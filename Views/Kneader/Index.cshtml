@@ -1,0 +1,73 @@
+﻿@model IEnumerable<GraficasMixing.Models.KneaderM>
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+@if (Model != null && Model.Any())
+{
+    <h2>Gráfico Kneader</h2>
+
+    <!-- Dropdown para seleccionar el Kneader -->
+    <select id="kneaderSelect" class="form-select" style="width:200px; margin-bottom:20px;">
+        <option value="Kneader1">Kneader 1</option>
+        <option value="Kneader2">Kneader 2</option>
+        <option value="Kneader3">Kneader 3</option>
+    </select>
+
+    <canvas id="kneaderChart" width="2200" height="800"></canvas>
+}
+else
+{
+    <p>No hay datos disponibles para graficar.</p>
+}
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // Serializar todos los datos desde Razor
+        var allData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model));
+
+        // Función para filtrar por Kneader
+        function filterByKneader(kneaderId) {
+            var filtered = allData.filter(x => x.Kneader === kneaderId);
+
+            kneaderChart.data.labels = filtered.map(x => x.Date.substring(0,10) + " " + x.Time);
+            kneaderChart.data.datasets[0].data = filtered.map(x => parseFloat(x.Pressure));
+            kneaderChart.data.datasets[1].data = filtered.map(x => parseFloat(x.Power));
+            kneaderChart.data.datasets[2].data = filtered.map(x => parseFloat(x.Revolution));
+            kneaderChart.data.datasets[3].data = filtered.map(x => parseFloat(x.Temperature));
+
+            kneaderChart.options.plugins.title.text =  kneaderId + " Parameters chart";
+            kneaderChart.update();
+        }
+
+        // Inicializar gráfico con Kneader 3
+        var ctx = document.getElementById('kneaderChart').getContext('2d');
+        var kneaderChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    { label: 'Pressure', data: [], borderColor: 'rgba(255, 99, 132, 1)', fill: false },
+                    { label: 'Power', data: [], borderColor: 'rgba(54, 162, 235, 1)', fill: false },
+                    { label: 'Revolution', data: [], borderColor: 'rgba(255, 206, 86, 1)', fill: false },
+                    { label: 'Temperature', data: [], borderColor: 'rgba(75, 192, 192, 1)', fill: false }
+                ]
+            },
+            options: {
+                responsive: true,
+                interaction: { mode: 'index', intersect: false },
+                plugins: { title: { display: true, text: 'Kneader Parameters chart' }, legend: { position: 'bottom' } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        filterByKneader("Kneader1");
+
+        // Evento al cambiar el dropdown
+        document.getElementById("kneaderSelect").addEventListener("change", function() {
+            filterByKneader(this.value);
+        });
+    </script>
+}
