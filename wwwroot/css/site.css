@@ -12,10 +12,22 @@ html {
   box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
+.titulo-con-linea {
+    margin-bottom: 30px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid #00ff90;
+    font-weight: bold;
+    opacity: 0;
+    transform: translateY(-10px);
+    animation: fadeInDown 0.6s ease-out forwards;
+}
+
 html {
   position: relative;
   min-height: 100%;
 }
+
+
 
 body {
   margin-bottom: 60px;

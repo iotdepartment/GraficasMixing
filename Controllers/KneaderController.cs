@@ -13,29 +13,19 @@ public class KneaderController : Controller
 
     public IActionResult Index()
     {
-
         var hoy = DateTime.Today;
 
-        var datos = _context.KneaderM
-                            .Where(x => x.Date.Date == hoy)   // solo registros del día actual
-                            .OrderBy(x => x.Time)
+        // Traer todos los registros
+        var todos = _context.KneaderM
+                            .OrderBy(x => x.Date)
+                            .ThenBy(x => x.Time)
                             .ToList();
 
+        // Filtrar los de hoy para inicializar
+        var deHoy = todos.Where(x => x.Date.Date == hoy).ToList();
 
-        Console.WriteLine($"Registros de hoy: {datos.Count}");
-        return View(datos);
-    }
-
-    public IActionResult Index1()
-    {
-        var hoy = DateTime.Today;
-
-        var datos = _context.KneaderM
-                            .Where(x => x.Date.Date == hoy)   // solo registros del día actual
-                            .OrderBy(x => x.Time)
-                            .ToList();
-
-        Console.WriteLine($"Registros de hoy: {datos.Count}");
-        return View(datos);
+        // Pasar ambos conjuntos a la vista
+        ViewBag.Hoy = deHoy;
+        return View(todos);
     }
 }

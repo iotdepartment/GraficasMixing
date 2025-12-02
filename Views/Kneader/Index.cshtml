@@ -2,19 +2,34 @@
 @{
     ViewData["Title"] = "Home Page";
 }
-
 @if (Model != null && Model.Any())
 {
-    <h2>Gráfico Kneader</h2>
+    <div class="container-fluid mt-3 shadow-lg p-4 mb-5 bg-white rounded-3">
+        <div class="row mb-4">
+            <h2>Graficas Mixing</h2>
+            <hr class="border border-dark border-3 mb-4 opacity-100">
+        </div>
+        <div class="row mb-4">
+            <!-- Dropdown para seleccionar el Kneader -->
+            <select id="kneaderSelect" class="form-select" style="width:200px; margin-bottom:20px;">
+                @foreach (var kneader in Model.Select(m => m.Kneader).Distinct())
+                {
+                    <option value="@kneader">@kneader</option>
+                }
+            </select>
 
-    <!-- Dropdown para seleccionar el Kneader -->
-    <select id="kneaderSelect" class="form-select" style="width:200px; margin-bottom:20px;">
-        <option value="Kneader1">Kneader 1</option>
-        <option value="Kneader2">Kneader 2</option>
-        <option value="Kneader3">Kneader 3</option>
-    </select>
+            <!-- Inputs para rango de fechas -->
+            <div style="margin-bottom:20px;">
+                <label for="startDate">Fecha inicio:</label>
+                <input type="date" id="startDate" class="form-control" style="width:200px; display:inline-block;">
 
-    <canvas id="kneaderChart" width="2200" height="800"></canvas>
+                <label for="endDate" style="margin-left:10px;">Fecha fin:</label>
+                <input type="date" id="endDate" class="form-control" style="width:200px; display:inline-block;">
+            </div>
+
+            <canvas id="kneaderChart" width="600" height="200"></canvas>
+        </div>
+    </div>
 }
 else
 {
@@ -22,52 +37,80 @@ else
 }
 
 @section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
         // Serializar todos los datos desde Razor
         var allData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model));
 
-        // Función para filtrar por Kneader
+        // Función para filtrar por Kneader y rango de fechas
         function filterByKneader(kneaderId) {
-            var filtered = allData.filter(x => x.Kneader === kneaderId);
+            var startDate = document.getElementById("startDate").value;
+            var endDate = document.getElementById("endDate").value;
+
+            var filtered = allData.filter(x => {
+                if (x.Kneader !== kneaderId) return false;
+
+                // Convertir a objeto Date (asegúrate que x.Date sea ISO o compatible)
+                var recordDate = new Date(x.Date);
+
+                // Si no hay rango definido, aceptar todo
+                if (!startDate || !endDate) return true;
+
+                var start = new Date(startDate);
+                var end = new Date(endDate);
+
+                // Comparar solo por día (ignorar horas)
+                return recordDate >= start && recordDate <= end;
+            });
 
             kneaderChart.data.labels = filtered.map(x => x.Date.substring(0,10) + " " + x.Time);
-            kneaderChart.data.datasets[0].data = filtered.map(x => parseFloat(x.Pressure));
-            kneaderChart.data.datasets[1].data = filtered.map(x => parseFloat(x.Power));
-            kneaderChart.data.datasets[2].data = filtered.map(x => parseFloat(x.Revolution));
-            kneaderChart.data.datasets[3].data = filtered.map(x => parseFloat(x.Temperature));
+            kneaderChart.data.datasets[0].data = filtered.map(x => parseFloat(x.Pressure) || 0);
+            kneaderChart.data.datasets[1].data = filtered.map(x => parseFloat(x.Power) || 0);
+            kneaderChart.data.datasets[2].data = filtered.map(x => parseFloat(x.Revolution) || 0);
+            kneaderChart.data.datasets[3].data = filtered.map(x => parseFloat(x.Temperature) || 0);
 
-            kneaderChart.options.plugins.title.text =  kneaderId + " Parameters chart";
+            kneaderChart.options.plugins.title.text = kneaderId + " Parameters chart";
             kneaderChart.update();
         }
 
-        // Inicializar gráfico con Kneader 3
+        // Inicializar gráfico
         var ctx = document.getElementById('kneaderChart').getContext('2d');
         var kneaderChart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: [],
                 datasets: [
-                    { label: 'Pressure', data: [], borderColor: 'rgba(255, 99, 132, 1)', fill: false },
-                    { label: 'Power', data: [], borderColor: 'rgba(54, 162, 235, 1)', fill: false },
-                    { label: 'Revolution', data: [], borderColor: 'rgba(255, 206, 86, 1)', fill: false },
-                    { label: 'Temperature', data: [], borderColor: 'rgba(75, 192, 192, 1)', fill: false }
+                    { label: 'Pressure', data: [], borderColor: 'rgba(255, 99, 132, 1)', fill: false, tension: 0.3, pointRadius: 2 },
+                    { label: 'Power', data: [], borderColor: 'rgba(54, 162, 235, 1)', fill: false, tension: 0.3, pointRadius: 2 },
+                    { label: 'Revolution', data: [], borderColor: 'rgba(255, 206, 86, 1)', fill: false, tension: 0.3, pointRadius: 2 },
+                    { label: 'Temperature', data: [], borderColor: 'rgba(75, 192, 192, 1)', fill: false, tension: 0.3, pointRadius: 2 }
                 ]
             },
             options: {
                 responsive: true,
                 interaction: { mode: 'index', intersect: false },
-                plugins: { title: { display: true, text: 'Kneader Parameters chart' }, legend: { position: 'bottom' } },
+                plugins: {
+                    title: { display: true, text: 'Kneader Parameters chart' },
+                    legend: { position: 'bottom' }
+                },
                 scales: { y: { beginAtZero: true } }
             }
         });
 
-        filterByKneader("Kneader1");
+        // Inicializar con el primer Kneader del dropdown
+        filterByKneader(document.getElementById("kneaderSelect").value);
 
-        // Evento al cambiar el dropdown
+        // Eventos al cambiar dropdown o rango de fechas
         document.getElementById("kneaderSelect").addEventListener("change", function() {
             filterByKneader(this.value);
+        });
+        document.getElementById("startDate").addEventListener("change", function() {
+            filterByKneader(document.getElementById("kneaderSelect").value);
+        });
+        document.getElementById("endDate").addEventListener("change", function() {
+            filterByKneader(document.getElementById("kneaderSelect").value);
         });
     </script>
 }
