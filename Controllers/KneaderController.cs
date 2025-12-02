@@ -15,17 +15,27 @@ public class KneaderController : Controller
     {
         var hoy = DateTime.Today;
 
-        // Traer todos los registros
-        var todos = _context.KneaderM
+        // Solo datos de hoy y Kneader1 para inicializar
+        var deHoyKneader1 = _context.KneaderM
+                                    .Where(x => x.Date.Date == hoy && x.Kneader == "Kneader1")
+                                    .OrderBy(x => x.Time)
+                                    .ToList();
+
+        return View(deHoyKneader1);
+    }
+
+    // Endpoint para AJAX: devuelve datos filtrados por rango y kneader
+    [HttpGet]
+    public JsonResult GetData(DateTime fechaInicio, DateTime fechaFin, string kneader)
+    {
+        var datos = _context.KneaderM
+                            .Where(x => x.Date.Date >= fechaInicio.Date &&
+                                        x.Date.Date <= fechaFin.Date &&
+                                        x.Kneader == kneader)
                             .OrderBy(x => x.Date)
                             .ThenBy(x => x.Time)
                             .ToList();
 
-        // Filtrar los de hoy para inicializar
-        var deHoy = todos.Where(x => x.Date.Date == hoy).ToList();
-
-        // Pasar ambos conjuntos a la vista
-        ViewBag.Hoy = deHoy;
-        return View(todos);
+        return Json(datos);
     }
 }
