@@ -17,10 +17,15 @@
         <input type="date" id="startDate" class="form-control" style="width:200px; display:inline-block;">
         <label for="endDate" style="margin-left:10px;">Fecha fin:</label>
         <input type="date" id="endDate" class="form-control" style="width:200px; display:inline-block;">
+
+        <!-- Botón para ejecutar el filtro -->
+        <button id="applyFilter" class="btn btn-primary" style="margin-left:15px;">Aplicar filtro</button>
+        <span id="spinner" class="spinner-border spinner-border-sm me-2" style="display:none;"></span>
     </div>
 
     <canvas id="kneaderChart" width="600" height="200"></canvas>
 </div>
+
 
 @section scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -61,15 +66,14 @@
         document.getElementById("endDate").value = today;
         loadData(today, today, "Kneader1");
 
-        // Eventos
-        document.getElementById("kneaderSelect").addEventListener("change", function() {
-            loadData(document.getElementById("startDate").value, document.getElementById("endDate").value, this.value);
+        // Evento único para el botón
+        document.getElementById("applyFilter").addEventListener("click", function() {
+            var start = document.getElementById("startDate").value;
+            var end = document.getElementById("endDate").value;
+            var kneader = document.getElementById("kneaderSelect").value;
+
+            loadData(start, end, kneader);
         });
-        document.getElementById("startDate").addEventListener("change", function() {
-            loadData(this.value, document.getElementById("endDate").value, document.getElementById("kneaderSelect").value);
-        });
-        document.getElementById("endDate").addEventListener("change", function() {
-            loadData(document.getElementById("startDate").value, this.value, document.getElementById("kneaderSelect").value);
-        });
+
     </script>
 }
