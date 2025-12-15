@@ -1,7 +1,7 @@
 ﻿@model IEnumerable<GraficasMixing.Models.KneaderM>
 
 <div class="container-fluid mt-3 shadow-lg p-4 mb-5 bg-white rounded-3">
-    <h2>Graficas Mixing</h2>
+    <h2>Graficas Kneader (Área de Mixing)</h2>
     <hr class="border border-dark border-3 mb-4 opacity-100">
 
     <!-- Dropdown Kneader -->
@@ -9,6 +9,13 @@
         <option value="Kneader1" selected>Kneader1</option>
         <option value="Kneader2">Kneader2</option>
         <option value="Kneader3">Kneader3</option>
+    </select>
+
+    <!-- Dropdown Turno -->
+    <select id="shiftSelect" class="form-select" style="width:200px; margin-bottom:20px;">
+        <option value="Turno1" selected>Turno 1 (7:00 - 14:00)</option>
+        <option value="Turno2">Turno 2 (14:00 - 24:00)</option>
+        <option value="Turno3">Turno 3 (24:00 - 7:00)</option>
     </select>
 
     <!-- Filtro por rango de fechas -->
@@ -22,12 +29,11 @@
         <button id="applyFilter" class="btn btn-primary" style="margin-left:15px;">Aplicar filtro</button>
         <span id="spinner" class="spinner-border spinner-border-sm me-2" style="display:none;"></span>
     </div>
-    <div style="overflow-x: auto; width: 100%;">
-        <canvas id="kneaderChart" width="1200" height="300"></canvas>
+
+    <div style="overflow-x:auto; width: 100%;">
+        <canvas id="kneaderChart" width="1500" height="300"></canvas>
     </div>
-
 </div>
-
 
 @section scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -47,35 +53,79 @@
                     { label: 'Temperature', data: [], borderColor: 'rgba(75, 192, 192, 1)', fill: false }
                 ]
             },
-            options: { responsive: true }
+
+            options: {
+                responsive: true,
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'minute',
+                            stepSize: 30,
+                            displayFormats: {
+                                minute: 'HH:mm'
+                            }
+                        },
+                        ticks: {
+                            autoSkip: true,
+                            maxRotation: 0,
+                            minRotation: 0
+                        }
+                    },
+
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                let value = context.raw;
+                                if (label === 'Pressure') return label + ': ' + value + ' bar';
+                                if (label === 'Power') return label + ': ' + value + ' kW';
+                                if (label === 'Revolution') return label + ': ' + value + ' rpm';
+                                if (label === 'Temperature') return label + ': ' + value + ' °C';
+                                return label + ': ' + value;
+                            }
+                        }
+                    }
+                }
+            }
         });
 
         // Función para cargar datos vía AJAX
-        function loadData(fechaInicio, fechaFin, kneaderId) {
-            $.getJSON('/Kneader/GetData', { fechaInicio: fechaInicio, fechaFin: fechaFin, kneader: kneaderId }, function (data) {
-                kneaderChart.data.labels = data.map(x => x.date.substring(0,10) + " " + x.time);
-                kneaderChart.data.datasets[0].data = data.map(x => parseFloat(x.pressure) || 0);
-                kneaderChart.data.datasets[1].data = data.map(x => parseFloat(x.power) || 0);
-                kneaderChart.data.datasets[2].data = data.map(x => parseFloat(x.revolution) || 0);
-                kneaderChart.data.datasets[3].data = data.map(x => parseFloat(x.temperature) || 0);
-                kneaderChart.update();
-            });
+        function loadData(fechaInicio, fechaFin, kneaderId, turno) {
+            $("#spinner").show();
+            $.getJSON('/Kneader/GetData', { fechaInicio: fechaInicio, fechaFin: fechaFin, kneader: kneaderId, turno: turno })
+                .done(function (data) {
+                    kneaderChart.data.labels = data.map(x => x.date.substring(0,10) + " " + x.time);
+                    kneaderChart.data.datasets[0].data = data.map(x => parseFloat(x.pressure) || 0);
+                    kneaderChart.data.datasets[1].data = data.map(x => parseFloat(x.power) || 0);
+                    kneaderChart.data.datasets[2].data = data.map(x => parseFloat(x.revolution) || 0);
+                    kneaderChart.data.datasets[3].data = data.map(x => parseFloat(x.temperature) || 0);
+                    kneaderChart.update();
+                })
+                .always(function () {
+                    $("#spinner").hide();
+                });
         }
 
         // Inicializar con datos de hoy y Kneader1
         var today = new Date().toISOString().substring(0,10);
         document.getElementById("startDate").value = today;
         document.getElementById("endDate").value = today;
-        loadData(today, today, "Kneader1");
+        loadData(today, today, "Kneader1", "Turno1");
 
         // Evento único para el botón
         document.getElementById("applyFilter").addEventListener("click", function() {
             var start = document.getElementById("startDate").value;
             var end = document.getElementById("endDate").value;
             var kneader = document.getElementById("kneaderSelect").value;
+            var turno = document.getElementById("shiftSelect").value;
 
-            loadData(start, end, kneader);
+            if (start > end) {
+                alert("La fecha inicio no puede ser mayor que la fecha fin.");
+                return;
+            }
+
+            loadData(start, end, kneader, turno);
         });
-
     </script>
 }

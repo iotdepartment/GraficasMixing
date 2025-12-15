@@ -1,5 +1,6 @@
 ﻿using GraficasMixing.Models;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Linq;
 
 public class KneaderController : Controller
@@ -24,17 +25,40 @@ public class KneaderController : Controller
         return View(deHoyKneader1);
     }
 
-    // Endpoint para AJAX: devuelve datos filtrados por rango y kneader
     [HttpGet]
-    public JsonResult GetData(DateTime fechaInicio, DateTime fechaFin, string kneader)
+    public JsonResult GetData(DateTime fechaInicio, DateTime fechaFin, string kneader, string turno)
     {
-        var datos = _context.KneaderM
+        // Base query por fechas y kneader
+        var query = _context.KneaderM
                             .Where(x => x.Date.Date >= fechaInicio.Date &&
                                         x.Date.Date <= fechaFin.Date &&
-                                        x.Kneader == kneader)
-                            .OrderBy(x => x.Date)
-                            .ThenBy(x => x.Time)
-                            .ToList();
+                                        x.Kneader == kneader);
+
+        // Filtrar por turno si se especifica
+        if (!string.IsNullOrEmpty(turno))
+        {
+            switch (turno)
+            {
+                case "Turno1": // 06:00 - 14:00
+                    query = query.Where(x => x.Time >= new TimeSpan(7, 0, 0) &&
+                                             x.Time < new TimeSpan(14, 0, 0));
+                    break;
+
+                case "Turno2": // 14:00 - 22:00
+                    query = query.Where(x => x.Time >= new TimeSpan(14, 0, 0) &&
+                                             x.Time < new TimeSpan(24, 0, 0));
+                    break;
+
+                case "Turno3": // 22:00 - 06:00 (abarca medianoche)
+                    query = query.Where(x => (x.Time >= new TimeSpan(24, 0, 0)) ||
+                                             (x.Time < new TimeSpan(7, 0, 0)));
+                    break;
+            }
+        }
+
+        var datos = query.OrderBy(x => x.Date)
+                         .ThenBy(x => x.Time)
+                         .ToList();
 
         return Json(datos);
     }
