@@ -13,9 +13,9 @@
 
     <!-- Dropdown Turno -->
     <select id="shiftSelect" class="form-select" style="width:200px; margin-bottom:20px;">
-        <option value="Turno1" selected>Turno 1 (7:00 - 14:00)</option>
-        <option value="Turno2">Turno 2 (14:00 - 24:00)</option>
-        <option value="Turno3">Turno 3 (24:00 - 7:00)</option>
+        <option value="Turno1" selected>Turno 1 (7:00 - 15:00)</option>
+        <option value="Turno2">Turno 2 (15:00 - 24:00)</option>
+        <option value="Turno3">Turno 3 (00:00 - 7:00)</option>
     </select>
 
     <!-- Filtro por rango de fechas -->
@@ -53,25 +53,8 @@
                     { label: 'Temperature', data: [], borderColor: 'rgba(75, 192, 192, 1)', fill: false }
                 ]
             },
-
             options: {
                 responsive: true,
-                    x: {
-                        type: 'time',
-                        time: {
-                            unit: 'minute',
-                            stepSize: 30,
-                            displayFormats: {
-                                minute: 'HH:mm'
-                            }
-                        },
-                        ticks: {
-                            autoSkip: true,
-                            maxRotation: 0,
-                            minRotation: 0
-                        }
-                    },
-
                 plugins: {
                     tooltip: {
                         callbacks: {

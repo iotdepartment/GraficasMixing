@@ -39,19 +39,23 @@ public class KneaderController : Controller
         {
             switch (turno)
             {
-                case "Turno1": // 06:00 - 14:00
-                    query = query.Where(x => x.Time >= new TimeSpan(7, 0, 0) &&
-                                             x.Time < new TimeSpan(14, 0, 0));
+                case "Turno1": // 07:00 - 14:59
+                    query = query.Where(x => x.Time >= new TimeSpan(07, 0, 1) &&
+                                             x.Time < new TimeSpan(14, 59, 59));
                     break;
 
-                case "Turno2": // 14:00 - 22:00
-                    query = query.Where(x => x.Time >= new TimeSpan(14, 0, 0) &&
-                                             x.Time < new TimeSpan(24, 0, 0));
+                case "Turno2": // 15:00 - 23:59
+                    query = query.Where(x => x.Time >= new TimeSpan(15, 0, 1) &&
+                                             x.Time < new TimeSpan(23, 59, 59));
                     break;
 
-                case "Turno3": // 22:00 - 06:00 (abarca medianoche)
-                    query = query.Where(x => (x.Time >= new TimeSpan(24, 0, 0)) ||
-                                             (x.Time < new TimeSpan(7, 0, 0)));
+                case "Turno3":
+                    // 00:00:01 - 06:59:59 del día siguiente
+                    var siguienteDia = fechaInicio.Date.AddDays(1);
+
+                    query = query.Where(x => x.Date == siguienteDia &&
+                                             x.Time >= new TimeSpan(0, 0, 1) &&
+                                             x.Time <= new TimeSpan(6, 59, 59));
                     break;
             }
         }
