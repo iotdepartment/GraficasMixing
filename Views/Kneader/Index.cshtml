@@ -1,29 +1,31 @@
 ﻿@model IEnumerable<GraficasMixing.Models.KneaderM>
 
 <div class="container-fluid mt-3 shadow-lg p-4 mb-5 bg-white rounded-3">
-    <h2>Graficas Kneader (Área de Mixing)</h2>
+    <h2>Kneader Charts (Mixing Area)</h2>
     <hr class="border border-dark border-3 mb-4 opacity-100">
 
     <!-- Dropdown Kneader -->
-    <select id="kneaderSelect" class="form-select" style="width:200px; margin-bottom:20px;">
+    <div style="margin-bottom:20px;">
+    <label for="kneaderSelect">Kneader:</label>
+    <select id="kneaderSelect" class="form-select" style="width:200px; margin-bottom:20px; display:inline-block;">
         <option value="Kneader1" selected>Kneader1</option>
         <option value="Kneader2">Kneader2</option>
         <option value="Kneader3">Kneader3</option>
     </select>
-
+    </div>
     <!-- Dropdown Turno -->
-    <select id="shiftSelect" class="form-select" style="width:200px; margin-bottom:20px;">
+    <div style="margin-bottom:20px;">
+    <label for="shiftSelect">Turno:</label>
+    <select id="shiftSelect" class="form-select" style="width:200px; margin-bottom:20px; display:inline-block;">
         <option value="Turno1" selected>Turno 1 (7:00 - 15:00)</option>
         <option value="Turno2">Turno 2 (15:00 - 24:00)</option>
         <option value="Turno3">Turno 3 (00:00 - 7:00)</option>
     </select>
-
-    <!-- Filtro por rango de fechas -->
+    </div>
+    <!-- Selección de una sola fecha -->
     <div style="margin-bottom:20px;">
-        <label for="startDate">Fecha inicio:</label>
+        <label for="startDate">Fecha:</label>
         <input type="date" id="startDate" class="form-control" style="width:200px; display:inline-block;">
-        <label for="endDate" style="margin-left:10px;">Fecha fin:</label>
-        <input type="date" id="endDate" class="form-control" style="width:200px; display:inline-block;">
 
         <!-- Botón para ejecutar el filtro -->
         <button id="applyFilter" class="btn btn-primary" style="margin-left:15px;">Aplicar filtro</button>
@@ -74,9 +76,9 @@
         });
 
         // Función para cargar datos vía AJAX
-        function loadData(fechaInicio, fechaFin, kneaderId, turno) {
+        function loadData(fecha, kneaderId, turno) {
             $("#spinner").show();
-            $.getJSON('/Kneader/GetData', { fechaInicio: fechaInicio, fechaFin: fechaFin, kneader: kneaderId, turno: turno })
+            $.getJSON('/Kneader/GetData', { fecha: fecha, kneader: kneaderId, turno: turno })
                 .done(function (data) {
                     kneaderChart.data.labels = data.map(x => x.date.substring(0,10) + " " + x.time);
                     kneaderChart.data.datasets[0].data = data.map(x => parseFloat(x.pressure) || 0);
@@ -93,22 +95,28 @@
         // Inicializar con datos de hoy y Kneader1
         var today = new Date().toISOString().substring(0,10);
         document.getElementById("startDate").value = today;
-        document.getElementById("endDate").value = today;
-        loadData(today, today, "Kneader1", "Turno1");
+        loadData(today, "Kneader1", "Turno1");
 
-        // Evento único para el botón
+        // Evento para el botón
         document.getElementById("applyFilter").addEventListener("click", function() {
-            var start = document.getElementById("startDate").value;
-            var end = document.getElementById("endDate").value;
+            var fecha = document.getElementById("startDate").value;
             var kneader = document.getElementById("kneaderSelect").value;
             var turno = document.getElementById("shiftSelect").value;
 
-            if (start > end) {
-                alert("La fecha inicio no puede ser mayor que la fecha fin.");
+            if (!fecha) {
+                alert("Debes seleccionar una fecha.");
                 return;
             }
 
-            loadData(start, end, kneader, turno);
+            // Ajuste automático para Turno 3 → usar el día siguiente
+            if (turno === "Turno3") {
+                let fechaObj = new Date(fecha);
+                let siguienteDia = new Date(fechaObj);
+                siguienteDia.setDate(fechaObj.getDate() + 1);
+                fecha = siguienteDia.toISOString().substring(0, 10);
+            }
+
+            loadData(fecha, kneader, turno);
         });
     </script>
 }
