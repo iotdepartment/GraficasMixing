@@ -15,26 +15,63 @@
     </div>
     <!-- Dropdown Turno -->
     <div style="margin-bottom:20px;">
-    <label for="shiftSelect">Turno:</label>
+    <label for="shiftSelect">Shift:</label>
     <select id="shiftSelect" class="form-select" style="width:200px; margin-bottom:20px; display:inline-block;">
-        <option value="Turno1" selected>Turno 1 (7:00 - 15:00)</option>
-        <option value="Turno2">Turno 2 (15:00 - 24:00)</option>
-        <option value="Turno3">Turno 3 (00:00 - 7:00)</option>
+        <option value="Turno1" selected>Shift 1 (7:00 - 15:00)</option>
+        <option value="Turno2">Shift 2 (15:00 - 24:00)</option>
+        <option value="Turno3">Shift 3 (00:00 - 7:00)</option>
     </select>
     </div>
     <!-- Selección de una sola fecha -->
     <div style="margin-bottom:20px;">
-        <label for="startDate">Fecha:</label>
+        <label for="startDate">Date:</label>
         <input type="date" id="startDate" class="form-control" style="width:200px; display:inline-block;">
 
         <!-- Botón para ejecutar el filtro -->
-        <button id="applyFilter" class="btn btn-primary" style="margin-left:15px;">Aplicar filtro</button>
+        <button id="applyFilter" class="btn btn-primary" style="margin-left:15px;">Apply Filters</button>
         <span id="spinner" class="spinner-border spinner-border-sm me-2" style="display:none;"></span>
     </div>
 
     <div style="overflow-x:auto; width: 100%;">
         <canvas id="kneaderChart" width="1500" height="300"></canvas>
     </div>
+<b></b>
+        <h2>Kneader Parameters(Real Time)</h2>
+    <hr class="border border-dark border-3 mb-4 opacity-100">
+<div id="latestCards" class="row mt-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-danger mb-3">
+            <div class="card-header">Pressure</div>
+            <div class="card-body">
+                <h5 id="pressureValue" class="card-title">-- bar</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-header">Power</div>
+            <div class="card-body">
+                <h5 id="powerValue" class="card-title">-- kW</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning mb-3">
+            <div class="card-header">Revolution</div>
+            <div class="card-body">
+                <h5 id="revolutionValue" class="card-title">-- rpm</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-header">Temperature</div>
+            <div class="card-body">
+                <h5 id="temperatureValue" class="card-title">-- °C</h5>
+            </div>
+        </div>
+    </div>
+</div>
 </div>
 
 @section scripts {
@@ -57,6 +94,23 @@
             },
             options: {
                 responsive: true,
+
+                        scales: {
+            x: {
+                type: 'category',
+                ticks: {
+                    callback: function(value, index, ticks) {
+                        let label = this.getLabelForValue(value);
+                        return label.split(" ")[1]; // solo la hora
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'Hora'
+                }
+            }
+        },
+
                 plugins: {
                     tooltip: {
                         callbacks: {
@@ -86,11 +140,26 @@
                     kneaderChart.data.datasets[2].data = data.map(x => parseFloat(x.revolution) || 0);
                     kneaderChart.data.datasets[3].data = data.map(x => parseFloat(x.temperature) || 0);
                     kneaderChart.update();
+
+        // 👉 Mostrar últimos valores en tarjetas
+        if (data.length > 0) {
+            let last = data[data.length - 1];
+            $("#pressureValue").text(last.pressure + " bar");
+            $("#powerValue").text(last.power + " kW");
+            $("#revolutionValue").text(last.revolution + " rpm");
+            $("#temperatureValue").text(last.temperature + " °C");
+        } else {
+            $("#pressureValue").text("-- bar");
+            $("#powerValue").text("-- kW");
+            $("#revolutionValue").text("-- rpm");
+            $("#temperatureValue").text("-- °C");
+        }
                 })
                 .always(function () {
                     $("#spinner").hide();
                 });
         }
+
 
         // Inicializar con datos de hoy y Kneader1
         var today = new Date().toISOString().substring(0,10);
