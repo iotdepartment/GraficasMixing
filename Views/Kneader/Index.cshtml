@@ -6,22 +6,24 @@
 
     <!-- Dropdown Kneader -->
     <div style="margin-bottom:20px;">
-    <label for="kneaderSelect">Kneader:</label>
-    <select id="kneaderSelect" class="form-select" style="width:200px; margin-bottom:20px; display:inline-block;">
-        <option value="Kneader1" selected>Kneader1</option>
-        <option value="Kneader2">Kneader2</option>
-        <option value="Kneader3">Kneader3</option>
-    </select>
+        <label for="kneaderSelect">Kneader:</label>
+        <select id="kneaderSelect" class="form-select" style="width:200px; margin-bottom:20px; display:inline-block;">
+            <option value="Kneader1" selected>Kneader1</option>
+            <option value="Kneader2">Kneader2</option>
+            <option value="Kneader3">Kneader3</option>
+        </select>
     </div>
+
     <!-- Dropdown Turno -->
     <div style="margin-bottom:20px;">
-    <label for="shiftSelect">Shift:</label>
-    <select id="shiftSelect" class="form-select" style="width:200px; margin-bottom:20px; display:inline-block;">
-        <option value="Turno1" selected>Shift 1 (7:00 - 15:00)</option>
-        <option value="Turno2">Shift 2 (15:00 - 24:00)</option>
-        <option value="Turno3">Shift 3 (00:00 - 7:00)</option>
-    </select>
+        <label for="shiftSelect">Shift:</label>
+        <select id="shiftSelect" class="form-select" style="width:200px; margin-bottom:20px; display:inline-block;">
+            <option value="Turno1" selected>Shift 1 (7:00 - 15:00)</option>
+            <option value="Turno2">Shift 2 (15:00 - 24:00)</option>
+            <option value="Turno3">Shift 3 (00:00 - 7:00)</option>
+        </select>
     </div>
+
     <!-- Selección de una sola fecha -->
     <div style="margin-bottom:20px;">
         <label for="startDate">Date:</label>
@@ -32,55 +34,67 @@
         <span id="spinner" class="spinner-border spinner-border-sm me-2" style="display:none;"></span>
     </div>
 
+    <!-- Dynamic slicer -->
+    <!-- Slicer de rango doble -->
+    <div style="margin-bottom:20px;">
+        <label>Rango de registros:</label>
+        <div id="rangeSlider" style="width:300px; margin-top:10px;"></div>
+        <span id="rangeValues"></span>
+    </div>
+
     <div style="overflow-x:auto; width: 100%;">
         <canvas id="kneaderChart" width="1500" height="300"></canvas>
     </div>
-<b></b>
-        <h2>Kneader Parameters(Real Time)</h2>
+
+    <h2>Kneader Parameters (Real Time)</h2>
     <hr class="border border-dark border-3 mb-4 opacity-100">
-<div id="latestCards" class="row mt-4">
-    <div class="col-md-3">
-        <div class="card text-white bg-danger mb-3">
-            <div class="card-header">Pressure</div>
-            <div class="card-body">
-                <h5 id="pressureValue" class="card-title">-- bar</h5>
+    <div id="latestCards" class="row mt-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-danger mb-3">
+                <div class="card-header">Pressure</div>
+                <div class="card-body">
+                    <h5 id="pressureValue" class="card-title">-- bar</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-primary mb-3">
+                <div class="card-header">Power</div>
+                <div class="card-body">
+                    <h5 id="powerValue" class="card-title">-- kW</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning mb-3">
+                <div class="card-header">Revolution</div>
+                <div class="card-body">
+                    <h5 id="revolutionValue" class="card-title">-- rpm</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success mb-3">
+                <div class="card-header">Temperature</div>
+                <div class="card-body">
+                    <h5 id="temperatureValue" class="card-title">-- °C</h5>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-primary mb-3">
-            <div class="card-header">Power</div>
-            <div class="card-body">
-                <h5 id="powerValue" class="card-title">-- kW</h5>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-warning mb-3">
-            <div class="card-header">Revolution</div>
-            <div class="card-body">
-                <h5 id="revolutionValue" class="card-title">-- rpm</h5>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-success mb-3">
-            <div class="card-header">Temperature</div>
-            <div class="card-body">
-                <h5 id="temperatureValue" class="card-title">-- °C</h5>
-            </div>
-        </div>
-    </div>
-</div>
 </div>
 
 @section scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- noUiSlider -->
+    <script src="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.css" rel="stylesheet" />
 
     <script>
-        // Inicializar gráfico vacío
         var ctx = document.getElementById('kneaderChart').getContext('2d');
+        var allData = [];
+
         var kneaderChart = new Chart(ctx, {
             type: 'line',
             data: {
@@ -94,72 +108,81 @@
             },
             options: {
                 responsive: true,
-
-                        scales: {
-            x: {
-                type: 'category',
-                ticks: {
-                    callback: function(value, index, ticks) {
-                        let label = this.getLabelForValue(value);
-                        return label.split(" ")[1]; // solo la hora
-                    }
-                },
-                title: {
-                    display: true,
-                    text: 'Hora'
-                }
-            }
-        },
-
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                let value = context.raw;
-                                if (label === 'Pressure') return label + ': ' + value + ' bar';
-                                if (label === 'Power') return label + ': ' + value + ' kW';
-                                if (label === 'Revolution') return label + ': ' + value + ' rpm';
-                                if (label === 'Temperature') return label + ': ' + value + ' °C';
-                                return label + ': ' + value;
+                scales: {
+                    x: {
+                        type: 'category',
+                        ticks: {
+                            callback: function(value) {
+                                let label = this.getLabelForValue(value);
+                                return label.split(" ")[1];
                             }
-                        }
+                        },
+                        title: { display: true, text: 'Hora' }
                     }
                 }
             }
         });
 
-        // Función para cargar datos vía AJAX
+        // 👉 Función para aplicar rango
+        function applyRange(start, end) {
+            let sliced = allData.slice(start, end);
+            kneaderChart.data.labels = sliced.map(x => x.date.substring(0,10) + " " + x.time);
+            kneaderChart.data.datasets[0].data = sliced.map(x => parseFloat(x.pressure) || 0);
+            kneaderChart.data.datasets[1].data = sliced.map(x => parseFloat(x.power) || 0);
+            kneaderChart.data.datasets[2].data = sliced.map(x => parseFloat(x.revolution) || 0);
+            kneaderChart.data.datasets[3].data = sliced.map(x => parseFloat(x.temperature) || 0);
+            kneaderChart.update();
+        }
+
+        // 👉 Inicializar slider doble
+        var rangeSlider = document.getElementById('rangeSlider');
+        noUiSlider.create(rangeSlider, {
+            start: [0, 100], // valores iniciales
+            connect: true,
+            range: { min: 0, max: 100 }, // se ajustará dinámicamente
+            step: 1
+        });
+
+        rangeSlider.noUiSlider.on('update', function(values) {
+            let start = Math.round(values[0]);
+            let end = Math.round(values[1]);
+            document.getElementById("rangeValues").innerText = start + " - " + end;
+            applyRange(start, end);
+        });
+
+        // 👉 Cargar datos vía AJAX
         function loadData(fecha, kneaderId, turno) {
             $("#spinner").show();
             $.getJSON('/Kneader/GetData', { fecha: fecha, kneader: kneaderId, turno: turno })
                 .done(function (data) {
-                    kneaderChart.data.labels = data.map(x => x.date.substring(0,10) + " " + x.time);
-                    kneaderChart.data.datasets[0].data = data.map(x => parseFloat(x.pressure) || 0);
-                    kneaderChart.data.datasets[1].data = data.map(x => parseFloat(x.power) || 0);
-                    kneaderChart.data.datasets[2].data = data.map(x => parseFloat(x.revolution) || 0);
-                    kneaderChart.data.datasets[3].data = data.map(x => parseFloat(x.temperature) || 0);
-                    kneaderChart.update();
+                    allData = data;
 
-        // 👉 Mostrar últimos valores en tarjetas
-        if (data.length > 0) {
-            let last = data[data.length - 1];
-            $("#pressureValue").text(last.pressure + " bar");
-            $("#powerValue").text(last.power + " kW");
-            $("#revolutionValue").text(last.revolution + " rpm");
-            $("#temperatureValue").text(last.temperature + " °C");
-        } else {
-            $("#pressureValue").text("-- bar");
-            $("#powerValue").text("-- kW");
-            $("#revolutionValue").text("-- rpm");
-            $("#temperatureValue").text("-- °C");
-        }
+                    // Ajustar rango máximo según cantidad de registros
+                    rangeSlider.noUiSlider.updateOptions({
+                        range: { min: 0, max: allData.length },
+                        start: [0, allData.length]
+                    });
+
+                    applyRange(0, allData.length);
+
+                    // Actualizar tarjetas
+                    if (data.length > 0) {
+                        let last = data[data.length - 1];
+                        $("#pressureValue").text(last.pressure + " bar");
+                        $("#powerValue").text(last.power + " kW");
+                        $("#revolutionValue").text(last.revolution + " rpm");
+                        $("#temperatureValue").text(last.temperature + " °C");
+                    } else {
+                        $("#pressureValue").text("-- bar");
+                        $("#powerValue").text("-- kW");
+                        $("#revolutionValue").text("-- rpm");
+                        $("#temperatureValue").text("-- °C");
+                    }
                 })
                 .always(function () {
                     $("#spinner").hide();
                 });
         }
-
 
         // Inicializar con datos de hoy y Kneader1
         var today = new Date().toISOString().substring(0,10);
@@ -177,7 +200,6 @@
                 return;
             }
 
-            // Ajuste automático para Turno 3 → usar el día siguiente
             if (turno === "Turno3") {
                 let fechaObj = new Date(fecha);
                 let siguienteDia = new Date(fechaObj);
