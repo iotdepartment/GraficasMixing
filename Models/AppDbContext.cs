@@ -11,4 +11,12 @@ namespace GraficasMixing.Models
 
         public DbSet<KneaderM> KneaderM { get; set; }
     }
+    public class MasterMcontext : DbContext{
+        public MasterMcontext(DbContextOptions<MasterMcontext> options)
+            : base(options)
+        {
+        }
+        public DbSet<MasterM> MasterM { get; set; }
+    }
+
 }

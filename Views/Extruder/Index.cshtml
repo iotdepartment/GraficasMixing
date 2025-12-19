@@ -1,0 +1,151 @@
+﻿@model dynamic
+
+@{
+    var labels1 = ((IEnumerable<dynamic>)Model.E1).Select(x => x.Fecha.ToString("yyyy-MM-dd HH:mm:ss")).ToArray();
+    var estado1 = ((IEnumerable<dynamic>)Model.E1).Select(x => x.Estado).ToArray();
+
+    var labels3 = ((IEnumerable<dynamic>)Model.E3).Select(x => x.Fecha.ToString("yyyy-MM-dd HH:mm:ss")).ToArray();
+    var estado3 = ((IEnumerable<dynamic>)Model.E3).Select(x => x.Estado).ToArray();
+
+    var labels4 = ((IEnumerable<dynamic>)Model.E4).Select(x => x.Fecha.ToString("yyyy-MM-dd HH:mm:ss")).ToArray();
+    var estado4 = ((IEnumerable<dynamic>)Model.E4).Select(x => x.Estado).ToArray();
+
+    var labels5 = ((IEnumerable<dynamic>)Model.E5).Select(x => x.Fecha.ToString("yyyy-MM-dd HH:mm:ss")).ToArray();
+    var estado5 = ((IEnumerable<dynamic>)Model.E5).Select(x => x.Estado).ToArray();
+}
+
+<style>
+    .grid-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+        padding: 20px;
+    }
+
+    .grafica-box {
+        background: #f8f8f8;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+        text-align: center;
+        margin-bottom: 10px;
+    }
+</style>
+
+<div class="grid-container">
+
+    <div class="grafica-box">
+        <h2>Extruder 1</h2>
+        <canvas id="grafE1" height="120"></canvas>
+    </div>
+
+    <div class="grafica-box">
+        <h2>Extruder 3</h2>
+        <canvas id="grafE3" height="120"></canvas>
+    </div>
+
+    <div class="grafica-box">
+        <h2>Extruder 4</h2>
+        <canvas id="grafE4" height="120"></canvas>
+    </div>
+
+    <div class="grafica-box">
+        <h2>Extruder 5</h2>
+        <canvas id="grafE5" height="120"></canvas>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Plugin para colorear fondo verde/rojo -->
+<script>
+    const estadoBackground = {
+        id: 'estadoBackground',
+        beforeDraw(chart, args, options) {
+            const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
+            ctx.save();
+
+            const data = chart.data.datasets[0].data;
+
+            for (let i = 0; i < data.length - 1; i++) {
+                const estado = data[i];
+                const xStart = x.getPixelForValue(i);
+                const xEnd = x.getPixelForValue(i + 1);
+
+                ctx.fillStyle = estado === 1
+                    ? 'rgba(0,200,0,0.25)'   // Verde
+                    : 'rgba(255,0,0,0.25)'; // Rojo
+
+                ctx.fillRect(xStart, top, xEnd - xStart, bottom - top);
+            }
+
+            ctx.restore();
+        }
+    };
+</script>
+
+<script>
+    function crearGrafica(idCanvas, labels, data, titulo) {
+           new Chart(document.getElementById(idCanvas), {
+               type: 'line',
+               data: {
+                   labels: labels,
+                   datasets: [{
+                       label: titulo,
+                       data: data,
+                       borderColor: 'black',
+                       borderWidth: 2,
+                       stepped: true,
+                       pointRadius: 0
+                   }]
+               },
+               options: {
+                   responsive: true,
+                   scales: {
+                       y: {
+                           min: -0.2,
+                           max: 1.2,
+                           ticks: {
+                               stepSize: 1,
+                               callback: function (value) {
+                                   if (value === 0) return "Apagada";   // 👈 Piso
+                                   if (value === 1) return "Corriendo"; // 👈 Techo
+                                   return "";
+                               }
+                           },
+                           grid: {
+                               drawTicks: true,
+                               drawBorder: true
+                           }
+                       }
+                   }
+               },
+               plugins: [estadoBackground]
+           });
+       }
+
+
+    crearGrafica("grafE1",
+        @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(labels1)),
+        @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(estado1)),
+        "Extruder 1");
+
+    crearGrafica("grafE3",
+        @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(labels3)),
+        @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(estado3)),
+        "Extruder 3");
+
+    crearGrafica("grafE4",
+        @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(labels4)),
+        @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(estado4)),
+        "Extruder 4");
+
+    crearGrafica("grafE5",
+        @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(labels5)),
+        @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(estado5)),
+        "Extruder 5");
+</script>

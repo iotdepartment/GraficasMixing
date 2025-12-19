@@ -10,6 +10,10 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<GaficadoreTestContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("GaficadoreTestConnection")));
 
+builder.Services.AddDbContext<MasterMcontext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("OmronConnection")));
+
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -28,6 +32,6 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Kneader}/{action=Index}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
