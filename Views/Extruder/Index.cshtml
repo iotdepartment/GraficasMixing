@@ -1,5 +1,5 @@
-﻿@model dynamic
-
+﻿@using Newtonsoft.Json
+@model dynamic
 @{
     var labels1 = ((IEnumerable<dynamic>)Model.E1).Select(x => x.Fecha.ToString("yyyy-MM-dd HH:mm:ss")).ToArray();
     var estado1 = ((IEnumerable<dynamic>)Model.E1).Select(x => x.Estado).ToArray();
@@ -12,123 +12,202 @@
 
     var labels5 = ((IEnumerable<dynamic>)Model.E5).Select(x => x.Fecha.ToString("yyyy-MM-dd HH:mm:ss")).ToArray();
     var estado5 = ((IEnumerable<dynamic>)Model.E5).Select(x => x.Estado).ToArray();
+
+    var velLabels = ((IEnumerable<dynamic>)Model.Velocidad3)
+    .Select(x => x.Fecha.ToString("yyyy-MM-dd HH:mm:ss"))
+    .ToArray();
+
+    var velValues = ((IEnumerable<dynamic>)Model.Velocidad3)
+        .Select(x => x.Valor)
+        .ToArray();
+
 }
 
-<style>
-    .grid-container {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 25px;
-        padding: 20px;
-    }
-
-    .grafica-box {
-        background: #f8f8f8;
-        padding: 15px;
-        border-radius: 10px;
-        box-shadow: 0 0 8px rgba(0,0,0,0.1);
-    }
-
-    h2 {
-        text-align: center;
-        margin-bottom: 10px;
-    }
-</style>
-
+<div class="container-fluid mt-3 shadow-lg p-4 mb-5 bg-white rounded-3">
+    <h2 class="text-center">Mesus Charts (Extruder Area)</h2>
+    <hr class="border border-dark border-3 mb-4 opacity-100">
 <div class="grid-container">
 
     <div class="grafica-box">
         <h2>Extruder 1</h2>
-        <canvas id="grafE1" height="120"></canvas>
+        <canvas id="grafE1" height="60"></canvas>
     </div>
 
     <div class="grafica-box">
         <h2>Extruder 3</h2>
-        <canvas id="grafE3" height="120"></canvas>
+        <canvas id="grafE3" height="60"></canvas>
     </div>
 
     <div class="grafica-box">
         <h2>Extruder 4</h2>
-        <canvas id="grafE4" height="120"></canvas>
+        <canvas id="grafE4" height="60"></canvas>
     </div>
 
     <div class="grafica-box">
         <h2>Extruder 5</h2>
-        <canvas id="grafE5" height="120"></canvas>
+        <canvas id="grafE5" height="60"></canvas>
+    </div>
+</div>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <label class="form-label fw-bold">Extrusora</label>
+            <select id="selectExtrusora" class="form-select">
+                <option value="1">Extruder 1</option>
+                <option value="3">Extruder 3</option>
+                <option value="4">Extruder 4</option>
+                <option value="5">Extruder 5</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label fw-bold">Fecha</label>
+            <input type="date" id="selectFecha" class="form-control">
+        </div>
+    </div>
+
+<hr class="border border-dark border-3 mb-3 opacity-100">
+<div id="latestCards" class="row mt-5">
+    <div class="col-md-3">
+        <div class="card text-white bg-warning mb-3">
+            <div class="card-header">Tiempo Total Disponible</div>
+            <div class="card-body">
+                <h5 id="TimeTotalValue" class="card-title">-- Min</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-header">Tiempo de Operacion</div>
+            <div class="card-body">
+                <h5 id="OperationTimeValue" class="card-title">-- Min</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-black mb-3">
+            <div class="card-header">Tiempo Muerto</div>
+            <div class="card-body">
+                <h5 id="ShutdownTimeValue" class="card-title">-- Min</h5>
+            </div>
+        </div>
+    </div>
+  </div>
+
+    <hr class="border border-dark border-3 my-4 opacity-100">
+
+    <div class="container-fluid mt-4">
+        <h2 class="mb-3">Variación de Velocidad</h2>
+        <canvas id="grafVelocidad" height="120"></canvas>
     </div>
 
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- Plugin para colorear fondo verde/rojo -->
 <script>
+    // Plugin para colorear fondo verde/rojo
     const estadoBackground = {
         id: 'estadoBackground',
-        beforeDraw(chart, args, options) {
-            const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
-            ctx.save();
-
+        beforeDraw(chart) {
+            const { ctx, chartArea, scales: { x } } = chart;
             const data = chart.data.datasets[0].data;
 
+            ctx.save();
+
             for (let i = 0; i < data.length - 1; i++) {
-                const estado = data[i];
                 const xStart = x.getPixelForValue(i);
                 const xEnd = x.getPixelForValue(i + 1);
 
-                ctx.fillStyle = estado === 1
+                ctx.fillStyle = data[i] === 1
                     ? 'rgba(0,200,0,0.25)'   // Verde
                     : 'rgba(255,0,0,0.25)'; // Rojo
 
-                ctx.fillRect(xStart, top, xEnd - xStart, bottom - top);
+                ctx.fillRect(
+                    xStart,
+                    chartArea.top,
+                    xEnd - xStart,
+                    chartArea.bottom - chartArea.top
+                );
             }
 
             ctx.restore();
         }
     };
-</script>
 
-<script>
+        function crearGraficaVelocidad(idCanvas, labels, data) {
+        new Chart(document.getElementById(idCanvas), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: "Velocidad (RPM)",
+                    data: data,
+                    borderColor: 'blue',
+                    backgroundColor: 'rgba(0,0,255,0.15)',
+                    borderWidth: 2,
+                    tension: 0.2,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: "RPM"
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            maxRotation: 0,
+                            autoSkip: true
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Crear gráfica
     function crearGrafica(idCanvas, labels, data, titulo) {
-           new Chart(document.getElementById(idCanvas), {
-               type: 'line',
-               data: {
-                   labels: labels,
-                   datasets: [{
-                       label: titulo,
-                       data: data,
-                       borderColor: 'black',
-                       borderWidth: 2,
-                       stepped: true,
-                       pointRadius: 0
-                   }]
-               },
-               options: {
-                   responsive: true,
-                   scales: {
-                       y: {
-                           min: -0.2,
-                           max: 1.2,
-                           ticks: {
-                               stepSize: 1,
-                               callback: function (value) {
-                                   if (value === 0) return "Apagada";   // 👈 Piso
-                                   if (value === 1) return "Corriendo"; // 👈 Techo
-                                   return "";
-                               }
-                           },
-                           grid: {
-                               drawTicks: true,
-                               drawBorder: true
-                           }
-                       }
-                   }
-               },
-               plugins: [estadoBackground]
-           });
-       }
+        new Chart(document.getElementById(idCanvas), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: titulo,
+                    data: data,
+                    borderColor: 'black',
+                    borderWidth: 2,
+                    stepped: true,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        min: -0.2,
+                        max: 1.2,
+                        ticks: {
+                            stepSize: 1,
+                            callback: function (value) {
+                                if (value === 0) return "Apagada";
+                                if (value === 1) return "Corriendo";
+                                return "";
+                            }
+                        }
+                    }
+                }
+            },
+            plugins: [estadoBackground]
+        });
+    }
 
-
+    // Crear todas las gráficas
     crearGrafica("grafE1",
         @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(labels1)),
         @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(estado1)),
@@ -148,4 +227,51 @@
         @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(labels5)),
         @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(estado5)),
         "Extruder 5");
+
+            crearGraficaVelocidad(
+        "grafVelocidad",
+        @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(velLabels)),
+        @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(velValues))
+    );
+
+    // ============================
+    //     CÁLCULO DE KPIs
+    // ============================
+
+    const dataSets = {
+        1: { labels: @Html.Raw(JsonConvert.SerializeObject(labels1)), estados: @Html.Raw(JsonConvert.SerializeObject(estado1)) },
+        3: { labels: @Html.Raw(JsonConvert.SerializeObject(labels3)), estados: @Html.Raw(JsonConvert.SerializeObject(estado3)) },
+        4: { labels: @Html.Raw(JsonConvert.SerializeObject(labels4)), estados: @Html.Raw(JsonConvert.SerializeObject(estado4)) },
+        5: { labels: @Html.Raw(JsonConvert.SerializeObject(labels5)), estados: @Html.Raw(JsonConvert.SerializeObject(estado5)) }
+    };
+
+    function calcularTiempos(labels, estados) {
+        let total = estados.length;
+        let operacion = estados.filter(x => x === 1).length;
+        let muerto = estados.filter(x => x === 0).length;
+
+        return {
+            totalMin: total,
+            operacionMin: operacion,
+            muertoMin: muerto
+        };
+    }
+
+    function actualizarKPIs() {
+        const extrusora = document.getElementById("selectExtrusora").value;
+        const datos = dataSets[extrusora];
+
+        const t = calcularTiempos(datos.labels, datos.estados);
+
+        document.getElementById("TimeTotalValue").innerText = t.totalMin + " Min";
+        document.getElementById("OperationTimeValue").innerText = t.operacionMin + " Min";
+        document.getElementById("ShutdownTimeValue").innerText = t.muertoMin + " Min";
+    }
+
+    // Eventos
+    document.getElementById("selectExtrusora").addEventListener("change", actualizarKPIs);
+    document.getElementById("selectFecha").addEventListener("change", actualizarKPIs);
+
+    // Inicializar KPIs al cargar
+    actualizarKPIs();
 </script>

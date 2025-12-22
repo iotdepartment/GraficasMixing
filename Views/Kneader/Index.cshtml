@@ -49,7 +49,7 @@
     <hr class="border border-dark border-3 mb-4 opacity-100">
     <div id="latestCards" class="row mt-4">
         <div class="col-md-3">
-            <div class="card text-white bg-danger mb-3">
+            <div class="card text-white bg-warning mb-3">
                 <div class="card-header">Pressure</div>
                 <div class="card-body">
                     <h5 id="pressureValue" class="card-title">-- bar</h5>
@@ -65,7 +65,7 @@
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card text-white bg-warning mb-3">
+            <div class="card text-white bg-black mb-3">
                 <div class="card-header">Revolution</div>
                 <div class="card-body">
                     <h5 id="revolutionValue" class="card-title">-- rpm</h5>
@@ -73,7 +73,7 @@
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card text-white bg-success mb-3">
+            <div class="card text-white bg-danger mb-3">
                 <div class="card-header">Temperature</div>
                 <div class="card-body">
                     <h5 id="temperatureValue" class="card-title">-- °C</h5>
@@ -99,10 +99,10 @@
             data: {
                 labels: [],
                 datasets: [
-                    { label: 'Pressure', data: [], borderColor: 'rgba(255, 99, 132, 1)', fill: false },
+                    { label: 'Pressure', data: [], borderColor: 'rgba(248, 195, 40, 1)', fill: false },
                     { label: 'Power', data: [], borderColor: 'rgba(54, 162, 235, 1)', fill: false },
-                    { label: 'Revolution', data: [], borderColor: 'rgba(255, 206, 86, 1)', fill: false },
-                    { label: 'Temperature', data: [], borderColor: 'rgba(75, 192, 192, 1)', fill: false }
+                    { label: 'Revolution', data: [], borderColor: 'rgba(0, 0, 0, 1)', fill: false },
+                    { label: 'Temperature', data: [], borderColor: 'rgba(211, 63, 73, 1)', fill: false }
                 ]
             },
             options: {
