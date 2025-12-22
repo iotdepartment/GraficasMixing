@@ -13,13 +13,17 @@
     var labels5 = ((IEnumerable<dynamic>)Model.E5).Select(x => x.Fecha.ToString("yyyy-MM-dd HH:mm:ss")).ToArray();
     var estado5 = ((IEnumerable<dynamic>)Model.E5).Select(x => x.Estado).ToArray();
 
-    var velLabels = ((IEnumerable<dynamic>)Model.Velocidad3)
-    .Select(x => x.Fecha.ToString("yyyy-MM-dd HH:mm:ss"))
-    .ToArray();
+var velLabels1 = ((IEnumerable<dynamic>)Model.Velocidad1).Select(x => x.Fecha.ToString("yyyy-MM-dd HH:mm:ss")).ToArray();
+var velValues1 = ((IEnumerable<dynamic>)Model.Velocidad1).Select(x => x.Valor).ToArray();
 
-    var velValues = ((IEnumerable<dynamic>)Model.Velocidad3)
-        .Select(x => x.Valor)
-        .ToArray();
+var velLabels3 = ((IEnumerable<dynamic>)Model.Velocidad3).Select(x => x.Fecha.ToString("yyyy-MM-dd HH:mm:ss")).ToArray();
+var velValues3 = ((IEnumerable<dynamic>)Model.Velocidad3).Select(x => x.Valor).ToArray();
+
+var velLabels4 = ((IEnumerable<dynamic>)Model.Velocidad4).Select(x => x.Fecha.ToString("yyyy-MM-dd HH:mm:ss")).ToArray();
+var velValues4 = ((IEnumerable<dynamic>)Model.Velocidad4).Select(x => x.Valor).ToArray();
+
+var velLabels5 = ((IEnumerable<dynamic>)Model.Velocidad5).Select(x => x.Fecha.ToString("yyyy-MM-dd HH:mm:ss")).ToArray();
+var velValues5 = ((IEnumerable<dynamic>)Model.Velocidad5).Select(x => x.Valor).ToArray();
 
 }
 
@@ -106,6 +110,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
+    let charts = {};
     // Plugin para colorear fondo verde/rojo
     const estadoBackground = {
         id: 'estadoBackground',
@@ -180,8 +185,8 @@
                 datasets: [{
                     label: titulo,
                     data: data,
-                    borderColor: 'black',
-                    borderWidth: 2,
+                    borderColor: 'rgba(0,0,0,0)', // invisible
+                    borderWidth: 0,
                     stepped: true,
                     pointRadius: 0
                 }]
@@ -207,6 +212,38 @@
         });
     }
 
+    function filtrarPorFecha(labels, estados, fechaSeleccionada) {
+        if (!fechaSeleccionada) return { labels, estados };
+
+        const L = [];
+        const E = [];
+
+        for (let i = 0; i < labels.length; i++) {
+            if (labels[i].startsWith(fechaSeleccionada)) {
+                L.push(labels[i]);
+                E.push(estados[i]);
+            }
+        }
+
+        return { labels: L, estados: E };
+    }
+
+        function filtrarPorFechaVelocidad(labels, data, fechaSeleccionada) {
+        if (!fechaSeleccionada) return { labels, data };
+
+        const L = [];
+        const D = [];
+
+        for (let i = 0; i < labels.length; i++) {
+            if (labels[i].startsWith(fechaSeleccionada)) {
+                L.push(labels[i]);
+                D.push(data[i]);
+            }
+        }
+
+        return { labels: L, data: D };
+    }
+
     // Crear todas las gráficas
     crearGrafica("grafE1",
         @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(labels1)),
@@ -227,22 +264,19 @@
         @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(labels5)),
         @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(estado5)),
         "Extruder 5");
-
-            crearGraficaVelocidad(
-        "grafVelocidad",
-        @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(velLabels)),
-        @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(velValues))
-    );
-
-    // ============================
     //     CÁLCULO DE KPIs
-    // ============================
-
     const dataSets = {
         1: { labels: @Html.Raw(JsonConvert.SerializeObject(labels1)), estados: @Html.Raw(JsonConvert.SerializeObject(estado1)) },
         3: { labels: @Html.Raw(JsonConvert.SerializeObject(labels3)), estados: @Html.Raw(JsonConvert.SerializeObject(estado3)) },
         4: { labels: @Html.Raw(JsonConvert.SerializeObject(labels4)), estados: @Html.Raw(JsonConvert.SerializeObject(estado4)) },
         5: { labels: @Html.Raw(JsonConvert.SerializeObject(labels5)), estados: @Html.Raw(JsonConvert.SerializeObject(estado5)) }
+    };
+
+        const velocidadData = {
+        1: { labels: @Html.Raw(JsonConvert.SerializeObject(velLabels1)), values: @Html.Raw(JsonConvert.SerializeObject(velValues1)) },
+        3: { labels: @Html.Raw(JsonConvert.SerializeObject(velLabels3)), values: @Html.Raw(JsonConvert.SerializeObject(velValues3)) },
+        4: { labels: @Html.Raw(JsonConvert.SerializeObject(velLabels4)), values: @Html.Raw(JsonConvert.SerializeObject(velValues4)) },
+        5: { labels: @Html.Raw(JsonConvert.SerializeObject(velLabels5)), values: @Html.Raw(JsonConvert.SerializeObject(velValues5)) }
     };
 
     function calcularTiempos(labels, estados) {
@@ -257,9 +291,54 @@
         };
     }
 
+        function actualizarGraficaVelocidad() {
+        const extrusora = document.getElementById("selectExtrusora").value;
+        const fecha = document.getElementById("selectFecha").value;
+
+        let datos = velocidadData[extrusora];
+
+        // Filtrar por fecha
+        // datos = filtrarPorFecha(datos.labels, datos.values, fecha);
+        datos = filtrarPorFechaVelocidad(datos.labels, datos.values, fecha);
+
+        // Destruir gráfica previa
+        if (charts["grafVelocidad"]) charts["grafVelocidad"].destroy();
+
+        // Crear nueva gráfica
+        charts["grafVelocidad"] = new Chart(document.getElementById("grafVelocidad"), {
+            type: 'line',
+            data: {
+                labels: datos.labels,
+                datasets: [{
+                    label: "Velocidad (RPM)",
+                    data: datos.data,
+                    borderColor: 'blue',
+                    backgroundColor: 'rgba(0,0,255,0.15)',
+                    borderWidth: 2,
+                    tension: 0.2,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: "RPM" }
+                    }
+                }
+            }
+        });
+    }
+
     function actualizarKPIs() {
         const extrusora = document.getElementById("selectExtrusora").value;
-        const datos = dataSets[extrusora];
+        const fecha = document.getElementById("selectFecha").value;
+
+        let datos = dataSets[extrusora];
+
+        // Filtrar por fecha seleccionada
+        datos = filtrarPorFecha(datos.labels, datos.estados, fecha);
 
         const t = calcularTiempos(datos.labels, datos.estados);
 
@@ -271,7 +350,10 @@
     // Eventos
     document.getElementById("selectExtrusora").addEventListener("change", actualizarKPIs);
     document.getElementById("selectFecha").addEventListener("change", actualizarKPIs);
+    document.getElementById("selectExtrusora").addEventListener("change", actualizarGraficaVelocidad);
+    document.getElementById("selectFecha").addEventListener("change", actualizarGraficaVelocidad);
 
     // Inicializar KPIs al cargar
     actualizarKPIs();
+    actualizarGraficaVelocidad();
 </script>
