@@ -75,6 +75,7 @@
 @section scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
     <!-- noUiSlider -->
     <script src="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.css" rel="stylesheet" />
@@ -88,8 +89,8 @@
             data: {
                 labels: [],
                 datasets: [
-                    { label: 'Pess', data: [], borderColor: 'rgba(248, 195, 40, 1)', fill: false },
-                    { label: 'Temp', data: [], borderColor: 'rgba(211, 63, 73, 1)', fill: false }
+                    { label: 'Pressure', data: [], borderColor: 'rgba(248, 195, 40, 1)', fill: false },
+                    { label: 'Temperature', data: [], borderColor: 'rgba(211, 63, 73, 1)', fill: false }
                 ]
             },
             options: {
@@ -98,50 +99,52 @@
                     x: {
                         type: 'category',
                         ticks: {
-                            callback: function(value) {
+                            callback: function (value) {
                                 let label = this.getLabelForValue(value);
                                 return label.split(" ")[1];
                             }
                         },
-                        title: { display: true, text: 'Hors' }
+                        title: { display: true, text: 'Hours' }
                     }
                 }
             }
         });
 
-        // 👉 Función para aplicar rango
+        // 👉 Aplicar rango al gráfico
         function applyRange(start, end) {
             let sliced = allData.slice(start, end);
-            OvenChart.data.labels = sliced.map(x => x.date.substring(0,10) + " " + x.time);
-            OvenChart.data.datasets[0].data = sliced.map(x => parseFloat(x.Pess) || 0);
-            OvenChart.data.datasets[3].data = sliced.map(x => parseFloat(x.Temp) || 0);
+
+            OvenChart.data.labels = sliced.map(x => x.date + " " + x.time);
+            OvenChart.data.datasets[0].data = sliced.map(x => Number(x.pess));
+            OvenChart.data.datasets[1].data = sliced.map(x => Number(x.temp));
+
             OvenChart.update();
         }
 
-        // 👉 Inicializar slider doble
+        // 👉 Inicializar slider
         var rangeSlider = document.getElementById('rangeSlider');
         noUiSlider.create(rangeSlider, {
-            start: [0, 100], // valores iniciales
+            start: [0, 100],
             connect: true,
-            range: { min: 0, max: 100 }, // se ajustará dinámicamente
+            range: { min: 0, max: 100 },
             step: 1
         });
 
-        rangeSlider.noUiSlider.on('update', function(values) {
+        rangeSlider.noUiSlider.on('update', function (values) {
             let start = Math.round(values[0]);
             let end = Math.round(values[1]);
             document.getElementById("rangeValues").innerText = start + " - " + end;
             applyRange(start, end);
         });
 
-        // 👉 Cargar datos vía AJAX
+        // 👉 Cargar datos desde el backend
         function loadData(Date, turno) {
             $("#spinner").show();
-            $.getJSON('/Oven/GetData', { fecha: Date })
+
+            $.getJSON('/Oven/GetData', { fecha: Date, shift: turno })
                 .done(function (data) {
                     allData = data;
 
-                    // Ajustar rango máximo según cantidad de registros
                     rangeSlider.noUiSlider.updateOptions({
                         range: { min: 0, max: allData.length },
                         start: [0, allData.length]
@@ -149,11 +152,10 @@
 
                     applyRange(0, allData.length);
 
-                    // Actualizar tarjetas
                     if (data.length > 0) {
                         let last = data[data.length - 1];
-                        $("#pressureValue").text(last.Pess + " bar");
-                        $("#temperatureValue").text(last.Temp + " °C");
+                               $("#pressureValue").text(last.pess + " bar");
+                                $("#temperatureValue").text(last.temp + " °C");
                     } else {
                         $("#pressureValue").text("-- bar");
                         $("#temperatureValue").text("-- °C");
@@ -164,28 +166,31 @@
                 });
         }
 
-        // Inicializar con datos de hoy y Kneader1
-        var today = new Date().toISOString().substring(0,10);
+        // 👉 Inicializar con datos de hoy
+        var today = new Date().toISOString().substring(0, 10);
         document.getElementById("startDate").value = today;
-        loadData(today, "Oven1");
+        loadData(today, "Turno1");
 
-        // Evento para el botón
-        document.getElementById("applyFilter").addEventListener("click", function() {
-            var Date = document.getElementById("startDate").value;
+        // 👉 Botón aplicar filtros
+        document.getElementById("applyFilter").addEventListener("click", function () {
 
-            if (Date) {
+            let Date = document.getElementById("startDate").value;
+            let turno = document.getElementById("shiftSelect").value;
+
+            if (!Date) {
                 alert("Debes seleccionar una fecha.");
                 return;
             }
 
+            // Turno 3 → pasa al día siguiente
             if (turno === "Turno3") {
                 let fechaObj = new Date(Date);
-                let siguienteDia = new Date(fechaObj);
-                siguienteDia.setDate(fechaObj.getDate() + 1);
-                Date = siguienteDia.toISOString().substring(0, 10);
+                fechaObj.setDate(fechaObj.getDate() + 1);
+                Date = fechaObj.toISOString().substring(0, 10);
             }
 
-            loadData(Date, Oven, );
+            loadData(Date, turno);
         });
     </script>
+}
 }
