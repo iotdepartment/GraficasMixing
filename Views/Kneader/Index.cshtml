@@ -1,13 +1,16 @@
 ﻿@model IEnumerable<GraficasMixing.Models.KneaderM>
 
 <div class="container-fluid mt-3 shadow-lg p-4 mb-5 bg-white rounded-3">
-    <h2 class="text-center">Kneader Charts (Mixing Area)</h2>
-    <hr class="border border-dark border-3 mb-4 opacity-100">
+    <h2 class="text-end">Kneader Charts (Mixing Area)</h2>
+    <hr class="border border-dark border-0 mb-4 opacity-100">
+
+
     <div style="display:flex; align-items:center; gap:25px; margin-bottom:20px;">
+
     <!-- Dropdown Kneader -->
-    <div style="margin-bottom:20px;">
+    <div>
         <label for="kneaderSelect">Kneader:</label>
-        <select id="kneaderSelect" class="form-select" style="width:200px; margin-bottom:20px; display:inline-block;">
+        <select id="kneaderSelect" class="form-select" style="width:200px;">
             <option value="Kneader1" selected>Kneader1</option>
             <option value="Kneader2">Kneader2</option>
             <option value="Kneader3">Kneader3</option>
@@ -15,25 +18,25 @@
     </div>
 
     <!-- Dropdown Turno -->
-    <div style="margin-bottom:20px;">
+    <div>
         <label for="shiftSelect">Shift:</label>
-        <select id="shiftSelect" class="form-select" style="width:200px; margin-bottom:20px; display:inline-block;">
+        <select id="shiftSelect" class="form-select" style="width:200px;">
             <option value="Turno1" selected>Shift 1 (7:00 - 15:00)</option>
             <option value="Turno2">Shift 2 (15:00 - 24:00)</option>
             <option value="Turno3">Shift 3 (00:00 - 7:00)</option>
         </select>
     </div>
 
-    <!-- Selección de una sola fecha -->
-    <div style="margin-bottom:20px;">
-        <label for="startDate">Date:</label>
-        <input type="date" id="startDate" class="form-control" style="width:200px; display:inline-block;">
+        <!-- Date + Button -->
+        <div>
+            <label for="startDate">Date:</label><br>
+            <input type="date" id="startDate" class="form-control" style="width:200px; display:inline-block;">
+            <button id="applyFilter" class="btn btn-primary" style="margin-left:10px;">Apply</button>
+            <span id="spinner" class="spinner-border spinner-border-sm me-2" style="display:none;"></span>
+        </div>
 
-        <!-- Botón para ejecutar el filtro -->
-        <button id="applyFilter" class="btn btn-primary" style="margin-left:15px;">Apply Filters</button>
-        <span id="spinner" class="spinner-border spinner-border-sm me-2" style="display:none;"></span>
     </div>
-    </div>
+
     <div style="overflow-x:auto; width: 100%;">
         <canvas id="kneaderChart" width="1500" height="300"></canvas>
     </div>
