@@ -1,6 +1,6 @@
 ﻿namespace GraficasMixing.Models
 {
-    public class Oven5 : OvenBase
+    public abstract class OvenBase
     {
         public int id { get; set; }
         public string Pess { get; set; }

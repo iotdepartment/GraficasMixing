@@ -3,40 +3,42 @@
 }
 
 <div class="container-fluid mt-3 shadow-lg p-4 mb-5 bg-white rounded-3">
-    <h2 class="text-center">Oven Charts (Oven Area)</h2>
-    <hr class="border border-dark border-3 mb-4 opacity-100">
+    <h2 class="text-black">Oven Charts (Oven Area)</h2>
+    <hr class="border border-dark border-1 mb-4 opacity-100">
 
-    <!-- Dropdown Kneader -->
-    <div style="margin-bottom:20px;">
-        <label for="OvenSelect">Oven:</label>
-        <select id="OvenSelect" class="form-select" style="width:200px; margin-bottom:20px; display:inline-block;">
-            <option value="Oven1" selected>Oven1</option>
-            <option value="Oven2">Oven2</option>
-            <option value="Oven3">Oven3</option>
-            <option value="Oven4">Oven4</option>
-            <option value="Oven5">Oven5</option>
-            <option value="Oven6">Oven6</option>
-        </select>
-    </div>
+    <div style="display:flex; align-items:center; gap:25px; margin-bottom:20px;">
 
-    <!-- Dropdown Turno -->
-    <div style="margin-bottom:20px;">
-        <label for="shiftSelect">Shift:</label>
-        <select id="shiftSelect" class="form-select" style="width:200px; margin-bottom:20px; display:inline-block;">
-            <option value="Turno1" selected>Shift 1 (7:00 - 15:00)</option>
-            <option value="Turno2">Shift 2 (15:00 - 24:00)</option>
-            <option value="Turno3">Shift 3 (00:00 - 7:00)</option>
-        </select>
-    </div>
+        <!-- Oven -->
+        <div>
+            <label for="OvenSelect">Oven:</label><br>
+            <select id="OvenSelect" class="form-select" style="width:200px;">
+                <option value="Oven1" selected>Oven1</option>
+                <option value="Oven2">Oven2</option>
+                <option value="Oven3">Oven3</option>
+                <option value="Oven4">Oven4</option>
+                <option value="Oven5">Oven5</option>
+                <option value="Oven6">Oven6</option>
+            </select>
+        </div>
 
-    <!-- Selección de una sola fecha -->
-    <div style="margin-bottom:20px;">
-        <label for="startDate">Date:</label>
-        <input type="date" id="startDate" class="form-control" style="width:200px; display:inline-block;">
+        <!-- Shift -->
+        <div>
+            <label for="shiftSelect">Shift:</label><br>
+            <select id="shiftSelect" class="form-select" style="width:200px;">
+                <option value="Turno1" selected>Shift 1 (7:00 - 15:00)</option>
+                <option value="Turno2">Shift 2 (15:00 - 24:00)</option>
+                <option value="Turno3">Shift 3 (00:00 - 7:00)</option>
+            </select>
+        </div>
 
-        <!-- Botón para ejecutar el filtro -->
-        <button id="applyFilter" class="btn btn-primary" style="margin-left:15px;">Apply Filters</button>
-        <span id="spinner" class="spinner-border spinner-border-sm me-2" style="display:none;"></span>
+        <!-- Date + Button -->
+        <div>
+            <label for="startDate">Date:</label><br>
+            <input type="date" id="startDate" class="form-control" style="width:200px; display:inline-block;">
+            <button id="applyFilter" class="btn btn-primary" style="margin-left:10px;">Apply</button>
+            <span id="spinner" class="spinner-border spinner-border-sm me-2" style="display:none;"></span>
+        </div>
+
     </div>
 
     <div style="overflow-x:auto; width: 100%;">
@@ -184,13 +186,6 @@
             if (!Date) {
                 alert("Debes seleccionar una fecha.");
                 return;
-            }
-
-            // Turno 3 → pasa al día siguiente
-            if (turno === "Turno3") {
-                let fechaObj = new Date(Date);
-                fechaObj.setDate(fechaObj.getDate() + 1);
-                Date = fechaObj.toISOString().substring(0, 10);
             }
 
             loadData(Date, turno);
