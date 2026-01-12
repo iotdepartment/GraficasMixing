@@ -1,9 +1,10 @@
 ﻿@{
     ViewData["Title"] = "Oven Charts";
 }
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
 
-<div class="container-fluid mt-3 shadow-lg p-4 mb-5 bg-white rounded-3">
-    <h2 class="text-end">Primary Oven Charts (Oven Area)</h2>
+<div class="container-fluid mt-3 shadow-lg p-4 mb-5 bg-gradient rounded-3">
+    <h2 class="text-end">Primary Oven Charts (Oven Area) <i class="bi bi-graph-up"></i></h2>
     <hr class="border border-dark border-0 mb-4 opacity-100">
 
     <div style="display:flex; align-items:center; gap:25px; margin-bottom:20px;">
@@ -21,7 +22,7 @@
             </select>
         </div>
 
-        <!-- Shift -->
+        <!-- Turno -->
         <div>
             <label for="shiftSelect">Shift:</label><br>
             <select id="shiftSelect" class="form-select" style="width:200px;">
@@ -31,7 +32,7 @@
             </select>
         </div>
 
-        <!-- Date + Button -->
+        <!-- Fecha + Boton -->
         <div>
             <label for="startDate">Date:</label><br>
             <input type="date" id="startDate" class="form-control" style="width:200px; display:inline-block;">
@@ -41,19 +42,29 @@
 
     </div>
 
+    <!-- Grafica -->
     <div style="overflow-x:auto; width: 100%;">
         <canvas id="OvenChart" width="1500" height="300"></canvas>
     </div>
 
-    <!-- Slicer de rango doble -->
+    <!-- Slicer -->
     <div style="margin-bottom:80px;">
         <label>Hours Range:</label>
         <div id="rangeSlider" style="width:1800px; margin-top:10px;"></div>
         <span id="rangeValues"></span>
     </div>
+</div>
 
-    <h2 class="text-end">Oven Paremeters (Real Time)</h2>
-    <hr class="border border-dark border-3 mb-4 opacity-100">
+<!-- Tarjetas -->
+<div class="container-fluid mt-1 shadow-lg p-4 mb-5 bg-white rounded-3">
+    <div class="row">
+        <h2 class="text-start">Primary Oven Parameters (Real Time) <i class="bi bi-clock"></i></h2>
+        <div class="text-end mb-2">
+            <small id="lastUpdate" class="text-muted">Last update: --</small>
+        </div>
+    </div>
+    <hr class="border border-dark border-0 mb-4 opacity-100">
+
     <div id="latestCards" class="row mt-4">
         <div class="col-md-3">
             <div class="card text-white bg-warning mb-3">
@@ -63,7 +74,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-3">
             <div class="card text-white bg-danger mb-3">
                 <div class="card-header">Temperature</div>
@@ -72,7 +83,26 @@
                 </div>
             </div>
         </div>
-       
+    </div>
+
+    <!-- Últimos 10 -->
+    <div class="row mt-5">
+        <h2 class="text-start">Last 10 Records <i class="bi bi-database"></i></h2>
+        <hr class="border border-dark border-0 mb-4 opacity-100">
+    </div>
+
+    <div class="table-responsive">
+        <table id="last10Table" class="table table-striped table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Pressure (bar)</th>
+                    <th>Temperature (°C)</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
     </div>
 </div>
 
@@ -80,11 +110,11 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-    <!-- noUiSlider -->
     <script src="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.css" rel="stylesheet" />
 
     <script>
+
         var ctx = document.getElementById('OvenChart').getContext('2d');
         var allData = [];
 
@@ -93,8 +123,8 @@
             data: {
                 labels: [],
                 datasets: [
-                    { label: 'Pressure', data: [], borderColor: 'rgba(248, 195, 40, 1)', fill: false },
-                    { label: 'Temperature', data: [], borderColor: 'rgba(211, 63, 73, 1)', fill: false }
+                    { label: 'Pressure', data: [], borderColor: 'rgba(248,195,40,1)', fill: false },
+                    { label: 'Temperature', data: [], borderColor: 'rgba(211,63,73,1)', fill: false }
                 ]
             },
             options: {
@@ -105,7 +135,8 @@
                         ticks: {
                             callback: function (value) {
                                 let label = this.getLabelForValue(value);
-                                return label.split(" ")[1];
+                                let time = label.split(" ")[1] ?? label;
+                                return time.substring(0, 5);
                             }
                         },
                         title: { display: true, text: 'Hours' }
@@ -114,7 +145,6 @@
             }
         });
 
-        // 👉 Aplicar rango al gráfico
         function applyRange(start, end) {
             let sliced = allData.slice(start, end);
 
@@ -125,7 +155,6 @@
             OvenChart.update();
         }
 
-        // 👉 Inicializar slider
         var rangeSlider = document.getElementById('rangeSlider');
         noUiSlider.create(rangeSlider, {
             start: [0, 100],
@@ -141,14 +170,14 @@
             applyRange(start, end);
         });
 
-        // 👉 Cargar datos desde el backend
         function loadData(Date, turno) {
             $("#spinner").show();
 
-            let oven = document.getElementById("OvenSelect").value;
+            let oven = $("#OvenSelect").val();
 
             $.getJSON('/Oven/GetData', { fecha: Date, oven: oven, turno: turno })
                 .done(function (data) {
+
                     allData = data;
 
                     rangeSlider.noUiSlider.updateOptions({
@@ -157,38 +186,85 @@
                     });
 
                     applyRange(0, allData.length);
-
-                    if (data.length > 0) {
-                        let last = data[data.length - 1];
-                        $("#pressureValue").text(last.press + " bar");
-                        $("#temperatureValue").text(last.temp + " °C");
-                    } else {
-                        $("#pressureValue").text("-- bar");
-                        $("#temperatureValue").text("-- °C");
-                    }
                 })
                 .always(function () {
                     $("#spinner").hide();
                 });
         }
 
-        // 👉 Inicializar con datos de hoy
+        function loadLatestCards() {
+            let oven = $("#OvenSelect").val();
+
+            $.getJSON('/Oven/GetLatest', { oven: oven })
+                .done(function (last) {
+                    if (last) {
+                        $("#pressureValue").text(last.press + " bar");
+                        $("#temperatureValue").text(last.temp + " °C");
+                    } else {
+                        $("#pressureValue").text("-- bar");
+                        $("#temperatureValue").text("-- °C");
+                    }
+                });
+        }
+
+        function loadLast10() {
+            let oven = $("#OvenSelect").val();
+
+            $.getJSON('/Oven/GetLast10', { oven: oven })
+                .done(function (data) {
+                    updateLast10Table(data);
+                });
+        }
+
+        function updateLast10Table(data) {
+            let tbody = $("#last10Table tbody");
+            tbody.empty();
+
+            data.forEach(item => {
+                tbody.append(`
+                    <tr>
+                        <td>${item.date}</td>
+                        <td>${item.time}</td>
+                        <td>${item.press}</td>
+                        <td>${item.temp}</td>
+                    </tr>
+                `);
+            });
+        }
+
+                function updateLastUpdateTime() {
+            let now = new Date();
+            let timeString = now.toLocaleTimeString();
+            $("#lastUpdate").text("Last update: " + timeString);
+        }
+
+        // Inicializar
         var today = new Date().toISOString().substring(0, 10);
-        document.getElementById("startDate").value = today;
+        $("#startDate").val(today);
+
         loadData(today, "Turno1");
+        loadLatestCards();
+        loadLast10();
 
-        // 👉 Botón aplicar filtros
-        document.getElementById("applyFilter").addEventListener("click", function () {
-
-            let Date = document.getElementById("startDate").value;
-            let turno = document.getElementById("shiftSelect").value;
-
-            if (!Date) {
-                alert("Debes seleccionar una fecha.");
-                return;
-            }
-
-            loadData(Date, turno);
+        // Filtros
+        $("#applyFilter").click(() => {
+            let date = $("#startDate").val();
+            let turno = $("#shiftSelect").val();
+            loadData(date, turno);
         });
+
+        $("#OvenSelect").change(() => {
+            loadLatestCards();
+            loadLast10();
+        });
+
+        // Auto-refresh tarjetas + últimos 10
+        setInterval(() => {
+            loadLatestCards();
+            loadLast10();
+                updateLastUpdateTime();
+
+        }, 10000);
+
     </script>
 }

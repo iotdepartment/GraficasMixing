@@ -83,4 +83,65 @@ public class OvenController : Controller
 
         return Json(datos);
     }
+    [HttpGet]
+    public IActionResult GetLast10(string oven)
+    {
+        IQueryable<OvenBase> query = oven switch
+        {
+            "Oven1" => _context.Oven1,
+            "Oven2" => _context.Oven2,
+            "Oven3" => _context.Oven3,
+            "Oven4" => _context.Oven4,
+            "Oven5" => _context.Oven5,
+            "Oven6" => _context.Oven6,
+            _ => null
+        };
+
+        if (query == null)
+            return NotFound();
+
+        var last10 = query
+            .OrderByDescending(x => x.id)
+            .Take(10)
+            .Select(x => new
+            {
+                date = x.Date.ToString("yyyy-MM-dd"),
+                time = x.Hors.ToString(@"hh\:mm\:ss"),
+                press = x.Pess,
+                temp = x.Temp
+            })
+            .ToList();
+
+        return Json(last10);
+    }
+[HttpGet]
+public IActionResult GetLatest(string oven)
+{
+    IQueryable<OvenBase> query = oven switch
+    {
+        "Oven1" => _context.Oven1,
+        "Oven2" => _context.Oven2,
+        "Oven3" => _context.Oven3,
+        "Oven4" => _context.Oven4,
+        "Oven5" => _context.Oven5,
+        "Oven6" => _context.Oven6,
+        _ => null
+    };
+
+    if (query == null)
+        return NotFound();
+
+    var last = query
+        .OrderByDescending(x => x.id)
+        .Select(x => new
+        {
+            press = x.Pess,
+            temp = x.Temp,
+            date = x.Date.ToString("yyyy-MM-dd"),
+            time = x.Hors.ToString(@"hh\:mm\:ss")
+        })
+        .FirstOrDefault();
+
+    return Json(last);
+}
 }
