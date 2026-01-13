@@ -27,6 +27,8 @@
                 <option value="Turno1" selected>Shift 1 (7:00 - 15:00)</option>
                 <option value="Turno2">Shift 2 (15:00 - 24:00)</option>
                 <option value="Turno3">Shift 3 (00:00 - 7:00)</option>
+                <option value="All">All shifts</option>
+
             </select>
         </div>
 
@@ -185,15 +187,23 @@
             applyRange(start, end);
         });
 
-        function loadData(Date, turno) {
+              function loadData(date, turno) {
             $("#spinner").show();
-
             let oven = $("#OvenSelect").val();
 
-            $.getJSON('/Oven/GetData', { fecha: Date, oven: oven, turno: turno })
-                .done(function (data) {
+            let request;
 
-                    allData = data;
+            if (turno === "All") {
+                request = loadAllShifts(date, oven);
+            } else {
+                request = $.getJSON('/Oven/GetData', { fecha: date, oven: oven, turno: turno })
+                           .catch(() => []); // si falla, devuelve array vacío
+            }
+
+            // Convertimos cualquier cosa en un Promise válido
+            Promise.resolve(request)
+                .then(data => {
+                    allData = data || [];
 
                     rangeSlider.noUiSlider.updateOptions({
                         range: { min: 0, max: allData.length },
@@ -202,7 +212,7 @@
 
                     applyRange(0, allData.length);
                 })
-                .always(function () {
+                .finally(() => {
                     $("#spinner").hide();
                 });
         }
@@ -246,6 +256,28 @@
                 `);
             });
         }
+
+function loadAllShifts(date, oven) {
+    const safeGet = turno =>
+        $.getJSON('/Oven/GetData', { fecha: date, oven: oven, turno: turno })
+         .catch(() => []); // si falla, devuelve array vacío
+
+    return Promise.all([
+        safeGet("Turno1"),
+        safeGet("Turno2"),
+        safeGet("Turno3")
+    ]).then(([t1, t2, t3]) => {
+        let combined = [...t1, ...t2, ...t3];
+
+        combined.sort((a, b) => {
+            let d1 = a.date + " " + a.time;
+            let d2 = b.date + " " + b.time;
+            return d1.localeCompare(d2);
+        });
+
+        return combined;
+    });
+}
 
                 function updateLastUpdateTime() {
             let now = new Date();
