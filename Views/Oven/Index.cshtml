@@ -5,7 +5,7 @@
 
 <div class="container-fluid mt-3 shadow-lg p-4 mb-5 bg-gradient rounded-3">
     <h2 class="text-end">Primary Oven Charts (Oven Area) <i class="bi bi-clipboard-data"></i></h2>
-    <hr class="border border-dark border-0 mb-4 opacity-100">
+,    <hr class="border border-dark border-0 mb-4 opacity-100">
 
     <div class="row align-items-end mb-3">
 
@@ -32,13 +32,13 @@
             </select>
         </div>
 
-        <!-- Fecha + Boton -->
+        <!-- Fecha -->
         <div class="col-2">
             <label for="startDate">Date:</label><br>
 
             <input type="date" id="startDate" class="form-control">
         </div>
-
+        <!-- Submit button-->
         <div class="col-1 me-0 ">
             <div class="d-grid gap-2">
                 <button type="button" id="applyFilter" class="btn btn-primary rounded-pill">
@@ -49,8 +49,8 @@
 
         </div>
 
+        <!-- Export button-->
             <div class="col-2">
-
                    <button id="exportChartBtn" class="btn btn-outline-success">
                 <i class="bi bi-download"></i> Export Chart
             </button>
@@ -278,7 +278,6 @@ function loadAllShifts(date, oven) {
         return combined;
     });
 }
-
                 function updateLastUpdateTime() {
             let now = new Date();
             let timeString = now.toLocaleTimeString();

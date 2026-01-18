@@ -1,0 +1,180 @@
+﻿
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+<div class="container-fluid mt-3 shadow-lg p-4 mb-5 bg-gradient rounded-3">
+    <h2 class="text-end">Batch Off Charts (Mixing Area) <i class="bi bi-clipboard-data"></i></h2>
+    <hr class="border border-dark border-0 mb-4 opacity-100">
+
+    <div class="row align-items-end mb-3">
+
+        <!-- Turno -->
+        <div class="col-2">
+            <label for="shiftSelect">Shift:</label><br>
+            <select id="shiftSelect" class="form-select">
+                <option value="Turno1" selected>Shift 1 (7:00 - 15:00)</option>
+                <option value="Turno2">Shift 2 (15:00 - 24:00)</option>
+                <option value="Turno3">Shift 3 (00:00 - 7:00)</option>
+                <option value="All">All shifts</option>
+
+            </select>
+        </div>
+
+        <!-- Fecha -->
+        <div class="col-2">
+            <label for="startDate">Date:</label><br>
+
+            <input type="date" id="startDate" class="form-control">
+        </div>
+
+        <!-- Submit button-->
+        <div class="col-1 me-0 ">
+            <div class="d-grid gap-2">
+                <button type="button" id="applyFilter" class="btn btn-primary rounded-pill">
+                    Apply
+                    <span id="spinner" class="spinner-border spinner-border-sm" style="display:none;"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Export button-->
+        <div class="col-2">
+            <button id="exportChartBtn" class="btn btn-outline-success">
+                <i class="bi bi-download"></i> Export Chart
+            </button>
+        </div>
+  
+    </div>
+
+        <!-- Chart -->
+        <div style="overflow-x:auto; width: 100%;">
+            <canvas id="BatchOffChart" width="1500" height="300"></canvas>
+        </div>
+
+        <!-- Slicer -->
+        <div style="margin-bottom:80px;">
+            <label>Hours Range:</label>
+            <div id="rangeSlider" style="width:1800px; margin-top:10px;"></div>
+            <span id="rangeValues"></span>
+        </div>
+</div>
+
+@section Scripts{
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.css" rel="stylesheet" />
+
+    <script>
+        $(document).ready(function () {
+
+            const ctx = document.getElementById('BatchOffChart').getContext('2d');
+            let allData = [];
+
+            // GRAFICA
+            const BatchOffChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: "Peso (kg)",
+                            data: [],
+                            borderColor: "#00b4d8",
+                            fill: false,
+                            tension: 0.35,
+                            pointRadius: 0
+                        },
+                        {
+                            label: "Temperatura (°C)",
+                            data: [],
+                            borderColor: "#ff4d6d",
+                            fill: false,
+                            tension: 0.35,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            type: "category",
+                            ticks: {
+                                callback: function (value) {
+                                    let label = this.getLabelForValue(value);
+                                    return label.substring(0, 5);
+                                }
+                            },
+                            title: { display: true, text: "Hora" }
+                        }
+                    }
+                }
+            });
+
+            // SLIDER (IGUAL QUE OVEN)
+            const rangeSlider = document.getElementById('rangeSlider');
+            noUiSlider.create(rangeSlider, {
+                start: [0, 100],
+                connect: true,
+                range: { min: 0, max: 100 },
+                step: 1
+            });
+
+            rangeSlider.noUiSlider.on('update', function (values) {
+                let start = Math.round(values[0]);
+                let end = Math.round(values[1]);
+                $("#rangeValues").text(start + " - " + end);
+                applyRange(start, end);
+            });
+
+            // APLICAR RANGO (FLUIDO)
+            function applyRange(start, end) {
+                let sliced = allData.slice(start, end);
+
+                BatchOffChart.data.labels = sliced.map(x => x.hora.substring(0, 5));
+                BatchOffChart.data.datasets[0].data = sliced.map(x => x.peso);
+                BatchOffChart.data.datasets[1].data = sliced.map(x => x.temperatura);
+
+                BatchOffChart.update();
+            }
+
+            // CARGAR DATOS
+            function loadData() {
+                const fecha = $('#startDate').val();
+                const turno = $('#shiftSelect').val();
+
+                if (!fecha) {
+                    alert("Select a date first");
+                    return;
+                }
+
+                $('#spinner').show();
+
+                $.getJSON('/BatchOff/GetData', { fecha, turno })
+                    .done(data => {
+                        allData = data;
+
+                        rangeSlider.noUiSlider.updateOptions({
+                            range: { min: 0, max: allData.length },
+                            start: [0, allData.length]
+                        });
+
+                        applyRange(0, allData.length);
+                    })
+                    .always(() => $('#spinner').hide());
+            }
+
+            // EXPORTAR PNG
+            $('#exportChartBtn').click(function () {
+                const link = document.createElement('a');
+                link.download = 'BatchOffChart.png';
+                link.href = BatchOffChart.toBase64Image();
+                link.click();
+            });
+
+            // Inicializar
+            $("#applyFilter").click(loadData);
+
+        });
+    </script>
+}

@@ -10,6 +10,9 @@ namespace GraficasMixing.Models
         }
 
         public DbSet<KneaderM> KneaderM { get; set; }
+
+        public DbSet<BatchOff> BatchOff { get; set; }
+
         public DbSet<Oven1> Oven1 { get; set; }
 
         public DbSet<Oven2> Oven2 { get; set; }
