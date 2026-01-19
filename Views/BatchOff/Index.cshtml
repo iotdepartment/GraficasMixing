@@ -82,7 +82,9 @@
                             borderColor: "#00b4d8",
                             fill: false,
                             tension: 0.35,
-                            pointRadius: 0
+                            pointRadius: 2,
+                            pointHoverRadius: 6,
+                            pointHoverBackgroundColor: "#00b4d8"
                         },
                         {
                             label: "Temperatura (°C)",
@@ -90,7 +92,9 @@
                             borderColor: "#ff4d6d",
                             fill: false,
                             tension: 0.35,
-                            pointRadius: 0
+                            pointRadius: 2,
+                            pointhoverRadious:6,
+                            pointhoverBackgroundColor: "#ff4d6d"
                         }
                     ]
                 },
@@ -111,7 +115,7 @@
                 }
             });
 
-            // SLIDER (IGUAL QUE OVEN)
+            // SLIDER
             const rangeSlider = document.getElementById('rangeSlider');
             noUiSlider.create(rangeSlider, {
                 start: [0, 100],
@@ -127,7 +131,7 @@
                 applyRange(start, end);
             });
 
-            // APLICAR RANGO (FLUIDO)
+            // APLICAR RANGO DEL SLIDER
             function applyRange(start, end) {
                 let sliced = allData.slice(start, end);
 
