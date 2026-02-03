@@ -1,358 +1,376 @@
-﻿@using Newtonsoft.Json
-@model dynamic
-@{
-    var labels1 = ((IEnumerable<dynamic>)Model.E1).Select(x => x.Fecha.ToString("yyyy-MM-dd HH:mm:ss")).ToArray();
-    var estado1 = ((IEnumerable<dynamic>)Model.E1).Select(x => x.Estado).ToArray();
-
-    var labels3 = ((IEnumerable<dynamic>)Model.E3).Select(x => x.Fecha.ToString("yyyy-MM-dd HH:mm:ss")).ToArray();
-    var estado3 = ((IEnumerable<dynamic>)Model.E3).Select(x => x.Estado).ToArray();
-
-    var labels4 = ((IEnumerable<dynamic>)Model.E4).Select(x => x.Fecha.ToString("yyyy-MM-dd HH:mm:ss")).ToArray();
-    var estado4 = ((IEnumerable<dynamic>)Model.E4).Select(x => x.Estado).ToArray();
-
-    var labels5 = ((IEnumerable<dynamic>)Model.E5).Select(x => x.Fecha.ToString("yyyy-MM-dd HH:mm:ss")).ToArray();
-    var estado5 = ((IEnumerable<dynamic>)Model.E5).Select(x => x.Estado).ToArray();
-
-    var velLabels1 = ((IEnumerable<dynamic>)Model.Velocidad1).Select(x => x.Fecha.ToString("yyyy-MM-dd HH:mm:ss")).ToArray();
-    var velValues1 = ((IEnumerable<dynamic>)Model.Velocidad1).Select(x => x.Valor).ToArray();
-
-    var velLabels3 = ((IEnumerable<dynamic>)Model.Velocidad3).Select(x => x.Fecha.ToString("yyyy-MM-dd HH:mm:ss")).ToArray();
-    var velValues3 = ((IEnumerable<dynamic>)Model.Velocidad3).Select(x => x.Valor).ToArray();
-
-    var velLabels4 = ((IEnumerable<dynamic>)Model.Velocidad4).Select(x => x.Fecha.ToString("yyyy-MM-dd HH:mm:ss")).ToArray();
-    var velValues4 = ((IEnumerable<dynamic>)Model.Velocidad4).Select(x => x.Valor).ToArray();
-
-    var velLabels5 = ((IEnumerable<dynamic>)Model.Velocidad5).Select(x => x.Fecha.ToString("yyyy-MM-dd HH:mm:ss")).ToArray();
-    var velValues5 = ((IEnumerable<dynamic>)Model.Velocidad5).Select(x => x.Valor).ToArray();
+﻿@{
+    ViewData["Title"] = "Extruder Efficiency";
 }
+<div class="container-fluid mt-3 shadow-lg p-4 mb-5 bg-gradient rounded-3">
+    <h2 class="text-end">Mesus Charts (Extruder Area) <i class="bi bi-clipboard-data"></i></h2>
+    <hr class="border border-dark border-0 mb-4 opacity-100">
 
-<div class="container-fluid mt-3 shadow-lg p-4 mb-5 bg-white rounded-3">
-    <h2 class="text-center">Mesus Charts (Extruder Area)</h2>
-    <hr class="border border-dark border-3 mb-4 opacity-100">
-<div class="grid-container">
-
-    <div class="grafica-box">
-        <h2>Extruder 1</h2>
-        <canvas id="grafE1" height="60"></canvas>
-    </div>
-
-    <div class="grafica-box">
-        <h2>Extruder 3</h2>
-        <canvas id="grafE3" height="60"></canvas>
-    </div>
-
-    <div class="grafica-box">
-        <h2>Extruder 4</h2>
-        <canvas id="grafE4" height="60"></canvas>
-    </div>
-
-    <div class="grafica-box">
-        <h2>Extruder 5</h2>
-        <canvas id="grafE5" height="60"></canvas>
-    </div>
-</div>
-
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <label class="form-label fw-bold">Extrusora</label>
-            <select id="selectExtrusora" class="form-select">
-                <option value="1">Extruder 1</option>
-                <option value="3">Extruder 3</option>
-                <option value="4">Extruder 4</option>
-                <option value="5">Extruder 5</option>
+    <div class="row align-items-end mb-5">
+        <!-- Extruder -->
+        <div class="col-2">
+            <label for="ExtruderSelect">Extrusora:</label><br>
+            <select id="ExtruderSelect" class="form-select">
+                @foreach (var extruder in ViewBag.Extruders as List<string>)
+                {
+                    <option value="@extruder">@extruder</option>
+                }
             </select>
         </div>
 
-        <div class="col-md-3">
-            <label class="form-label fw-bold">Fecha</label>
-            <input type="date" id="selectFecha" class="form-control">
+        <!-- Shift -->
+        <div class="col-2">
+            <label for="shiftSelect">Shift:</label><br>
+            <select id="shiftSelect" class="form-select">
+                <option value="Turno1" selected>Shift 1 (7:00 - 15:00)</option>
+                <option value="Turno2">Shift 2 (15:00 - 24:00)</option>
+                <option value="Turno3">Shift 3 (00:00 - 7:00)</option>
+                <option value="All">All shifts</option>
+            </select>
         </div>
-    </div>
 
-<hr class="border border-dark border-3 mb-3 opacity-100">
-<div id="latestCards" class="row mt-5">
-    <div class="col-md-3">
-        <div class="card text-white bg-warning mb-3">
-            <div class="card-header">Tiempo Total Disponible</div>
-            <div class="card-body">
-                <h5 id="TimeTotalValue" class="card-title">-- Min</h5>
+        <!-- Fecha -->
+        <div class="col-2">
+            <label for="startDate">Fecha:</label><br>
+            <input type="date" id="startDate" class="form-control">
+        </div>
+
+        <!-- Submit button-->
+        <div class="col-1 me-0 ">
+            <div class="d-grid gap-2">
+                <button type="button" id="applyFilter" class="btn btn-primary rounded-pill">
+                    Apply
+                    <span id="spinner" class="spinner-border spinner-border-sm" style="display:none;"></span>
+                </button>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-success mb-3">
-            <div class="card-header">Tiempo de Operacion</div>
-            <div class="card-body">
-                <h5 id="OperationTimeValue" class="card-title">-- Min</h5>
+
+    <div class="row align-items-end mb-5 mt-4">
+        <div class="col-4 mb-2">
+            <div class="card shadow-sm border-0 rounded-0 h-100">
+                <canvas id="TotmPieChart" width="200" height="200"></canvas>
+            </div>
+        </div>
+
+        <div class="col-4 mb-2">
+            <div class="card shadow-sm border-0 rounded-0 h-100">
+                <canvas id="EfficiencyBarChart" width="200" height="200"></canvas>
+            </div>
+        </div>
+
+        <div class="col-4 mb-2">
+            <div class="card shadow-sm border-0 rounded-0 h-100">
+                <canvas id="DowntimeBarChart" width="200" height="200"></canvas>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-black mb-3">
-            <div class="card-header">Tiempo Muerto</div>
-            <div class="card-body">
-                <h5 id="ShutdownTimeValue" class="card-title">-- Min</h5>
+
+    <hr class="border border-dark border-0 mb-4 opacity-100">
+    <div class="row align-items-end mb-5 mt-4">
+        <div class="col-12 mb-2">
+            <div class="card shadow-sm border-0 rounded-0 h-100">
+                <canvas id="DailyEfficiencyChart" width="50" height="10"></canvas>
             </div>
         </div>
     </div>
-  </div>
 
-    <hr class="border border-dark border-3 my-4 opacity-100">
-
-    <div class="container-fluid mt-4">
-        <h2 class="mb-3">Variación de Velocidad</h2>
-        <canvas id="grafVelocidad" height="120"></canvas>
-    </div>
-
+    <!-- Mensaje de error inline -->
+    <div id="errorMessage" class="text-danger fw-bold mt-3"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+@section Scripts {
+    <!-- Importar Chart.js y el plugin de datalabels -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 
-<script>
-    let charts = {};
-    // Plugin para colorear fondo verde/rojo
-    const estadoBackground = {
-        id: 'estadoBackground',
-        beforeDraw(chart) {
-            const { ctx, chartArea, scales: { x } } = chart;
-            const data = chart.data.datasets[0].data;
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 
-            ctx.save();
+    <script>
+        let totmChart;
+        let efficiencyChart;
+        let downtimeChart;
+        let dailyEfficiencyChart;
 
-            for (let i = 0; i < data.length - 1; i++) {
-                const xStart = x.getPixelForValue(i);
-                const xEnd = x.getPixelForValue(i + 1);
+        async function loadEfficiencyChart() {
+            const extruder = document.getElementById("ExtruderSelect").value;
+            const date = document.getElementById("startDate").value;
 
-                ctx.fillStyle = data[i] === 1
-                    ? 'rgba(0,200,0,0.25)'   // Verde
-                    : 'rgba(255,0,0,0.25)'; // Rojo
+            const response = await fetch(`/Extruder/GetEfficiencyByShift?extruder=${extruder}&date=${date}`);
+            const result = await response.json();
 
-                ctx.fillRect(
-                    xStart,
-                    chartArea.top,
-                    xEnd - xStart,
-                    chartArea.bottom - chartArea.top
-                );
-            }
+            const labels = result.map(r => r.shift);
+            const data = result.map(r => r.efficiency);
 
-            ctx.restore();
-        }
-    };
+            const ctx = document.getElementById("EfficiencyBarChart").getContext("2d");
 
-        function crearGraficaVelocidad(idCanvas, labels, data) {
-        new Chart(document.getElementById(idCanvas), {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: "Velocidad (RPM)",
-                    data: data,
-                    borderColor: 'blue',
-                    backgroundColor: 'rgba(0,0,255,0.15)',
-                    borderWidth: 2,
-                    tension: 0.2,
-                    pointRadius: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: "RPM"
-                        }
+            if (!efficiencyChart) {
+                efficiencyChart = new Chart(ctx, {
+                    type: "bar",
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: "Eficiencia (%)",
+                            data: data,
+                            backgroundColor: ["rgba(49,177,52,0.6)", "rgba(49,177,52,0.6)", "rgba(49,177,52,0.6)"]
+                        }]
                     },
-                    x: {
-                        ticks: {
-                            maxRotation: 0,
-                            autoSkip: true
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    // Crear gráfica
-    function crearGrafica(idCanvas, labels, data, titulo) {
-        new Chart(document.getElementById(idCanvas), {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: titulo,
-                    data: data,
-                    borderColor: 'rgba(0,0,0,0)', // invisible
-                    borderWidth: 0,
-                    stepped: true,
-                    pointRadius: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        min: -0.2,
-                        max: 1.2,
-                        ticks: {
-                            stepSize: 1,
-                            callback: function (value) {
-                                if (value === 0) return "Apagada";
-                                if (value === 1) return "Corriendo";
-                                return "";
+                    options: {
+                        responsive: true,
+                        animation: {
+                            duration: 1200,
+                            easing: "easeOutQuart"
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + "%";
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: "Eficiencia por Turno",
+                                font: { size: 18, weight: "bold" },
+                                color: "#333"
                             }
                         }
                     }
+                });
+            } else {
+                efficiencyChart.data.labels = labels;
+                efficiencyChart.data.datasets[0].data = data;
+                efficiencyChart.update();
+            }
+        }
+
+        async function loadTotmChart() {
+            const extruder = document.getElementById("ExtruderSelect").value;
+            const shift = document.getElementById("shiftSelect").value;
+            const date = document.getElementById("startDate").value;
+            const spinner = document.getElementById("spinner");
+            const errorMessage = document.getElementById("errorMessage");
+
+            spinner.style.display = "inline-block";
+            errorMessage.innerText = "";
+
+            try {
+                const response = await fetch(`/Extruder/GetTotmData?extruder=${extruder}&shift=${shift}&date=${date}`);
+                const result = await response.json();
+
+                let totm1 = 0;
+                let totm0 = 0;
+
+                result.forEach(r => {
+                    if (r.totm == 1) totm1 = r.count;
+                    else if (r.totm == 0) totm0 = r.count;
+                });
+
+                const labels = ["Tiempo Muerto", "Tiempo de Operacion"];
+                const data = [totm1, totm0];
+
+                const ctx = document.getElementById("TotmPieChart").getContext("2d");
+
+                // Texto dinámico para el título
+                const chartTitle = `Daily Efficiency % – ${extruder} – ${shift} (${date})`;
+
+                if (!totmChart) {
+                    // Crear gráfico inicial
+                    totmChart = new Chart(ctx, {
+                        type: "pie",
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: data,
+                                backgroundColor: ["rgba(49,177,52,0.6)", "rgba(236, 37, 39,0.6)"], // verde y rojo
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            animation: {
+                                duration: 1200,
+                                easing: "easeOutQuart"
+                            },
+                            plugins: {
+                                legend: { position: "bottom" },
+                                title: {
+                                    display: true,
+                                    text: chartTitle,
+                                    font: {
+                                        size: 18,
+                                        weight: "bold"
+                                    },
+                                    color: "#333",
+                                    padding: {
+                                        top: 10,
+                                        bottom: 20
+                                    }
+                                },
+                                datalabels: {
+                                    color: "#fff",
+                                    font: { weight: "bold", size: 14 },
+                                    formatter: (value, ctx) => {
+                                        const dataset = ctx.chart.data.datasets[0].data;
+                                        const total = dataset.reduce((a, b) => a + b, 0);
+                                        if (total === 0) return "0 (0%)";
+                                        const porcentaje = (value / total * 100).toFixed(1);
+                                        return `${value} (${porcentaje}%)`;
+                                    }
+                                }
+                            }
+                        },
+                        plugins: [ChartDataLabels]
+                    });
+                } else {
+                    // Actualizar datos y título suavemente
+                    totmChart.data.datasets[0].data = data;
+                    totmChart.options.plugins.title.text = chartTitle;
+                    totmChart.update();
                 }
-            },
-            plugins: [estadoBackground]
-        });
-    }
-
-    function filtrarPorFecha(labels, estados, fechaSeleccionada) {
-        if (!fechaSeleccionada) return { labels, estados };
-
-        const L = [];
-        const E = [];
-
-        for (let i = 0; i < labels.length; i++) {
-            if (labels[i].startsWith(fechaSeleccionada)) {
-                L.push(labels[i]);
-                E.push(estados[i]);
+            } catch (error) {
+                errorMessage.innerText = "Error cargando datos.";
+            } finally {
+                spinner.style.display = "none";
             }
         }
 
-        return { labels: L, estados: E };
-    }
+        async function loadDowntimeChart() {
+            const extruder = document.getElementById("ExtruderSelect").value;
+            const date = document.getElementById("startDate").value;
 
-        function filtrarPorFechaVelocidad(labels, data, fechaSeleccionada) {
-        if (!fechaSeleccionada) return { labels, data };
+            const response = await fetch(`/Extruder/GetDowntimeByShift?extruder=${extruder}&date=${date}`);
+            const result = await response.json();
 
-        const L = [];
-        const D = [];
+            const labels = result.map(r => r.shift);
+            const data = result.map(r => Number(r.downtime));
 
-        for (let i = 0; i < labels.length; i++) {
-            if (labels[i].startsWith(fechaSeleccionada)) {
-                L.push(labels[i]);
-                D.push(data[i]);
-            }
-        }
+            const ctx = document.getElementById("DowntimeBarChart").getContext("2d");
 
-        return { labels: L, data: D };
-    }
+            if (!downtimeChart) {
+                downtimeChart = new Chart(ctx, {
+                    type: "bar",
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: "Tiempo Muerto (%)",
+                            data: data,
+                            backgroundColor: ["rgba(236, 37, 39,0.6)", "rgba(236, 37, 39,0.6)", "rgba(236, 37, 39,0.6)"] // rojo
 
-    // Crear todas las gráficas
-    crearGrafica("grafE1",
-        @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(labels1)),
-        @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(estado1)),
-        "Extruder 1");
-
-    crearGrafica("grafE3",
-        @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(labels3)),
-        @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(estado3)),
-        "Extruder 3");
-
-    crearGrafica("grafE4",
-        @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(labels4)),
-        @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(estado4)),
-        "Extruder 4");
-
-    crearGrafica("grafE5",
-        @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(labels5)),
-        @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(estado5)),
-        "Extruder 5");
-    //     CÁLCULO DE KPIs
-    const dataSets = {
-        1: { labels: @Html.Raw(JsonConvert.SerializeObject(labels1)), estados: @Html.Raw(JsonConvert.SerializeObject(estado1)) },
-        3: { labels: @Html.Raw(JsonConvert.SerializeObject(labels3)), estados: @Html.Raw(JsonConvert.SerializeObject(estado3)) },
-        4: { labels: @Html.Raw(JsonConvert.SerializeObject(labels4)), estados: @Html.Raw(JsonConvert.SerializeObject(estado4)) },
-        5: { labels: @Html.Raw(JsonConvert.SerializeObject(labels5)), estados: @Html.Raw(JsonConvert.SerializeObject(estado5)) }
-    };
-
-        const velocidadData = {
-        1: { labels: @Html.Raw(JsonConvert.SerializeObject(velLabels1)), values: @Html.Raw(JsonConvert.SerializeObject(velValues1)) },
-        3: { labels: @Html.Raw(JsonConvert.SerializeObject(velLabels3)), values: @Html.Raw(JsonConvert.SerializeObject(velValues3)) },
-        4: { labels: @Html.Raw(JsonConvert.SerializeObject(velLabels4)), values: @Html.Raw(JsonConvert.SerializeObject(velValues4)) },
-        5: { labels: @Html.Raw(JsonConvert.SerializeObject(velLabels5)), values: @Html.Raw(JsonConvert.SerializeObject(velValues5)) }
-    };
-
-    function calcularTiempos(labels, estados) {
-        let total = estados.length;
-        let operacion = estados.filter(x => x === 1).length;
-        let muerto = estados.filter(x => x === 0).length;
-
-        return {
-            totalMin: total,
-            operacionMin: operacion,
-            muertoMin: muerto
-        };
-    }
-
-        function actualizarGraficaVelocidad() {
-        const extrusora = document.getElementById("selectExtrusora").value;
-        const fecha = document.getElementById("selectFecha").value;
-
-        let datos = velocidadData[extrusora];
-
-        // Filtrar por fecha
-        // datos = filtrarPorFecha(datos.labels, datos.values, fecha);
-        datos = filtrarPorFechaVelocidad(datos.labels, datos.values, fecha);
-
-        // Destruir gráfica previa
-        if (charts["grafVelocidad"]) charts["grafVelocidad"].destroy();
-
-        // Crear nueva gráfica
-        charts["grafVelocidad"] = new Chart(document.getElementById("grafVelocidad"), {
-            type: 'line',
-            data: {
-                labels: datos.labels,
-                datasets: [{
-                    label: "Velocidad (RPM)",
-                    data: datos.data,
-                    borderColor: 'blue',
-                    backgroundColor: 'rgba(0,0,255,0.15)',
-                    borderWidth: 2,
-                    tension: 0.2,
-                    pointRadius: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: { display: true, text: "RPM" }
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        animation: {
+                            duration: 1200,
+                            easing: "easeOutQuart"
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    callback: value => value + "%"
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: "Tiempo Muerto por Turno",
+                                font: { size: 18, weight: "bold" },
+                                color: "#333"
+                            }
+                        }
                     }
-                }
+                });
+            } else {
+                downtimeChart.data.labels = labels;
+                downtimeChart.data.datasets[0].data = data;
+                downtimeChart.update();
             }
-        });
-    }
+        }
 
-    function actualizarKPIs() {
-        const extrusora = document.getElementById("selectExtrusora").value;
-        const fecha = document.getElementById("selectFecha").value;
+        async function loadDailyEfficiencyChart() {
+            const extruder = document.getElementById("ExtruderSelect").value;
 
-        let datos = dataSets[extrusora];
+            const response = await fetch(`/Extruder/GetDailyEfficiencyLast7Days?extruder=${extruder}`);
+            const result = await response.json();
 
-        // Filtrar por fecha seleccionada
-        datos = filtrarPorFecha(datos.labels, datos.estados, fecha);
+            const labels = result.map(r => r.date);
+            const data = result.map(r => Number(r.efficiency));
 
-        const t = calcularTiempos(datos.labels, datos.estados);
+            const ctx = document.getElementById("DailyEfficiencyChart").getContext("2d");
 
-        document.getElementById("TimeTotalValue").innerText = t.totalMin + " Min";
-        document.getElementById("OperationTimeValue").innerText = t.operacionMin + " Min";
-        document.getElementById("ShutdownTimeValue").innerText = t.muertoMin + " Min";
-    }
+            if (!dailyEfficiencyChart) {
+                dailyEfficiencyChart = new Chart(ctx, {
+                    type: "bar",
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: "Eficiencia Diaria (%)",
+                            data: data,
+                            borderColor: "#31B134",
+                            backgroundColor: "rgba(49,177,52,0.6)",
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        animation: {
+                            duration: 1200,
+                            easing: "easeOutQuart"
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    callback: value => value + "%"
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: "Eficiencia Diaria – Últimos 7 Días",
+                                font: { size: 18, weight: "bold" },
+                                color: "#333"
+                            }
+                        }
+                    }
+                });
+            } else {
+                dailyEfficiencyChart.data.labels = labels;
+                dailyEfficiencyChart.data.datasets[0].data = data;
+                dailyEfficiencyChart.update();
+            }
+        }
 
-    // Eventos
-    document.getElementById("selectExtrusora").addEventListener("change", actualizarKPIs);
-    document.getElementById("selectFecha").addEventListener("change", actualizarKPIs);
-    document.getElementById("selectExtrusora").addEventListener("change", actualizarGraficaVelocidad);
-    document.getElementById("selectFecha").addEventListener("change", actualizarGraficaVelocidad);
 
-    // Inicializar KPIs al cargar
-    actualizarKPIs();
-    actualizarGraficaVelocidad();
-</script>
+
+        // Evento del botón Apply
+        document.getElementById("applyFilter").addEventListener("click", loadTotmChart);
+        document.getElementById("applyFilter").addEventListener("click", loadEfficiencyChart);
+        document.getElementById("applyFilter").addEventListener("click", loadDowntimeChart);
+        document.getElementById("applyFilter").addEventListener("click", loadDailyEfficiencyChart);
+
+        // Cargar inicial al abrir la página con fecha actual y turno All
+        window.onload = () => {
+            const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+            document.getElementById("startDate").value = today;
+            document.getElementById("shiftSelect").value = "All";
+            const extruder = document.getElementById("ExtruderSelect").value;
+            loadTotmChart(extruder, "All", today);
+            loadEfficiencyChart();
+            loadDowntimeChart();
+            loadDailyEfficiencyChart();
+        };
+    </script>
+}
