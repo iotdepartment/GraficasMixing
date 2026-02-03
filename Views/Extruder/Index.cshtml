@@ -19,12 +19,12 @@
 
         <!-- Shift -->
         <div class="col-2">
-            <label for="shiftSelect">Shift:</label><br>
+            <label for="shiftSelect">Turno:</label><br>
             <select id="shiftSelect" class="form-select">
-                <option value="Turno1" selected>Shift 1 (7:00 - 15:00)</option>
-                <option value="Turno2">Shift 2 (15:00 - 24:00)</option>
-                <option value="Turno3">Shift 3 (00:00 - 7:00)</option>
-                <option value="All">All shifts</option>
+                <option value="Turno1" selected>Turno 1(7:00 - 15:00)</option>
+                <option value="Turno2">Turno 2(15:00 - 24:00)</option>
+                <option value="Turno3">Turno 3(00:00 - 7:00)</option>
+                <option value="All">Todos los Turnos</option>
             </select>
         </div>
 
@@ -45,22 +45,28 @@
         </div>
     </div>
 
-    <div class="row align-items-end mb-5 mt-4">
+    <div class="row align-items-end mb-5 mt-1">
         <div class="col-4 mb-2">
             <div class="card shadow-sm border-0 rounded-0 h-100">
-                <canvas id="TotmPieChart" width="200" height="200"></canvas>
+                <div style="height:360px;">
+                    <canvas id="TotmPieChart"></canvas>
+                </div>
             </div>
         </div>
 
         <div class="col-4 mb-2">
             <div class="card shadow-sm border-0 rounded-0 h-100">
-                <canvas id="EfficiencyBarChart" width="200" height="200"></canvas>
+                <div style="height:360px;">
+                    <canvas id="EfficiencyBarChart" width="10" height="10"></canvas>
+                </div>
             </div>
         </div>
 
         <div class="col-4 mb-2">
             <div class="card shadow-sm border-0 rounded-0 h-100">
-                <canvas id="DowntimeBarChart" width="200" height="200"></canvas>
+                <div style="height:360px;">
+                    <canvas id="DowntimeBarChart" width="10" height="10"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -112,7 +118,7 @@
                         datasets: [{
                             label: "Eficiencia (%)",
                             data: data,
-                            backgroundColor: ["rgba(49,177,52,0.6)", "rgba(49,177,52,0.6)", "rgba(49,177,52,0.6)"]
+                            backgroundColor: ["rgba(49, 92, 213)", "rgba(49, 92, 213)", "rgba(49, 92, 213)"]
                         }]
                     },
                     options: {
@@ -171,13 +177,13 @@
                     else if (r.totm == 0) totm0 = r.count;
                 });
 
-                const labels = ["Tiempo Muerto", "Tiempo de Operacion"];
+                const labels = ["Tiempo de Operacion","Tiempo Muerto"];
                 const data = [totm1, totm0];
 
                 const ctx = document.getElementById("TotmPieChart").getContext("2d");
 
                 // Texto dinámico para el título
-                const chartTitle = `Daily Efficiency % – ${extruder} – ${shift} (${date})`;
+                const chartTitle = `Eficiencia Diaria % – ${extruder} – ${shift} (${date})`;
 
                 if (!totmChart) {
                     // Crear gráfico inicial
@@ -187,7 +193,7 @@
                             labels: labels,
                             datasets: [{
                                 data: data,
-                                backgroundColor: ["rgba(49,177,52,0.6)", "rgba(236, 37, 39,0.6)"], // verde y rojo
+                                backgroundColor: ["rgba(49, 92, 213)", "rgba(153, 153, 153)"], // verde y rojo
                             }]
                         },
                         options: {
@@ -259,7 +265,7 @@
                         datasets: [{
                             label: "Tiempo Muerto (%)",
                             data: data,
-                            backgroundColor: ["rgba(236, 37, 39,0.6)", "rgba(236, 37, 39,0.6)", "rgba(236, 37, 39,0.6)"] // rojo
+                            backgroundColor: ["rgba(153, 153, 153,1.0)", "rgba(153, 153, 153,1.0)", "rgba(153, 153, 153,1.0)"] // rojo
 
                         }]
                     },
@@ -314,8 +320,7 @@
                         datasets: [{
                             label: "Eficiencia Diaria (%)",
                             data: data,
-                            borderColor: "#31B134",
-                            backgroundColor: "rgba(49,177,52,0.6)",
+                            backgroundColor:"rgba(49, 92, 213)",
                             borderWidth: 2,
                             tension: 0.3,
                             fill: true

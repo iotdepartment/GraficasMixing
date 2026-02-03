@@ -67,6 +67,10 @@
     <script>
         $(document).ready(function () {
 
+            // Establecer fecha de hoy automáticamente
+            const today = new Date().toISOString().split('T')[0];
+            $('#startDate').val(today);
+
             const ctx = document.getElementById('BatchOffChart').getContext('2d');
             let allData = [];
 
@@ -93,8 +97,8 @@
                             fill: false,
                             tension: 0.35,
                             pointRadius: 2,
-                            pointhoverRadious:6,
-                            pointhoverBackgroundColor: "#ff4d6d"
+                            pointHoverRadius: 6,
+                            pointHoverBackgroundColor: "#ff4d6d"
                         }
                     ]
                 },
@@ -179,6 +183,8 @@
             // Inicializar
             $("#applyFilter").click(loadData);
 
+            // Cargar datos automáticamente al abrir la página
+            loadData();
         });
     </script>
 }
