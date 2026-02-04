@@ -78,6 +78,34 @@
                 <canvas id="DailyEfficiencyChart" width="50" height="10"></canvas>
             </div>
         </div>
+
+        <hr class="border border-dark border-0 mb-4 opacity-100">
+
+        <div class="row align-items-end mb-5 mt-1">
+            <div class="col-6 mb-2">
+                <div class="card shadow-sm border-0 rounded-0 h-100">
+                    <div style="height:360px;">
+                        <canvas id="FamilyStackedChart" width="10" height="10"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 mb-2">
+                <div class="card shadow-sm border-0 rounded-0 h-100">
+                    <div style="height:360px;">
+                        <canvas id="FamilyMetersChart" width="10" height="10"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr class="border border-dark border-0 mb-4 opacity-100">
+        <div class="row align-items-end mb-5 mt-4">
+            <div class="col-12 mb-2">
+                <div class="card shadow-sm border-0 rounded-0 h-100">
+                    <canvas id="SpeedLineChart" width="50" height="10"></canvas>
+                </div>
+            </div>
     </div>
 
     <!-- Mensaje de error inline -->
@@ -97,6 +125,9 @@
         let efficiencyChart;
         let downtimeChart;
         let dailyEfficiencyChart;
+        let familyStackedChart;
+        let familyMetersChart;
+        let speedChart;
 
         async function loadEfficiencyChart() {
             const extruder = document.getElementById("ExtruderSelect").value;
@@ -358,13 +389,172 @@
             }
         }
 
+        async function loadFamilyStackedChart() {
+            const extruder = document.getElementById("ExtruderSelect").value;
+            const date = document.getElementById("startDate").value;
+            const shift = document.getElementById("shiftSelect").value;
 
+            const response = await fetch(`/Extruder/GetFamilyRuntime?extruder=${extruder}&date=${date}&shift=${shift}`);
+            const result = await response.json();
+
+            const labels = ["Producción"]; // una sola barra
+            const datasets = result.map(r => ({
+                label: r.family,
+                data: [r.minutes],
+                backgroundColor: getRandomColor()
+            }));
+
+            const ctx = document.getElementById("FamilyStackedChart").getContext("2d");
+
+            if (!familyStackedChart) {
+                familyStackedChart = new Chart(ctx, {
+                    type: "bar",
+                    data: {
+                        labels: labels,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: { stacked: true },
+                            y: { stacked: true }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: "Tiempo por Familia (Dinámico)",
+                                font: { size: 18, weight: "bold" }
+                            }
+                        }
+                    }
+                });
+            } else {
+                familyStackedChart.data.labels = labels;
+                familyStackedChart.data.datasets = datasets;
+                familyStackedChart.update();
+            }
+        }
+
+        function getRandomColor() {
+            return `hsl(${Math.floor(Math.random() * 360)}, 70%, 55%)`;
+        }
+
+        async function loadFamilyMetersChart() {
+            const extruder = document.getElementById("ExtruderSelect").value;
+            const date = document.getElementById("startDate").value;
+            const shift = document.getElementById("shiftSelect").value;
+
+            const response = await fetch(`/Extruder/GetFamilyMeters?extruder=${extruder}&date=${date}&shift=${shift}`);
+            const result = await response.json();
+
+            const labels = ["Producción"]; // una sola barra
+            const datasets = result.map(r => ({
+                label: r.family,
+                data: [r.meters],
+                backgroundColor: getRandomColor()
+            }));
+
+            const ctx = document.getElementById("FamilyMetersChart").getContext("2d");
+
+            if (!familyMetersChart) {
+                familyMetersChart = new Chart(ctx, {
+                    type: "bar",
+                    data: {
+                        labels: labels,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: { stacked: true },
+                            y: { stacked: true }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: "Metros Extruidos por Familia",
+                                font: { size: 18, weight: "bold" }
+                            }
+                        }
+                    }
+                });
+            } else {
+                familyMetersChart.data.labels = labels;
+                familyMetersChart.data.datasets = datasets;
+                familyMetersChart.update();
+            }
+        }
+
+        function getRandomColor() {
+            return `hsl(${Math.floor(Math.random() * 360)}, 70%, 55%)`;
+        }
+
+
+
+            async function loadSpeedChart() {
+                const extruder = document.getElementById("ExtruderSelect").value;
+                const date = document.getElementById("startDate").value;
+                const shift = document.getElementById("shiftSelect").value;
+
+                const response = await fetch(`/Extruder/GetSpeedData?extruder=${extruder}&date=${date}&shift=${shift}`);
+                const result = await response.json();
+
+                const labels = result.map(r => r.timestamp);
+                const data = result.map(r => Number(r.speed));
+
+                const ctx = document.getElementById("SpeedLineChart").getContext("2d");
+
+                if (!speedChart) {
+                    speedChart = new Chart(ctx, {
+                        type: "line",
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: "Velocidad (RPM)",
+                                data: data,
+                                borderColor: "#007bff",
+                                backgroundColor: "rgba(0,123,255,0.2)",
+                                borderWidth: 2,
+                                tension: 0.3,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            animation: {
+                                duration: 1200,
+                                easing: "easeOutQuart"
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            },
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: "Velocidad por Tiempo",
+                                    font: { size: 18, weight: "bold" },
+                                    color: "#333"
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    speedChart.data.labels = labels;
+                    speedChart.data.datasets[0].data = data;
+                    speedChart.update();
+                }
+            }
 
         // Evento del botón Apply
         document.getElementById("applyFilter").addEventListener("click", loadTotmChart);
         document.getElementById("applyFilter").addEventListener("click", loadEfficiencyChart);
         document.getElementById("applyFilter").addEventListener("click", loadDowntimeChart);
         document.getElementById("applyFilter").addEventListener("click", loadDailyEfficiencyChart);
+        document.getElementById("applyFilter").addEventListener("click", loadFamilyStackedChart);
+        document.getElementById("applyFilter").addEventListener("click", loadFamilyMetersChart);
+        document.getElementById("applyFilter").addEventListener("click", loadSpeedChart);
 
         // Cargar inicial al abrir la página con fecha actual y turno All
         window.onload = () => {
@@ -376,6 +566,9 @@
             loadEfficiencyChart();
             loadDowntimeChart();
             loadDailyEfficiencyChart();
+            loadFamilyStackedChart();
+            loadFamilyMetersChart();
+            loadSpeedChart();
         };
     </script>
 }
