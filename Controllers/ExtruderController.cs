@@ -17,7 +17,7 @@ namespace GraficasMixing.Controllers
 
         public IActionResult Index()
         {
-            // Traer solo los extruders distintos que tienen registros
+            // Extruders distintos
             var extruders = _context.ScadaExtrudermaster
                 .Where(r => !string.IsNullOrEmpty(r.Extruder))
                 .Select(r => r.Extruder)
@@ -25,10 +25,49 @@ namespace GraficasMixing.Controllers
                 .OrderBy(e => e)
                 .ToList();
 
-            // Pasar la lista a la vista
+            // Todos los setpoints
+            var setpoints = _context.SetPointExtruder
+                .OrderBy(x => x.extruder)
+                .ThenBy(x => x.familia)
+                .ToList();
+
             ViewBag.Extruders = extruders;
 
-            return View();
+            // Pasamos la lista de setpoints como modelo
+            return View(setpoints);
+        }
+        [HttpGet]
+        public IActionResult GetSetPointModal()
+        {
+            // Traer todos los extruders distintos
+            var extruders = _context.ScadaExtrudermaster
+                .Where(r => !string.IsNullOrEmpty(r.Extruder))
+                .Select(r => r.Extruder)
+                .Distinct()
+                .OrderBy(e => e)
+                .ToList();
+
+            ViewBag.Extruders = extruders;
+
+            // Pasamos todos los setpoints para que el modal tenga la info
+            var setpoints = _context.SetPointExtruder.ToList();
+            return PartialView("Partials/_ExtruderModal", setpoints);
+        }
+
+        [HttpPost]
+        public IActionResult SaveSetPoint(SetPointExtruder model)
+        {
+            if (ModelState.IsValid)
+            {
+                var existing = _context.SetPointExtruder.FirstOrDefault(x => x.id == model.id);
+                if (existing != null)
+                {
+                    existing.setpoint = model.setpoint;
+                    _context.SaveChanges();
+                    return Json(new { success = true, message = "Setpoint actualizado correctamente" });
+                }
+            }
+            return Json(new { success = false, message = "Error al guardar" });
         }
 
         [HttpGet]
@@ -385,5 +424,102 @@ namespace GraficasMixing.Controllers
 
             return Json(data);
         }
+
+        [HttpGet]
+        public IActionResult GetProduccionFamilias(string extruder, string shift, DateTime date)
+        {
+            IEnumerable<ScadaExtrudermaster> query;
+
+            switch (shift)
+            {
+                case "Turno1":
+                    query = _context.ScadaExtrudermaster
+                        .Where(x => x.Extruder == extruder &&
+                                    x.Fecha.Date == date.Date &&
+                                    x.Hora >= new TimeSpan(7, 0, 0) &&
+                                    x.Hora < new TimeSpan(15, 0, 0) &&
+                                    x.Metros >= 0)
+                        .ToList();
+                    break;
+
+                case "Turno2":
+                    query = _context.ScadaExtrudermaster
+                        .Where(x => x.Extruder == extruder &&
+                                    x.Fecha.Date == date.Date &&
+                                    x.Hora >= new TimeSpan(15, 0, 0) &&
+                                    x.Hora <= new TimeSpan(23, 59, 59) &&
+                                    x.Metros >= 0)
+                        .ToList();
+                    break;
+
+                case "Turno3":
+                    query = _context.ScadaExtrudermaster
+                        .Where(x => x.Extruder == extruder &&
+                                    x.Fecha.Date == date.AddDays(1).Date &&
+                                    x.Hora >= new TimeSpan(0, 0, 0) &&
+                                    x.Hora < new TimeSpan(7, 0, 0) &&
+                                    x.Metros >= 0)
+                        .ToList();
+                    break;
+
+                case "All":
+                    var turno1 = _context.ScadaExtrudermaster
+                        .Where(x => x.Extruder == extruder &&
+                                    x.Fecha.Date == date.Date &&
+                                    x.Hora >= new TimeSpan(7, 0, 0) &&
+                                    x.Hora < new TimeSpan(15, 0, 0) &&
+                                    x.Metros >= 0)
+                        .ToList();
+
+                    var turno2 = _context.ScadaExtrudermaster
+                        .Where(x => x.Extruder == extruder &&
+                                    x.Fecha.Date == date.Date &&
+                                    x.Hora >= new TimeSpan(15, 0, 0) &&
+                                    x.Hora <= new TimeSpan(23, 59, 59) &&
+                                    x.Metros >= 0)
+                        .ToList();
+
+                    var turno3 = _context.ScadaExtrudermaster
+                        .Where(x => x.Extruder == extruder &&
+                                    x.Fecha.Date == date.AddDays(1).Date &&
+                                    x.Hora < new TimeSpan(7, 0, 0) &&
+                                    x.Metros >= 0)
+                        .ToList();
+
+                    query = turno1.Concat(turno2).Concat(turno3);
+                    break;
+
+                default:
+                    query = new List<ScadaExtrudermaster>();
+                    break;
+            }
+
+            // Ahora trabajamos en memoria
+            var grouped = query.GroupBy(x => x.Familia);
+
+            var produccionFamilias = grouped
+                .Select(g =>
+                {
+                    var velocidadPromedio = g.Where(v => v.Velocidad > 0).Average(v => v.Velocidad ?? 0);
+                    var setpoint = _context.SetPointExtruder
+                        .Where(sp => sp.familia == g.Key && sp.extruder == extruder)
+                        .Select(sp => sp.setpoint)
+                        .FirstOrDefault();
+
+                    return new ProduccionFamiliaViewModel
+                    {
+                        Familia = g.Key,
+                        MetrosProducidos = g.Sum(x => x.Metros ?? 0),
+                        VelocidadPromedio = velocidadPromedio,
+                        SetPointVelocidad = setpoint,
+                        PorcentajeEfectividad = (setpoint > 0) ? (velocidadPromedio * 100 / setpoint) : 0
+                    };
+                })
+                .OrderByDescending(x => x.MetrosProducidos)
+                .ToList();
+
+            return Json(produccionFamilias);
+        }
+
     }
 }

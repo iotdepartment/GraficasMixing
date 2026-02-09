@@ -1,0 +1,107 @@
+﻿@model List<GraficasMixing.Models.SetPointExtruder>
+@{
+    var extruders = ViewBag.Extruders as List<string>;
+}
+
+<div class="modal fade" id="extruderModal" tabindex="-1" aria-labelledby="extruderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title" id="extruderModalLabel">Modificar Setpoint</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <form asp-action="SaveSetPoint" asp-controller="Extruder" method="post" id="setPointForm">
+                    <input type="hidden" id="setpointId" name="id" />
+
+                    <!-- Select de Extruder -->
+                    <div class="mb-3">
+                        <label for="extruderSelect" class="form-label">Extrusora</label>
+                        <select id="extruderSelect" name="extruder" class="form-select">
+                            <option value="">-- Selecciona Extrusora --</option>
+                            @foreach (var extruder in extruders)
+                            {
+                                <option value="@extruder">@extruder</option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Select de Familia -->
+                    <div class="mb-3">
+                        <label for="familiaSelect" class="form-label">Familia</label>
+                        <select id="familiaSelect" name="familia" class="form-select"></select>
+                    </div>
+
+                    <!-- Input de Setpoint -->
+                    <div class="mb-3">
+                        <label for="setpointInput" class="form-label">Setpoint</label>
+                        <input id="setpointInput" name="setpoint" class="form-control" type="number" step="0.01" />
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary rounded-pill">Guardar</button>
+                        <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const allSetpoints = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model));
+
+    const extruderSelect = document.getElementById("extruderSelect");
+    const familiaSelect = document.getElementById("familiaSelect");
+    const setpointInput = document.getElementById("setpointInput");
+    const setpointId = document.getElementById("setpointId");
+
+    // Al seleccionar extruder, cargar familias
+    extruderSelect.addEventListener("change", function () {
+        const selectedExtruder = this.value;
+        familiaSelect.innerHTML = "";
+
+        const familias = allSetpoints.filter(x => x.extruder === selectedExtruder);
+
+        familias.forEach(f => {
+            const opt = document.createElement("option");
+            opt.value = f.familia;
+            opt.textContent = f.familia;
+            opt.dataset.setpoint = f.setpoint;
+            opt.dataset.id = f.id;
+            familiaSelect.appendChild(opt);
+        });
+
+        if (familias.length > 0) {
+            familiaSelect.value = familias[0].familia;
+            setpointInput.value = familias[0].setpoint;
+            setpointId.value = familias[0].id;
+        }
+    });
+
+    // Al seleccionar familia, cargar setpoint
+    familiaSelect.addEventListener("change", function () {
+        const option = this.options[this.selectedIndex];
+        setpointInput.value = option.dataset.setpoint;
+        setpointId.value = option.dataset.id;
+    });
+
+    // Guardar vía AJAX
+    document.getElementById("setPointForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+
+        fetch(this.action, {
+            method: "POST",
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => {
+            alert(data.message);
+            if (data.success) {
+                var modal = bootstrap.Modal.getInstance(document.getElementById("extruderModal"));
+                modal.hide();
+            }
+        });
+    });
+</script>

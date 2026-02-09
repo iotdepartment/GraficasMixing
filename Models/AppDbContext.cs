@@ -26,6 +26,8 @@ namespace GraficasMixing.Models
         public DbSet<Oven6> Oven6 { get; set; }
 
         public DbSet<ScadaExtrudermaster> ScadaExtrudermaster { get; set; }
+
+        public DbSet<SetPointExtruder> SetPointExtruder { get; set; }
     }
     public class MasterMcontext : DbContext{
         public MasterMcontext(DbContextOptions<MasterMcontext> options)
