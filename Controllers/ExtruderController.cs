@@ -500,7 +500,11 @@ namespace GraficasMixing.Controllers
             var produccionFamilias = grouped
                 .Select(g =>
                 {
-                    var velocidadPromedio = g.Where(v => v.Velocidad > 0).Average(v => v.Velocidad ?? 0);
+                    var velocidadPromedio = g
+                        .Where(v => v.Velocidad > 0)
+                        .Select(v => v.Velocidad ?? 0)
+                        .DefaultIfEmpty(0)
+                        .Average();
                     var setpoint = _context.SetPointExtruder
                         .Where(sp => sp.familia == g.Key && sp.extruder == extruder)
                         .Select(sp => sp.setpoint)

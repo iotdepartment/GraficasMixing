@@ -240,7 +240,7 @@
                         plugins: {
                             title: {
                                 display: true,
-                                text: "Eficiencia por Turno",
+                                text: "Porcentaje de eficiencia por turno (%)",
                                 font: { size: 18, weight: "bold" },
                                 color: "#333"
                             }
@@ -386,7 +386,7 @@
                         plugins: {
                             title: {
                                 display: true,
-                                text: "Tiempo Muerto por Turno",
+                                text: "Porcentaje de Tiempo Muerto por Turno (%)",
                                 font: { size: 18, weight: "bold" },
                                 color: "#333"
                             }
@@ -490,7 +490,7 @@
                         plugins: {
                             title: {
                                 display: true,
-                                text: "Tiempo por Familia (Dinámico)",
+                                text: "Tiempo de produccion por Familia (min)",
                                 font: { size: 18, weight: "bold" }
                             }
                         }
@@ -540,7 +540,7 @@
                         plugins: {
                             title: {
                                 display: true,
-                                text: "Metros Extruidos por Familia",
+                                text: "Metros Extruidos por Familia (metros)",
                                 font: { size: 18, weight: "bold" }
                             }
                         }
@@ -599,7 +599,7 @@
                             plugins: {
                                 title: {
                                     display: true,
-                                    text: "Velocidad por Tiempo",
+                                    text: "Velocidad durante el dia (m/min)",
                                     font: { size: 18, weight: "bold" },
                                     color: "#333"
                                 }
@@ -614,7 +614,7 @@
             }
 
         
-            document.getElementById("applyFilter").addEventListener("click", function () {
+        document.getElementById("applyFilter").addEventListener("click", function () {
             const fecha = document.getElementById("startDate").value;
             const turno = document.getElementById("shiftSelect").value;
             const extruder = document.getElementById("ExtruderSelect").value;
