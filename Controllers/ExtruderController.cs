@@ -203,15 +203,16 @@ namespace GraficasMixing.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetDailyEfficiencyLast7Days(string extruder)
+        public IActionResult GetDailyEfficiencyLast7Days(string extruder, DateTime date)
         {
-            DateTime today = DateTime.Today;
-            DateTime startDate = today.AddDays(-6); // últimos 7 días incluyendo hoy
+            // Tomamos la fecha seleccionada como referencia
+            DateTime endDate = date.Date;
+            DateTime startDate = endDate.AddDays(-6); // últimos 7 días hacia atrás desde la fecha seleccionada
 
             var data = _context.ScadaExtrudermaster
                 .Where(x => x.Extruder == extruder &&
                             x.Fecha.Date >= startDate &&
-                            x.Fecha.Date <= today)
+                            x.Fecha.Date <= endDate)
                 .GroupBy(x => x.Fecha.Date)
                 .Select(g => new
                 {
@@ -418,7 +419,8 @@ namespace GraficasMixing.Controllers
                 .Select(x => new
                 {
                     timestamp = x.Fecha.ToString("yyyy-MM-dd") + " " + x.Hora.ToString(),
-                    speed = x.Velocidad   // ← TU CAMPO REAL
+                    speed = x.Velocidad,   // ← TU CAMPO REAL
+                    family = x.Familia // ← aquí incluyes la familia
                 })
                 .ToList();
 
