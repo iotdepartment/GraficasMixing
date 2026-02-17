@@ -1,0 +1,251 @@
+﻿@{
+    Layout = "~/Views/Extruder/Partials/_LayoutNoNav.cshtml";
+    ViewData["Title"] = "Dashboard de Extruder";
+}
+
+<!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<div class="row g-3 mt-1 mb-5">
+
+    <!-- Gráfica 1: Pie chart eficiencia diaria -->
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 400px;">
+            <canvas id="TotmPieChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Gráfica 2: Barras producción vs downtime por turno -->
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 400px;">
+            <div id="productionDowntimeChart" style="width:100%;height:400px;"></div>
+        </div>
+    </div>
+
+</div>
+
+<div class="row align-items-end mb-5 mt-4">
+    <div class="col-12 mb-2">
+        <div class="card shadow-sm border border-1 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 360px;">
+
+            <div id="SpeedLineChart" style="width:100%; height:420px;"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+
+    <script>
+        // ---------------------------
+        // Gráfica de barras por turno
+        // ---------------------------
+        let productionChart = echarts.init(document.getElementById('productionDowntimeChart'));
+
+        function cargarProductionVsDowntimeChart() {
+            fetch('/Extruder/GetProductionVsDowntimeByShift')
+                .then(response => response.json())
+                .then(data => {
+                    const option = {
+                        title: {
+                            text: 'Operación vs Downtime por Turno - Extruder 1',
+                            left: 'center',
+                            textStyle: { fontSize: 20, fontWeight: 'bold' }
+                        },
+                        tooltip: {
+                            trigger: 'axis',
+                            axisPointer: { type: 'shadow' },
+                            formatter: params => {
+                                let total = params.reduce((sum, p) => sum + p.value, 0);
+                                return params.map(p => {
+                                    let porcentaje = total > 0 ? ((p.value / total) * 100).toFixed(1) : 0;
+                                    return `${p.seriesName}: ${p.value} (${porcentaje}%)`;
+                                }).join('<br>');
+                            }
+                        },
+                        legend: {
+                            bottom: 0,
+                            textStyle: { fontSize: 14 }
+                        },
+                        grid: { left: '3%', right: '4%', bottom: '10%', containLabel: true },
+                        xAxis: {
+                            type: 'category',
+                            data: data.map(d => d.turno),
+                            axisLabel: { fontSize: 14 }
+                        },
+                        yAxis: {
+                            type: 'value',
+                            axisLabel: { fontSize: 14 }
+                        },
+                        series: [
+                            {
+                                name: 'Operación',
+                                type: 'bar',
+                                stack: 'total',
+                                data: data.map(d => d.produccion),
+                                itemStyle: { color: '#66BB6A' },
+                                label: {
+                                    show: true,
+                                    position: 'inside',
+                                    formatter: (params) => {
+                                        let turno = data[params.dataIndex];
+                                        let total = turno.produccion + turno.downtime;
+                                        let porcentaje = total > 0 ? ((params.value / total) * 100).toFixed(1) : 0;
+                                        return `${params.value} (${porcentaje}%)`;
+                                    },
+                                    fontSize: 12,
+                                    color: '#fff'
+                                }
+                            },
+                            {
+                                name: 'Downtime',
+                                type: 'bar',
+                                stack: 'total',
+                                data: data.map(d => d.downtime),
+                                itemStyle: { color: '#EF5350' },
+                                label: {
+                                    show: true,
+                                    position: 'inside',
+                                    formatter: (params) => {
+                                        let turno = data[params.dataIndex];
+                                        let total = turno.produccion + turno.downtime;
+                                        let porcentaje = total > 0 ? ((params.value / total) * 100).toFixed(1) : 0;
+                                        return `${params.value} (${porcentaje}%)`;
+                                    },
+                                    fontSize: 12,
+                                    color: '#fff'
+                                }
+                            }
+                        ]
+                    };
+
+                    productionChart.setOption(option);
+                })
+                .catch(err => console.error("Error cargando datos:", err));
+        }
+
+        // Primera carga
+        cargarProductionVsDowntimeChart();
+        // Actualización cada 10 segundos sin recrear el chart
+        setInterval(cargarProductionVsDowntimeChart, 10000);
+
+        // ---------------------------
+        // Gráfica de pie eficiencia diaria
+        // ---------------------------
+                    let totmChart;
+
+        function cargarOperacionVsDowntimeChart() {
+            fetch('/Extruder/GetDailyTotmData')
+                .then(response => response.json())
+                .then(data => {
+                    const ctx = document.getElementById('TotmPieChart').getContext('2d');
+
+                    if (totmChart) {
+                        totmChart.data.labels = data.map(d => d.label);
+                        totmChart.data.datasets[0].data = data.map(d => d.value);
+                        totmChart.update('none');
+                    } else {
+                        totmChart = new Chart(ctx, {
+                            type: 'pie',
+                            data: {
+                                labels: data.map(d => d.label),
+                                datasets: [{
+                                    data: data.map(d => d.value),
+                                    backgroundColor: ['#66BB6A', '#EF5350'], // verde suave y rojo suave
+                                    borderColor: '#fff',
+                                    borderWidth: 2
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: {
+                                    legend: { position: 'bottom', labels: { font: { size: 14 } } },
+                                    title: {
+                                        display: true,
+                                        text: 'Eficiencia diaria % - Extruder 1',
+                                        font: { size: 22, weight: 'bold' },
+                                        color: '#333'
+                                    },
+                                    datalabels: {
+                                        color: '#fff',
+                                        font: { weight: 'bold', size: 14 },
+                                        formatter: (value, ctx) => {
+                                            let dataset = ctx.chart.data.datasets[0].data;
+                                            let total = dataset.reduce((a, b) => a + b, 0);
+                                            let porcentaje = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                            return value + " (" + porcentaje + "%)";
+                                        }
+                                    }
+                                }
+                            },
+                            plugins: [ChartDataLabels]
+                        });
+                    }
+                })
+                .catch(err => console.error("Error cargando datos:", err));
+        }
+
+        cargarOperacionVsDowntimeChart();
+        setInterval(cargarOperacionVsDowntimeChart, 10000);
+
+
+        let speedChart = echarts.init(document.getElementById('SpeedLineChart'), null, {
+            devicePixelRatio: window.devicePixelRatio
+        });
+
+        function cargarSpeedLineChart() {
+            fetch('/Extruder/GetExtruder1SpeedHistoryByShift')
+                .then(response => response.json())
+                .then(data => {
+                    const option = {
+                        title: {
+                            text: 'Velocidad por Turno - Extruder 1 (7:00 am a 7:00 am)',
+                            left: 'center',
+                            textStyle: { fontSize: 20, fontWeight: 'bold' }
+                        },
+                        tooltip: { trigger: 'axis' },
+                        grid: { left: '3%', right: '4%', bottom: '10%', containLabel: true },
+                        xAxis: {
+                            type: 'category',
+                            data: data.map(d => d.hora),
+                            axisLabel: { fontSize: 12 }
+                        },
+                        yAxis: {
+                            type: 'value',
+                            name: 'Velocidad (m/min)',
+                            axisLabel: { fontSize: 12 }
+                        },
+                        series: [
+                            {
+                                name: 'Velocidad',
+                                type: 'line',
+                                smooth: true,
+                                data: data.map(d => d.velocidad),
+                                lineStyle: { width: 3 },
+                                itemStyle: {
+                                    color: params => {
+                                        const turno = data[params.dataIndex].turno;
+                                        if (turno === "Turno 1") return '#42A5F5'; // azul
+                                        if (turno === "Turno 2") return '#66BB6A'; // verde
+                                        return '#EF5350'; // rojo
+                                    }
+                                }
+                            }
+                        ]
+                    };
+
+                    speedChart.setOption(option);
+                })
+                .catch(err => console.error("Error cargando datos:", err));
+        }
+
+        cargarSpeedLineChart();
+        setInterval(cargarSpeedLineChart, 10000);
+
+        window.addEventListener('resize', () => {
+            speedChart.resize();
+        });
+    </script>
+}

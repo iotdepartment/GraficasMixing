@@ -1,18 +1,29 @@
 ﻿@model List<GraficasMixing.Models.SetPointExtruder>
 
-
 @{
     var extruders = ViewBag.Extruders as List<string>;
 
     ViewData["Title"] = "Extruder Efficiency";
 }
+
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <h2 class="text-end">Mesus Charts (Extruder Area) <i class="bi bi-clipboard-data"></i></h2>
     <hr class="border border-dark border-0 mb-4 opacity-100">
 
-    <div class="card shadow-sm border border-1 bg-white rounded-4 p-3">
-       <div class="row align-items-end">
-            <!-- Extruder -->
+<!-- Nuevo botón para ir a la vista de Chart -->
+
+
+<div class="row mb-3 mt-2">
+    <div class="col-12 text-end">
+        <a href="@Url.Action("Chart", "Extruder")" class="btn btn-info rounded-pill">
+            <i class="bi bi-bar-chart"></i> Ver Gráfica
+        </a>
+    </div>
+</div>
+   <div class="card shadow-sm border border-1 bg-white rounded-4 p-3">
+    <div class="row align-items-end">
+        
+        <!-- Extruder -->
         <div class="col-2">
             <label for="ExtruderSelect">Extrusora:</label><br>
             <select id="ExtruderSelect" class="form-select">
@@ -23,38 +34,39 @@
             </select>
         </div>
 
+        <!-- Shift -->
+        <div class="col-2">
+            <label for="shiftSelect">Turno:</label><br>
+            <select id="shiftSelect" class="form-select">
+                <option value="Turno1" selected>Turno 1(7:00 - 15:00)</option>
+                <option value="Turno2">Turno 2(15:00 - 24:00)</option>
+                <option value="Turno3">Turno 3(00:00 - 7:00)</option>
+                <option value="All">Todos los Turnos</option>
+            </select>
+        </div>
 
-            <!-- Shift -->
-            <div class="col-2">
-                <label for="shiftSelect">Turno:</label><br>
-                <select id="shiftSelect" class="form-select">
-                    <option value="Turno1" selected>Turno 1(7:00 - 15:00)</option>
-                    <option value="Turno2">Turno 2(15:00 - 24:00)</option>
-                    <option value="Turno3">Turno 3(00:00 - 7:00)</option>
-                    <option value="All">Todos los Turnos</option>
-                </select>
-            </div>
+        <!-- Fecha -->
+        <div class="col-2">
+            <label for="startDate">Fecha:</label><br>
+            <input type="date" id="startDate" class="form-control">
+        </div>
 
-            <!-- Fecha -->
-            <div class="col-2">
-                <label for="startDate">Fecha:</label><br>
-                <input type="date" id="startDate" class="form-control">
-            </div>
-
-            <!-- Submit button-->
-            <div class="col-1 me-0 ">
-                <div class="d-grid gap-2">
-                    <button type="button" id="applyFilter" class="btn btn-primary rounded-pill">
-                        Apply
-                        <span id="spinner" class="spinner-border spinner-border-sm" style="display:none;"></span>
-                    </button>
-                </div>
-            </div>
-            <div class="col-2">
-                <button id="exportChartBtn" class="btn btn-outline-success">
-                    <i class="bi bi-download"></i> Export Report
+        <!-- Submit button-->
+        <div class="col-1 me-0 ">
+            <div class="d-grid gap-2">
+                <button type="button" id="applyFilter" class="btn btn-primary rounded-pill">
+                    Apply
+                    <span id="spinner" class="spinner-border spinner-border-sm" style="display:none;"></span>
                 </button>
             </div>
+        </div>
+
+        <!-- Export -->
+        <div class="col-2">
+            <button id="exportChartBtn" class="btn btn-outline-success">
+                <i class="bi bi-download"></i> Export Report
+            </button>
+        </div>
 
         <!-- Botón para abrir modal -->
         <div class="col-2">
@@ -63,10 +75,11 @@
             </button>
         </div>
 
+     
 
-
-        </div>
     </div>
+</div>
+
 <!-- Renderizamos el modal fijo con los datos -->
 @await Html.PartialAsync("Partials/_ExtruderModal", Model)
 
@@ -97,32 +110,32 @@
 
     </div>
 
-<hr class="border border-dark border-0 mb-4 opacity-100">
+    <hr class="border border-dark border-0 mb-4 opacity-100">
 
-<div class="card shadow-sm border border-1 rounded-4 p-3 mt-4">
-    <h5 class="mb-3">Producción por familia</h5>
-    <div class="table-responsive">
-        <table id="produccionTable" class="table table-striped table-hover align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th>Familia</th>
-                    <th>Metros Producidos</th>
-                    <th>Velocidad Promedio (m/min)</th>
-                    <th>SetPoint Velocidad (m/min)</th>
-                    <th>% Efectividad</th>
-
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model)
-                {
+    <div class="card shadow-sm border border-1 rounded-4 p-3 mt-4">
+        <h5 class="mb-3">Producción por familia</h5>
+        <div class="table-responsive">
+            <table id="produccionTable" class="table table-striped table-hover align-middle">
+                <thead class="table-dark">
                     <tr>
+                        <th>Familia</th>
+                        <th>Metros Producidos</th>
+                        <th>Velocidad Promedio (m/min)</th>
+                        <th>SetPoint Velocidad (m/min)</th>
+                        <th>% Efectividad</th>
+
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
     
     <hr class="border border-dark border-0 mb-4 opacity-100">
 
@@ -157,18 +170,17 @@
 
     </div>
 
-
     <hr class="border border-dark border-0 mb-4 opacity-100">
 
     @* // Cuarta Fila *@
-<div class="row align-items-end mb-5 mt-4">
-    <div class="col-12 mb-2">
-        <div class="card shadow-sm border border-1 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 360px;">
+    <div class="row align-items-end mb-5 mt-4">
+        <div class="col-12 mb-2">
+            <div class="card shadow-sm border border-1 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 360px;">
 
-                <canvas id="SpeedLineChart" style="width:100%; height:100%;"></canvas>
+                    <canvas id="SpeedLineChart" style="width:100%; height:100%;"></canvas>
+            </div>
         </div>
     </div>
-</div>
 
 
 
@@ -616,10 +628,6 @@
                 familyMetersChart.data.datasets = datasets;
                 familyMetersChart.update();
             }
-        }
-
-        function getRandomColor() {
-            return `hsl(${Math.floor(Math.random() * 360)}, 70%, 55%)`;
         }
 
         async function loadSpeedChart() {

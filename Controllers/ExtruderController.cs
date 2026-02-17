@@ -134,6 +134,7 @@ namespace GraficasMixing.Controllers
 
             return Json(data);
         }
+
         [HttpGet]
         public IActionResult GetEfficiencyByShift(string extruder, DateTime date)
         {
@@ -527,5 +528,118 @@ namespace GraficasMixing.Controllers
             return Json(produccionFamilias);
         }
 
+        [HttpGet]
+        public IActionResult Chart()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        public IActionResult GetDailyTotmData()
+        {
+            var extruder = "Extruder1"; // fijo
+            var parsedDate = DateTime.Now.Date; // día actual
+
+            var inicio = parsedDate.AddHours(7);
+            var fin = parsedDate.AddDays(1).AddHours(6).AddMinutes(59);
+
+            var registros = _context.ScadaExtrudermaster
+                .Where(x => x.Extruder == extruder &&
+                            (x.Fecha.Date == parsedDate || x.Fecha.Date == parsedDate.AddDays(1)))
+                .AsEnumerable()
+                .Where(x =>
+                {
+                    var fechaHora = x.Fecha.Date.Add(x.Hora);
+                    return fechaHora >= inicio && fechaHora <= fin;
+                })
+                .ToList();
+
+            var operacion = registros.Count(x => x.Totm == 1);
+            var tiempoMuerto = registros.Count(x => x.Totm == 0);
+
+            var data = new[]
+            {
+                new { label = "Operación", value = operacion },
+                new { label = "Downtime", value = tiempoMuerto }
+            };
+
+            return Json(data);
+        }
+
+        [HttpGet]
+        public JsonResult GetProductionVsDowntimeByShift()
+        {
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
+            var parsedDate = TimeZoneInfo.ConvertTime(DateTime.UtcNow, tz).Date;
+            var extruder = "Extruder1";
+
+            var turno1Inicio = new TimeSpan(7, 0, 0);
+            var turno1Fin = new TimeSpan(15, 0, 0);
+
+            var turno2Inicio = new TimeSpan(15, 0, 0);
+            var turno2Fin = new TimeSpan(23, 59, 59);
+
+            var turno3Inicio = new TimeSpan(0, 0, 0);
+            var turno3Fin = new TimeSpan(7, 0, 0);
+
+            var turno1 = _context.ScadaExtrudermaster
+                .Where(x => x.Extruder == extruder &&
+                            x.Fecha.Date == parsedDate &&
+                            x.Hora >= turno1Inicio && x.Hora < turno1Fin)
+                .ToList();
+
+            var turno2 = _context.ScadaExtrudermaster
+                .Where(x => x.Extruder == extruder &&
+                            x.Fecha.Date == parsedDate &&
+                            x.Hora >= turno2Inicio && x.Hora <= turno2Fin)
+                .ToList();
+
+            var turno3 = _context.ScadaExtrudermaster
+                .Where(x => x.Extruder == extruder &&
+                            x.Fecha.Date == parsedDate.AddDays(1) &&
+                            x.Hora >= turno3Inicio && x.Hora < turno3Fin)
+                .ToList();
+
+            var data = new[]
+            {
+        new { turno = "Turno 1", produccion = turno1.Count(x => x.Totm == 1), downtime = turno1.Count(x => x.Totm == 0) },
+        new { turno = "Turno 2", produccion = turno2.Count(x => x.Totm == 1), downtime = turno2.Count(x => x.Totm == 0) },
+        new { turno = "Turno 3", produccion = turno3.Count(x => x.Totm == 1), downtime = turno3.Count(x => x.Totm == 0) }
+    };
+
+            return Json(data);
+        }
+
+        [HttpGet]
+        public JsonResult GetExtruder1SpeedHistoryByShift()
+        {
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
+            var fechaHoy = TimeZoneInfo.ConvertTime(DateTime.UtcNow, tz).Date;
+            var extruder = "Extruder1";
+
+            var inicio = fechaHoy.AddHours(7);
+            var fin = fechaHoy.AddDays(1).AddHours(7);
+
+            var registrosRaw = _context.ScadaExtrudermaster
+                .Where(x => x.Extruder == extruder &&
+                            (x.Fecha.Date == fechaHoy || x.Fecha.Date == fechaHoy.AddDays(1)))
+                .OrderBy(x => x.Fecha)
+                .AsEnumerable()
+                .Select(x => new {
+                    fechaHora = x.Fecha.Date + x.Hora,
+                    velocidad = x.Velocidad
+                })
+                .Where(x => x.fechaHora >= inicio && x.fechaHora < fin)
+                .Select(x => new {
+                    hora = x.fechaHora.ToString("HH:mm"),
+                    velocidad = x.velocidad,
+                    turno = x.fechaHora.TimeOfDay >= new TimeSpan(7, 0, 0) && x.fechaHora.TimeOfDay < new TimeSpan(15, 0, 0) ? "Turno 1"
+                           : x.fechaHora.TimeOfDay >= new TimeSpan(15, 0, 0) && x.fechaHora.TimeOfDay < new TimeSpan(23, 59, 59) ? "Turno 2"
+                           : "Turno 3"
+                })
+                .ToList();
+
+            return Json(registrosRaw);
+        }
     }
 }
