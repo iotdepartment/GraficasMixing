@@ -543,7 +543,7 @@ namespace GraficasMixing.Controllers
             // Día laboral: si estamos entre 00:00 y 6:59, retrocedemos un día
             var parsedDate = nowLocal.Hour < 7 ? nowLocal.Date.AddDays(-1) : nowLocal.Date;
 
-            var extruder = "Extruder1"; // fijo
+            var extruder = "Extruder1";
 
             var inicio = parsedDate.AddHours(7);                // 7:00 am del día laboral
             var fin = parsedDate.AddDays(1).AddHours(6).AddMinutes(59); // 6:59 am del siguiente día
@@ -585,19 +585,19 @@ namespace GraficasMixing.Controllers
             var turno1 = _context.ScadaExtrudermaster
                 .Where(x => x.Extruder == extruder &&
                             x.Fecha.Date == parsedDate &&
-                            x.Hora >= new TimeSpan(7, 0, 0) && x.Hora < new TimeSpan(15, 0, 0))
+                            x.Hora >= new TimeSpan(7, 0, 0) && x.Hora < new TimeSpan(15, 29, 59))
                 .ToList();
 
             var turno2 = _context.ScadaExtrudermaster
                 .Where(x => x.Extruder == extruder &&
                             x.Fecha.Date == parsedDate &&
-                            x.Hora >= new TimeSpan(15, 0, 0) && x.Hora <= new TimeSpan(23, 59, 59))
+                            x.Hora >= new TimeSpan(15, 30, 0) && x.Hora <= new TimeSpan(23, 29, 59))
                 .ToList();
 
             var turno3 = _context.ScadaExtrudermaster
                 .Where(x => x.Extruder == extruder &&
                             x.Fecha.Date == parsedDate.AddDays(1) &&
-                            x.Hora >= new TimeSpan(0, 0, 0) && x.Hora < new TimeSpan(7, 0, 0))
+                            x.Hora >= new TimeSpan(23, 30, 0) && x.Hora < new TimeSpan(6, 59, 59))
                 .ToList();
 
             var data = new[]
@@ -636,8 +636,8 @@ namespace GraficasMixing.Controllers
                 .Select(x => new {
                     hora = x.fechaHora.ToString("HH:mm"),
                     velocidad = x.velocidad,
-                    turno = x.fechaHora.TimeOfDay >= new TimeSpan(7, 0, 0) && x.fechaHora.TimeOfDay < new TimeSpan(15, 0, 0) ? "Turno 1"
-                           : x.fechaHora.TimeOfDay >= new TimeSpan(15, 0, 0) && x.fechaHora.TimeOfDay < new TimeSpan(23, 59, 59) ? "Turno 2"
+                    turno = x.fechaHora.TimeOfDay >= new TimeSpan(7, 0, 0) && x.fechaHora.TimeOfDay < new TimeSpan(15, 29, 59) ? "Turno 1"
+                           : x.fechaHora.TimeOfDay >= new TimeSpan(15, 30, 0) && x.fechaHora.TimeOfDay < new TimeSpan(23, 29, 59) ? "Turno 2"
                            : "Turno 3"
                 })
                 .ToList();
