@@ -537,8 +537,9 @@ namespace GraficasMixing.Controllers
         [HttpGet]
         public IActionResult GetDailyTotmData()
         {
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time (Mexico)");
+            var parsedDate = TimeZoneInfo.ConvertTime(DateTime.UtcNow, tz).Date;
             var extruder = "Extruder1"; // fijo
-            var parsedDate = DateTime.Now.Date; // día actual
 
             var inicio = parsedDate.AddHours(7);
             var fin = parsedDate.AddDays(1).AddHours(6).AddMinutes(59);
@@ -559,9 +560,9 @@ namespace GraficasMixing.Controllers
 
             var data = new[]
             {
-                new { label = "Operación", value = operacion },
-                new { label = "Downtime", value = tiempoMuerto }
-            };
+        new { label = "Operación", value = operacion },
+        new { label = "Downtime", value = tiempoMuerto }
+    };
 
             return Json(data);
         }
