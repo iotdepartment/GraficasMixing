@@ -538,11 +538,15 @@ namespace GraficasMixing.Controllers
         public IActionResult GetDailyTotmData()
         {
             var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time (Mexico)");
-            var parsedDate = TimeZoneInfo.ConvertTime(DateTime.UtcNow, tz).Date;
+            var nowLocal = TimeZoneInfo.ConvertTime(DateTime.UtcNow, tz);
+
+            // Día laboral: si estamos entre 00:00 y 6:59, retrocedemos un día
+            var parsedDate = nowLocal.Hour < 7 ? nowLocal.Date.AddDays(-1) : nowLocal.Date;
+
             var extruder = "Extruder1"; // fijo
 
-            var inicio = parsedDate.AddHours(7);
-            var fin = parsedDate.AddDays(1).AddHours(6).AddMinutes(59);
+            var inicio = parsedDate.AddHours(7);                // 7:00 am del día laboral
+            var fin = parsedDate.AddDays(1).AddHours(6).AddMinutes(59); // 6:59 am del siguiente día
 
             var registros = _context.ScadaExtrudermaster
                 .Where(x => x.Extruder == extruder &&
@@ -570,35 +574,30 @@ namespace GraficasMixing.Controllers
         [HttpGet]
         public JsonResult GetProductionVsDowntimeByShift()
         {
-            var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
-            var parsedDate = TimeZoneInfo.ConvertTime(DateTime.UtcNow, tz).Date;
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time (Mexico)");
+            var nowLocal = TimeZoneInfo.ConvertTime(DateTime.UtcNow, tz);
+
+            // Día laboral: si estamos antes de las 7:00 am, retrocedemos un día
+            var parsedDate = nowLocal.Hour < 7 ? nowLocal.Date.AddDays(-1) : nowLocal.Date;
             var extruder = "Extruder1";
 
-            var turno1Inicio = new TimeSpan(7, 0, 0);
-            var turno1Fin = new TimeSpan(15, 0, 0);
-
-            var turno2Inicio = new TimeSpan(15, 0, 0);
-            var turno2Fin = new TimeSpan(23, 59, 59);
-
-            var turno3Inicio = new TimeSpan(0, 0, 0);
-            var turno3Fin = new TimeSpan(7, 0, 0);
-
+            // Turnos dentro del día laboral
             var turno1 = _context.ScadaExtrudermaster
                 .Where(x => x.Extruder == extruder &&
                             x.Fecha.Date == parsedDate &&
-                            x.Hora >= turno1Inicio && x.Hora < turno1Fin)
+                            x.Hora >= new TimeSpan(7, 0, 0) && x.Hora < new TimeSpan(15, 0, 0))
                 .ToList();
 
             var turno2 = _context.ScadaExtrudermaster
                 .Where(x => x.Extruder == extruder &&
                             x.Fecha.Date == parsedDate &&
-                            x.Hora >= turno2Inicio && x.Hora <= turno2Fin)
+                            x.Hora >= new TimeSpan(15, 0, 0) && x.Hora <= new TimeSpan(23, 59, 59))
                 .ToList();
 
             var turno3 = _context.ScadaExtrudermaster
                 .Where(x => x.Extruder == extruder &&
                             x.Fecha.Date == parsedDate.AddDays(1) &&
-                            x.Hora >= turno3Inicio && x.Hora < turno3Fin)
+                            x.Hora >= new TimeSpan(0, 0, 0) && x.Hora < new TimeSpan(7, 0, 0))
                 .ToList();
 
             var data = new[]
@@ -614,8 +613,11 @@ namespace GraficasMixing.Controllers
         [HttpGet]
         public JsonResult GetExtruder1SpeedHistoryByShift()
         {
-            var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
-            var fechaHoy = TimeZoneInfo.ConvertTime(DateTime.UtcNow, tz).Date;
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time (Mexico)");
+            var nowLocal = TimeZoneInfo.ConvertTime(DateTime.UtcNow, tz);
+
+            // Día laboral: si estamos antes de las 7:00 am, retrocedemos un día
+            var fechaHoy = nowLocal.Hour < 7 ? nowLocal.Date.AddDays(-1) : nowLocal.Date;
             var extruder = "Extruder1";
 
             var inicio = fechaHoy.AddHours(7);
@@ -642,5 +644,6 @@ namespace GraficasMixing.Controllers
 
             return Json(registrosRaw);
         }
+
     }
 }
