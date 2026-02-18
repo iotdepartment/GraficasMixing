@@ -10,25 +10,35 @@
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="~/Images/icono-tg.png" />
+    <style>
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
 </head>
-<body class="bg-light">
+<body class="bg-body-secondary">
 
     <div class="container-fluid">
         @RenderBody()
     </div>
 
     <!-- Footer -->
-    <footer class="border-top footer text-muted mt-4">
+    <footer class="border-top footer text-muted mt-auto py-2">
         <div class="container d-flex justify-content-between align-items-center">
+            <!-- Texto alineado a la izquierda -->
             <span>&copy; TGRMX - Iot Department 2026</span>
 
-            <!-- Botón para regresar al Index -->
-            <a asp-controller="Home" asp-action="Index" class="btn btn-outline-primary rounded-pill mt-3">
-                <i class="bi bi-arrow-left-circle"></i> Regresar al Inicio
+            <!-- Botón alineado a la derecha -->
+            <a asp-controller="Extruder" asp-action="Index" class="btn btn-outline-secondary rounded-pill">
+                <i class="bi bi-arrow-left-circle"></i> Regresar
             </a>
         </div>
     </footer>
-
     @RenderSection("Scripts", required: false)
 </body>
 </html>

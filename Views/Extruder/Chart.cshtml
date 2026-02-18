@@ -1,33 +1,89 @@
-﻿@{
+﻿@model GraficasMixing.ViewModels.EstadoCardViewModel
+
+
+@{
     Layout = "~/Views/Extruder/Partials/_LayoutNoNav.cshtml";
     ViewData["Title"] = "Extruder 1";
 }
 
 <!-- Bootstrap CSS -->
+<!-- Bootstrap CSS -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<div class="row g-3 mt-1 mb-5">
+
+<style>
+    .profile-card {
+        position: relative;
+        overflow: visible; /* permite que la imagen sobresalga */
+        text-align: center;
+    }
+
+        .profile-card img {
+            position: absolute;
+            top: -60px; /* sobresale la mitad */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 4px solid #fff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+    .profile-info {
+        margin-top: 70px; /* espacio para la imagen */
+    }
+
+        .profile-info p {
+            margin-bottom: 12px;
+        }
+</style>
+
+<div class="row g-3 mt-5 mb-5">
+    <!-- Card de información -->
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 rounded-4 p-3 profile-card" style="height: 400px;">
+            <!-- Imagen de perfil -->
+            <img src="~/Images/tm/thumbnail.png" alt="Foto de perfil">
+
+            <!-- Información -->
+            <div class="profile-info">
+                <h4 class="card-title mb-4 fw-bold fs-4">@Model.Extruder</h4>
+
+                <p class="fs-5"><strong>Team Member:</strong><br>@Model.Empleado</p>
+                <p class="fs-5"><strong>Mandril:</strong><br>@Model.Mandril</p>
+                <p class="fs-5"><strong>Contador:</strong><br>@Model.Contador</p>
+            </div>
+        </div>
+    </div>
 
     <!-- Gráfica 1: Pie chart eficiencia diaria -->
-    <div class="col-md-6">
+    <div class="col-md-4">
         <div class="card shadow-sm border-0 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 400px;">
             <canvas id="TotmPieChart"></canvas>
         </div>
     </div>
 
     <!-- Gráfica 2: Barras producción vs downtime por turno -->
-    <div class="col-md-6">
+    <div class="col-md-5">
         <div class="card shadow-sm border-0 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 400px;">
             <div id="productionDowntimeChart" style="width:100%;height:400px;"></div>
         </div>
     </div>
-
 </div>
 
 <div class="row align-items-end mb-5 mt-4">
     <div class="col-12 mb-2">
-        <div class="card shadow-sm border border-1 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 360px;">
+        <div class="card shadow-sm border border-1 rounded-4 p-3 position-relative" style="height: 420px;">
 
-            <div id="SpeedLineChart" style="width:100%; height:420px;"></div>
+            <!-- Gráfica -->
+            <div id="SpeedLineChart" style="width:100%; height:100%;"></div>
+
+            <!-- Velocidad actual en la parte superior derecha -->
+            <div class="position-absolute top-0 end-0 mt-2 me-3 text-end">
+                <div class="fw-bold">Velocidad:</div>
+                <span id="ultimoRegistro" class="badge bg-primary fs-6"></span>
+            </div>
         </div>
     </div>
 </div>
@@ -194,51 +250,72 @@
             devicePixelRatio: window.devicePixelRatio
         });
 
-        function cargarSpeedLineChart() {
-            fetch('/Extruder/GetExtruder1SpeedHistoryByShift')
-                .then(response => response.json())
-                .then(data => {
-                    const option = {
-                        title: {
-                            text: 'Velocidad por Turno - Extruder 1 (7:00 am a 7:00 am)',
-                            left: 'center',
-                            textStyle: { fontSize: 20, fontWeight: 'bold' }
-                        },
-                        tooltip: { trigger: 'axis' },
-                        grid: { left: '3%', right: '4%', bottom: '10%', containLabel: true },
-                        xAxis: {
-                            type: 'category',
-                            data: data.map(d => d.hora),
-                            axisLabel: { fontSize: 12 }
-                        },
-                        yAxis: {
-                            type: 'value',
-                            name: 'Velocidad (m/min)',
-                            axisLabel: { fontSize: 12 }
-                        },
-                        series: [
-                            {
-                                name: 'Velocidad',
-                                type: 'line',
-                                smooth: true,
-                                data: data.map(d => d.velocidad),
-                                lineStyle: { width: 3 },
-                                itemStyle: {
-                                    color: params => {
-                                        const turno = data[params.dataIndex].turno;
-                                        if (turno === "Turno 1") return '#42A5F5'; // azul
-                                        if (turno === "Turno 2") return '#66BB6A'; // verde
-                                        return '#EF5350'; // rojo
-                                    }
-                                }
-                            }
-                        ]
-                    };
+        fetch('/Extruder/GetExtruder1SpeedHistoryByShift')
+        .then(response => response.json())
+        .then(data => {
+            const registros = data.registros;
+            const setPoint = data.setpoint;
 
-                    speedChart.setOption(option);
-                })
-                .catch(err => console.error("Error cargando datos:", err));
-        }
+            // Último registro
+            const ultimo = registros[registros.length - 1];
+            document.getElementById("ultimoRegistro").innerText =
+                `${ultimo.velocidad.toFixed(2)} m/min`;
+
+            // Configuración de la gráfica con línea roja del setpoint
+            const option = {
+                title: {
+                    text: 'Velocidad por Turno - Extruder 1 (7:00 am a 7:00 am)',
+                    left: 'center',
+                    textStyle: { fontSize: 20, fontWeight: 'bold' }
+                },
+                tooltip: { trigger: 'axis' },
+                grid: { left: '3%', right: '4%', bottom: '10%', containLabel: true },
+                xAxis: {
+                    type: 'category',
+                    data: registros.map(d => d.hora),
+                    axisLabel: { fontSize: 12 }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: 'Velocidad (m/min)',
+                    axisLabel: { fontSize: 12 }
+                },
+                series: [
+                    {
+                        name: 'Velocidad',
+                        type: 'line',
+                        smooth: true,
+                        data: registros.map(d => d.velocidad),
+                        lineStyle: { width: 3 },
+                        itemStyle: {
+                            color: params => {
+                                const turno = registros[params.dataIndex].turno;
+                                if (turno === "Turno 1") return '#42A5F5'; // azul
+                                if (turno === "Turno 2") return '#66BB6A'; // verde
+                                return '#EF5350'; // rojo
+                            }
+                        },
+                        markLine: {
+                            symbol: 'none', // sin flechas
+                            label: {
+                                show: true,
+                                position: 'insideEndTop', // evita que se corte
+                                formatter: `Setpoint: ${setPoint.toFixed(2)} m/min`,
+                                color: 'red',
+                                fontWeight: 'bold'
+                            },
+                            lineStyle: { color: 'red', type: 'solid', width: 2 },
+                            data: [
+                                { yAxis: setPoint }
+                            ]
+                        }
+                    }
+                ]
+            };
+
+            speedChart.setOption(option);
+        })
+        .catch(err => console.error("Error cargando datos:", err));
 
         cargarSpeedLineChart();
         setInterval(cargarSpeedLineChart, 10000);

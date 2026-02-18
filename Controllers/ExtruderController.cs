@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
+using GraficasMixing.ViewModels;
+
 
 namespace GraficasMixing.Controllers
 {
@@ -528,11 +530,43 @@ namespace GraficasMixing.Controllers
             return Json(produccionFamilias);
         }
 
-        [HttpGet]
+
         public IActionResult Chart()
         {
-            return View();
+            var estado = _context.Estado
+                .Include(e => e.ExtruderRef)
+                .Include(e => e.EmpleadoRef)
+                .Include(e => e.MandrilRef)
+                .FirstOrDefault();
+
+            if (estado == null)
+            {
+                // Devuelve un modelo vacío para evitar null en la vista
+                return View(new EstadoCardViewModel
+                {
+                    Extruder = "N/A",
+                    Empleado = "N/A",
+                    NumeroEmpleado = "N/A",
+                    Mandril = "N/A",
+                    Familia = "N/A",
+                    Contador = 0
+                });
+            }
+
+            var cardInfo = new EstadoCardViewModel
+            {
+                Extruder = estado.ExtruderRef?.NombreExtruder,
+                Empleado = estado.EmpleadoRef?.Nombre,
+                // Convertimos el int a string para mostrarlo en la vista
+                NumeroEmpleado = estado.EmpleadoRef?.NumeroEmpleado.ToString(),
+                Mandril = estado.MandrilRef?.NombreMandril,
+                Familia = estado.MandrilRef?.Familia,
+                Contador = estado.Contador
+            };
+
+            return View(cardInfo);
         }
+
 
         [HttpGet]
         public IActionResult GetDailyTotmData()
@@ -581,24 +615,36 @@ namespace GraficasMixing.Controllers
             var parsedDate = nowLocal.Hour < 7 ? nowLocal.Date.AddDays(-1) : nowLocal.Date;
             var extruder = "Extruder1";
 
-            // Turnos dentro del día laboral
+            // Turno 1: 07:00 - 15:29
             var turno1 = _context.ScadaExtrudermaster
                 .Where(x => x.Extruder == extruder &&
                             x.Fecha.Date == parsedDate &&
-                            x.Hora >= new TimeSpan(7, 0, 0) && x.Hora < new TimeSpan(15, 29, 59))
+                            x.Hora >= new TimeSpan(7, 0, 0) && x.Hora <= new TimeSpan(15, 29, 59))
                 .ToList();
 
+            // Turno 2: 15:30 - 23:29
             var turno2 = _context.ScadaExtrudermaster
                 .Where(x => x.Extruder == extruder &&
                             x.Fecha.Date == parsedDate &&
                             x.Hora >= new TimeSpan(15, 30, 0) && x.Hora <= new TimeSpan(23, 29, 59))
                 .ToList();
 
-            var turno3 = _context.ScadaExtrudermaster
+            // Turno 3: dividido en dos partes
+            // Parte 1: 23:30 - 23:59 del mismo día
+            var turno3Parte1 = _context.ScadaExtrudermaster
+                .Where(x => x.Extruder == extruder &&
+                            x.Fecha.Date == parsedDate &&
+                            x.Hora >= new TimeSpan(23, 30, 0) && x.Hora <= new TimeSpan(23, 59, 59))
+                .ToList();
+
+            // Parte 2: 00:00 - 06:59 del día siguiente
+            var turno3Parte2 = _context.ScadaExtrudermaster
                 .Where(x => x.Extruder == extruder &&
                             x.Fecha.Date == parsedDate.AddDays(1) &&
-                            x.Hora >= new TimeSpan(23, 30, 0) && x.Hora < new TimeSpan(6, 59, 59))
+                            x.Hora >= new TimeSpan(0, 0, 0) && x.Hora <= new TimeSpan(6, 59, 59))
                 .ToList();
+
+            var turno3 = turno3Parte1.Concat(turno3Parte2).ToList();
 
             var data = new[]
             {
@@ -609,7 +655,6 @@ namespace GraficasMixing.Controllers
 
             return Json(data);
         }
-
         [HttpGet]
         public JsonResult GetExtruder1SpeedHistoryByShift()
         {
@@ -630,7 +675,8 @@ namespace GraficasMixing.Controllers
                 .AsEnumerable()
                 .Select(x => new {
                     fechaHora = x.Fecha.Date + x.Hora,
-                    velocidad = x.Velocidad
+                    velocidad = x.Velocidad,
+                    familia = x.Familia
                 })
                 .Where(x => x.fechaHora >= inicio && x.fechaHora < fin)
                 .Select(x => new {
@@ -638,12 +684,28 @@ namespace GraficasMixing.Controllers
                     velocidad = x.velocidad,
                     turno = x.fechaHora.TimeOfDay >= new TimeSpan(7, 0, 0) && x.fechaHora.TimeOfDay < new TimeSpan(15, 29, 59) ? "Turno 1"
                            : x.fechaHora.TimeOfDay >= new TimeSpan(15, 30, 0) && x.fechaHora.TimeOfDay < new TimeSpan(23, 29, 59) ? "Turno 2"
-                           : "Turno 3"
+                           : "Turno 3",
+                    familia = x.familia
                 })
                 .ToList();
 
-            return Json(registrosRaw);
+            // Identificar la familia actual (último registro)
+            var familiaActual = registrosRaw.LastOrDefault()?.familia;
+
+            // Buscar el setpoint en la tabla SetPointExtruder
+            var setPoint = _context.SetPointExtruder
+                .Where(sp => sp.extruder == extruder && sp.familia == familiaActual)
+                .Select(sp => sp.setpoint)
+                .FirstOrDefault();
+
+            return Json(new
+            {
+                registros = registrosRaw,
+                setpoint = setPoint
+            });
         }
+
+        
 
     }
 }
