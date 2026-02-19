@@ -729,5 +729,20 @@ namespace GraficasMixing.Controllers
             });
         }
 
+        [HttpGet]
+        public JsonResult GetContador(int numeroEmpleado)
+        {
+            // Buscar el último estado asociado al empleado
+            var estado = _context.Estado
+                .Where(e => e.EmpleadoRef.NumeroEmpleado == numeroEmpleado)
+                .OrderByDescending(e => e.ID) // o por fecha si tienes una columna
+                .FirstOrDefault();
+
+            return Json(new
+            {
+                contador = estado?.Contador ?? 0
+            });
+        }
+
     }
 }

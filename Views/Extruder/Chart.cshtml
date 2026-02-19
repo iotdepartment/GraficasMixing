@@ -39,7 +39,7 @@
                     <p class="mb-2"><strong>Mandril:</strong><br>@Model.Mandril</p>
                     <p>
                         <strong>Contador:</strong><br>
-                        <span class="badge rounded-pill bg-success fs-6">@Model.Contador</span>
+                        <span id="contador" class="badge rounded-pill bg-success fs-6">@Model.Contador</span>
                     </p>
                 </div>
             </div>
@@ -84,6 +84,14 @@
 
     <script>
 
+        function actualizarContador() {
+            fetch(`/Extruder/GetContador?numeroEmpleado=${@Model.NumeroEmpleado}`)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById("contador").innerText = data.contador;
+                })
+                .catch(err => console.error("Error actualizando contador:", err));
+        }
 
         // ---------------------------
         // Gráfica de pie eficiencia diaria
@@ -394,9 +402,13 @@
 
         // Ejecutar al cargar
         cargarSpeedLineChart();
+        actualizarContador();
+
 
         // Refrescar cada 10 segundos
         setInterval(cargarSpeedLineChart, 10000);
+        setInterval(actualizarContador, 10000);
+
 
         window.addEventListener('resize', () => {
             speedChart.resize();
