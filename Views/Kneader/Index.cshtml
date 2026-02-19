@@ -1,10 +1,10 @@
 ﻿@model IEnumerable<GraficasMixing.Models.KneaderM>
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+
 <div class="container-fluid mt-3 shadow-sm p-5 mb-5 bg-white rounded-4 border-1 border">
     <h2 class="text-end">Kneader Charts (Mixing Area)</h2>
     <hr class="border border-dark border-0 mb-4 opacity-100">
-
-
     <div style="display:flex; align-items:center; gap:25px; margin-bottom:20px;">
 
     <!-- Dropdown Kneader -->
@@ -34,7 +34,6 @@
             <button id="applyFilter" class="btn btn-primary" style="margin-left:10px;">Apply</button>
             <span id="spinner" class="spinner-border spinner-border-sm me-2" style="display:none;"></span>
         </div>
-
     </div>
 
     <div style="overflow-x:auto; width: 100%;">
@@ -47,9 +46,16 @@
             <div id="rangeSlider" style="width:100%; margin-top:10px;"></div>
         <span id="rangeValues"></span>
     </div>
+</div>
 
-    <h2>Kneader Parameters (Real Time)</h2>
-    <hr class="border border-dark border-3 mb-4 opacity-100">
+<div class="container-fluid mt-3 shadow-sm p-4 mb-5 bg-white rounded-4 border-1 border">
+        <div class="row">
+            <h2 class="text-start">Kneader Parameters (Real Time) <i class="bi bi-clock"></i></h2>
+            <div class="text-end mb-2">
+                <small id="lastUpdate" class="text-muted">Last update: --</small>
+            </div>
+        </div>
+    <hr class="border border-dark border-0 mb-4 opacity-100">
     <div id="latestCards" class="row mt-4">
         <div class="col-md-3">
             <div class="card text-white bg-warning mb-3">
@@ -96,7 +102,6 @@
     <script>
         var ctx = document.getElementById('kneaderChart').getContext('2d');
         var allData = [];
-
         var kneaderChart = new Chart(ctx, {
             type: 'line',
             data: {
@@ -113,12 +118,6 @@
                 scales: {
                     x: {
                         type: 'category',
-                        ticks: {
-                            callback: function(value) {
-                                let label = this.getLabelForValue(value);
-                                return label.split(" ")[1];
-                            }
-                        },
                         title: { display: true, text: 'Hora' }
                     }
                 }
@@ -128,13 +127,20 @@
         // 👉 Función para aplicar rango
         function applyRange(start, end) {
             let sliced = allData.slice(start, end);
-            kneaderChart.data.labels = sliced.map(x => x.date.substring(0,10) + " " + x.time);
+
+            kneaderChart.data.labels = sliced.map(x => {
+                let hora = x.time.substring(0,5);
+                return hora;
+            });
+
             kneaderChart.data.datasets[0].data = sliced.map(x => parseFloat(x.pressure) || 0);
             kneaderChart.data.datasets[1].data = sliced.map(x => parseFloat(x.power) || 0);
             kneaderChart.data.datasets[2].data = sliced.map(x => parseFloat(x.revolution) || 0);
             kneaderChart.data.datasets[3].data = sliced.map(x => parseFloat(x.temperature) || 0);
+
             kneaderChart.update();
         }
+
 
         // 👉 Inicializar slider doble
         var rangeSlider = document.getElementById('rangeSlider');
@@ -185,6 +191,30 @@
                     $("#spinner").hide();
                 });
         }
+
+        function refreshLatestCards(kneaderId) {
+            $.getJSON('/Kneader/GetLatest', { kneader: kneaderId })
+                .done(function (last) {
+                    if (last) {
+                        $("#pressureValue").text(last.pressure + " bar");
+                        $("#powerValue").text(last.power + " kW");
+                        $("#revolutionValue").text(last.revolution + " rpm");
+                        $("#temperatureValue").text(last.temperature + " °C");
+
+                        // 👉 Actualizar indicador de última actualización
+                        let now = new Date();
+                        let hora = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                        $("#lastUpdate").text("Last update: " + hora);
+                    }
+                });
+        }
+
+
+        setInterval(() => {
+            let kneader = document.getElementById("kneaderSelect").value;
+            refreshLatestCards(kneader);
+        }, 10000);
+
 
         // Inicializar con datos de hoy y Kneader1
         var today = new Date().toISOString().substring(0,10);

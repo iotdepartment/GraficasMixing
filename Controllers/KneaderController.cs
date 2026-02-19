@@ -59,4 +59,16 @@ public class KneaderController : Controller
 
         return Json(datos);
     }
+    [HttpGet]
+    public IActionResult GetLatest(string kneader)
+    {
+        var last = _context.KneaderM
+            .Where(x => x.Kneader == kneader)
+            .OrderByDescending(x => x.Date)
+            .ThenByDescending(x => x.Time)
+            .FirstOrDefault();
+
+        return Json(last);
+    }
+
 }

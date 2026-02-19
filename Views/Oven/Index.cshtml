@@ -28,7 +28,6 @@
                 <option value="Turno2">Shift 2 (15:00 - 24:00)</option>
                 <option value="Turno3">Shift 3 (00:00 - 7:00)</option>
                 <option value="All">All shifts</option>
-
             </select>
         </div>
 
@@ -38,6 +37,7 @@
 
             <input type="date" id="startDate" class="form-control">
         </div>
+
         <!-- Submit button-->
         <div class="col-1 me-0 ">
             <div class="d-grid gap-2">
@@ -46,7 +46,6 @@
                 <span id="spinner" class="spinner-border spinner-border-sm" style="display:none;"></span>
                 </button>
             </div>
-
         </div>
 
         <!-- Export button-->
@@ -54,9 +53,7 @@
                    <button id="exportChartBtn" class="btn btn-outline-success">
                 <i class="bi bi-download"></i> Export Chart
             </button>
-
         </div>
-
     </div>
 
     <!-- Grafica -->
@@ -278,7 +275,7 @@ function loadAllShifts(date, oven) {
         return combined;
     });
 }
-                function updateLastUpdateTime() {
+        function updateLastUpdateTime() {
             let now = new Date();
             let timeString = now.toLocaleTimeString();
             $("#lastUpdate").text("Last update: " + timeString);
@@ -321,7 +318,7 @@ function loadAllShifts(date, oven) {
         setInterval(() => {
             loadLatestCards();
             loadLast10();
-                updateLastUpdateTime();
+            updateLastUpdateTime();
 
         }, 10000);
 
