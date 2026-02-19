@@ -567,6 +567,27 @@ namespace GraficasMixing.Controllers
             return View(cardInfo);
         }
 
+        [HttpGet]
+        public IActionResult GetFotoEmpleado(int numeroEmpleado)
+        {
+            // Ruta base donde están las fotos
+            var basePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images", "tm");
+
+            // Nombre del archivo = NumeroEmpleado.png
+            var fileName = $"{numeroEmpleado}.png";
+            var fullPath = Path.Combine(basePath, fileName);
+
+            if (!System.IO.File.Exists(fullPath))
+            {
+                // Si no existe la foto, usar la imagen predeterminada thumbnail.png
+                var defaultPath = Path.Combine(basePath, "thumbnail.png");
+                var defaultImage = System.IO.File.OpenRead(defaultPath);
+                return File(defaultImage, "image/png");
+            }
+
+            var image = System.IO.File.OpenRead(fullPath);
+            return File(image, "image/png");
+        }
 
         [HttpGet]
         public IActionResult GetDailyTotmData()
@@ -655,6 +676,8 @@ namespace GraficasMixing.Controllers
 
             return Json(data);
         }
+
+
         [HttpGet]
         public JsonResult GetExtruder1SpeedHistoryByShift()
         {
@@ -668,44 +691,43 @@ namespace GraficasMixing.Controllers
             var inicio = fechaHoy.AddHours(7);
             var fin = fechaHoy.AddDays(1).AddHours(7);
 
+            // Traer registros del extruder
             var registrosRaw = _context.ScadaExtrudermaster
                 .Where(x => x.Extruder == extruder &&
                             (x.Fecha.Date == fechaHoy || x.Fecha.Date == fechaHoy.AddDays(1)))
                 .OrderBy(x => x.Fecha)
                 .AsEnumerable()
-                .Select(x => new {
+                .Select(x => new
+                {
                     fechaHora = x.Fecha.Date + x.Hora,
                     velocidad = x.Velocidad,
                     familia = x.Familia
                 })
                 .Where(x => x.fechaHora >= inicio && x.fechaHora < fin)
-                .Select(x => new {
-                    hora = x.fechaHora.ToString("HH:mm"),
-                    velocidad = x.velocidad,
-                    turno = x.fechaHora.TimeOfDay >= new TimeSpan(7, 0, 0) && x.fechaHora.TimeOfDay < new TimeSpan(15, 29, 59) ? "Turno 1"
-                           : x.fechaHora.TimeOfDay >= new TimeSpan(15, 30, 0) && x.fechaHora.TimeOfDay < new TimeSpan(23, 29, 59) ? "Turno 2"
-                           : "Turno 3",
-                    familia = x.familia
-                })
                 .ToList();
 
-            // Identificar la familia actual (último registro)
-            var familiaActual = registrosRaw.LastOrDefault()?.familia;
+            // Traer todos los setpoints en memoria
+            var setpoints = _context.SetPointExtruder
+                .Where(sp => sp.extruder == extruder)
+                .ToDictionary(sp => sp.familia, sp => sp.setpoint);
 
-            // Buscar el setpoint en la tabla SetPointExtruder
-            var setPoint = _context.SetPointExtruder
-                .Where(sp => sp.extruder == extruder && sp.familia == familiaActual)
-                .Select(sp => sp.setpoint)
-                .FirstOrDefault();
+            // Proyectar registros con setpoint correspondiente
+            var registros = registrosRaw.Select(x => new
+            {
+                hora = x.fechaHora.ToString("HH:mm"),
+                velocidad = x.velocidad,
+                turno = x.fechaHora.TimeOfDay >= new TimeSpan(7, 0, 0) && x.fechaHora.TimeOfDay < new TimeSpan(15, 29, 59) ? "Turno 1"
+                       : x.fechaHora.TimeOfDay >= new TimeSpan(15, 30, 0) && x.fechaHora.TimeOfDay < new TimeSpan(23, 29, 59) ? "Turno 2"
+                       : "Turno 3",
+                familia = x.familia,
+                setpoint = setpoints.ContainsKey(x.familia) ? setpoints[x.familia] : 0
+            }).ToList();
 
             return Json(new
             {
-                registros = registrosRaw,
-                setpoint = setPoint
+                registros = registros
             });
         }
-
-        
 
     }
 }
