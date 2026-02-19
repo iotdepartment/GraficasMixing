@@ -80,7 +80,7 @@
     <hr class="border border-dark border-0 mb-4 opacity-100">
 
     <div id="latestCards" class="row mt-4">
-        <div class="col-md-3">
+        <div class="col-md-6">
             <div class="card text-white bg-warning mb-3">
                 <div class="card-header">Pressure</div>
                 <div class="card-body">
@@ -89,7 +89,7 @@
             </div>
         </div>
 
-        <div class="col-md-3">
+        <div class="col-md-6">
             <div class="card text-white bg-danger mb-3">
                 <div class="card-header">Temperature</div>
                 <div class="card-body">
@@ -194,7 +194,7 @@
                 request = loadAllShifts(date, oven);
             } else {
                 request = $.getJSON('/Oven/GetData', { fecha: date, oven: oven, turno: turno })
-                           .catch(() => []); // si falla, devuelve array vacío
+                           .catch(() => []);
             }
 
             // Convertimos cualquier cosa en un Promise válido
@@ -257,7 +257,7 @@
 function loadAllShifts(date, oven) {
     const safeGet = turno =>
         $.getJSON('/Oven/GetData', { fecha: date, oven: oven, turno: turno })
-         .catch(() => []); // si falla, devuelve array vacío
+         .catch(() => []);
 
     return Promise.all([
         safeGet("Turno1"),
