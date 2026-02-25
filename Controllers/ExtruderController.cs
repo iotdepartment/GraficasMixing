@@ -537,6 +537,10 @@ namespace GraficasMixing.Controllers
                 .Include(e => e.ExtruderRef)
                 .Include(e => e.EmpleadoRef)
                 .Include(e => e.MandrilRef)
+                .Include(e => e.Tubo1Ref)
+                .Include(e => e.Tubo2Ref)
+                .Include(e => e.CoverRef)
+
                 .FirstOrDefault();
 
             if (estado == null)
@@ -549,9 +553,9 @@ namespace GraficasMixing.Controllers
                     Mandril = "N/A",
                     Familia = "N/A",
                     Contador = 0,
-                    Tubo1 = 0,
-                    Tubo2 = 0,
-                    Cover = 0
+                    Tubo1 = "",
+                    Tubo2 = "",
+                    Cover = ""
                 });
             }
 
@@ -563,9 +567,9 @@ namespace GraficasMixing.Controllers
                 Mandril = estado.MandrilRef?.NombreMandril,
                 Familia = estado.MandrilRef?.Familia,
                 Contador = estado.Contador,
-                Tubo1 = estado.Tubo1,
-                Tubo2 = estado.Tubo2,
-                Cover = estado.Cover
+                Tubo1 = estado.Tubo1Ref?.Batch,
+                Tubo2 = estado.Tubo2Ref?.Batch,
+                Cover = estado.CoverRef?.Batch
             };
 
             return View(cardInfo);

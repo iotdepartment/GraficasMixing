@@ -172,9 +172,6 @@
                 .catch(err => console.error("Error cargando datos:", err));
         }
 
-        cargarOperacionVsDowntimeChart();
-        setInterval(cargarOperacionVsDowntimeChart, 10000);
-
         // ---------------------------
         // Gráfica de barras por turno
         // ---------------------------
@@ -426,12 +423,12 @@
         // Ejecutar al cargar
         cargarSpeedLineChart();
         actualizarContador();
-
+        cargarOperacionVsDowntimeChart();
 
         // Refrescar cada 10 segundos
         setInterval(cargarSpeedLineChart, 10000);
         setInterval(actualizarContador, 10000);
-
+        setInterval(cargarOperacionVsDowntimeChart, 10000);
 
         window.addEventListener('resize', () => {
             speedChart.resize();
