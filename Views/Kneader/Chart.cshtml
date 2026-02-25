@@ -1,0 +1,331 @@
+﻿@model GraficasMixing.Models.KneaderM
+
+@{
+    Layout = "~/Views/Kneader/Partials/_LayoutNoNav.cshtml";
+    ViewData["Title"] = "Kneader";
+}
+
+<!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<div class="container-fluid">
+        <!-- Fila inferior -->
+    <div class="row align-items-end mb-2">
+            <div class="col-10 mb-2">
+                <div class="card shadow-sm border border-1 rounded-4 p-3 position-relative" style="height: 300px;">
+                    <h3 class="card-title">Kneader 1</h3>
+                    <!-- Gráfica -->
+                    <canvas id="KneaderChart1" style="width:100%; height:100%;"></canvas> 
+                </div>
+            </div>
+        <div class="col-2" style="height: 300px">
+            <div class="row">
+                <div class="col-6">
+                    <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                        <div class="fw-bold fs-5">Pressure:</div>
+                        <span id="lastPressure" class="badge bg-warning text-dark rounded-pill fs-4"></span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                        <div class="fw-bold fs-5">Power:</div>
+                        <span id="lastPower" class="badge bg-primary rounded-pill fs-4"></span>
+                    </div>
+                </div>
+
+                <div class="col-6">
+                    <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                        <div class="fw-bold fs-5">Revolution:</div>
+                        <span id="lastRevolution" class="badge bg-dark rounded-pill fs-4"></span>
+                    </div>
+                </div>
+
+                <div class="col-6">
+                    <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                        <div class="fw-bold fs-5">Temp:</div>
+                        <span id="lastTemperature" class="badge bg-danger rounded-pill fs-4"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row align-items-end mb-2">
+        <div class="col-10 mb-2">
+            <div class="card shadow-sm border border-1 rounded-4 p-3 position-relative" style="height: 300px;">
+                <h3 class="card-title">Kneader 2</h3>
+                <!-- Gráfica -->
+                <canvas id="KneaderChart2" style="width:100%; height:100%;"></canvas>
+            </div>
+        </div>
+        <div class="col-2" style="height: 300px">
+            <div class="row">
+                <div class="col-6">
+                    <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                        <div class="fw-bold fs-5">Pressure:</div>
+                        <span id="lastPressure2" class="badge bg-warning text-dark rounded-pill fs-4"></span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                        <div class="fw-bold fs-5">Power:</div>
+                        <span id="lastPower2" class="badge bg-primary rounded-pill fs-4"></span>
+                    </div>
+                </div>
+
+                <div class="col-6">
+                    <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                        <div class="fw-bold fs-5">Revolution:</div>
+                        <span id="lastRevolution2" class="badge bg-dark rounded-pill fs-4"></span>
+                    </div>
+                </div>
+
+                <div class="col-6">
+                    <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                        <div class="fw-bold fs-5">Temp:</div>
+                        <span id="lastTemperature2" class="badge bg-danger rounded-pill fs-4"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row align-items-end mb-2">
+        <div class="col-10 mb-2">
+            <div class="card shadow-sm border border-1 rounded-4 p-3 position-relative" style="height: 300px;">
+                <h3 class="card-title">Kneader 3</h3>
+                <!-- Gráfica -->
+                <canvas id="KneaderChart3" style="width:100%; height:100%;"></canvas>
+            </div>
+        </div>
+        <div class="col-2" style="height: 300px">
+            <div class="row">
+                <div class="col-6">
+                    <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                        <div class="fw-bold fs-5">Pressure:</div>
+                        <span id="lastPressure3" class="badge bg-warning text-dark rounded-pill fs-4"></span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                        <div class="fw-bold fs-5">Power:</div>
+                        <span id="lastPower3" class="badge bg-primary rounded-pill fs-4"></span>
+                    </div>
+                </div>
+
+                <div class="col-6">
+                    <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                        <div class="fw-bold fs-5">Revolution:</div>
+                        <span id="lastRevolution3" class="badge bg-dark rounded-pill fs-4"></span>
+                    </div>
+                </div>
+
+                <div class="col-6">
+                    <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                        <div class="fw-bold fs-5">Temp:</div>
+                        <span id="lastTemperature3" class="badge bg-danger rounded-pill fs-4"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+ @section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+    <script>
+        var ctx = document.getElementById('KneaderChart1').getContext('2d');
+        var kneaderChart1 = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    { label: 'Pressure', data: [], borderColor: 'rgba(248, 195, 40, 1)', fill: false },
+                    { label: 'Power', data: [], borderColor: 'rgba(54, 162, 235, 1)', fill: false },
+                    { label: 'Revolution', data: [], borderColor: 'rgba(0, 0, 0, 1)', fill: false },
+                    { label: 'Temperature', data: [], borderColor: 'rgba(211, 63, 73, 1)', fill: false }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                       plugins: {
+                            legend: {
+                                display: false   
+                            }
+                       },
+                scales: {
+                    x: {
+                        type: 'category',
+                        title: { display: true, text: '' }
+                    }
+                }
+            }
+        });
+
+        var ctx = document.getElementById('KneaderChart2').getContext('2d');
+        var kneaderChart2 = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    { label: 'Pressure', data: [], borderColor: 'rgba(248, 195, 40, 1)', fill: false },
+                    { label: 'Power', data: [], borderColor: 'rgba(54, 162, 235, 1)', fill: false },
+                    { label: 'Revolution', data: [], borderColor: 'rgba(0, 0, 0, 1)', fill: false },
+                    { label: 'Temperature', data: [], borderColor: 'rgba(211, 63, 73, 1)', fill: false }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                       plugins: {
+                            legend: {
+                                display: false
+                            }
+                       },
+                scales: {
+                    x: {
+                        type: 'category',
+                        title: { display: true, text: '' }
+                    }
+                }
+            }
+        });
+
+        var ctx = document.getElementById('KneaderChart3').getContext('2d');
+        var kneaderChart3 = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    { label: 'Pressure', data: [], borderColor: 'rgba(248, 195, 40, 1)', fill: false },
+                    { label: 'Power', data: [], borderColor: 'rgba(54, 162, 235, 1)', fill: false },
+                    { label: 'Revolution', data: [], borderColor: 'rgba(0, 0, 0, 1)', fill: false },
+                    { label: 'Temperature', data: [], borderColor: 'rgba(211, 63, 73, 1)', fill: false }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                       plugins: {
+                            legend: {
+                                display: false
+                            }
+                       },
+                scales: {
+                    x: {
+                        type: 'category',
+                        title: { display: true, text: '' }
+                    }
+                }
+            }
+        });
+
+        function cargarDatosKneader1() {
+            $.ajax({
+                url: '/Kneader/GetKneaderData1',
+                type: 'GET',
+                data: { fecha: new Date().toISOString() },
+                success: function (response) {
+
+                    if (!response.success) return;
+
+                    const registros = response.data;
+
+                    kneaderChart1.data.labels = registros.map(r => r.hora);
+                    kneaderChart1.data.datasets[0].data = registros.map(r => r.pressure);
+                    kneaderChart1.data.datasets[1].data = registros.map(r => r.power);
+                    kneaderChart1.data.datasets[2].data = registros.map(r => r.revolution);
+                    kneaderChart1.data.datasets[3].data = registros.map(r => r.temperature);
+
+                    // Último registro para el badge
+                            if (registros.length > 0) {
+                                const last = registros[registros.length - 1];
+
+                                $("#lastPressure").text(last.pressure + " psi");
+                                $("#lastPower").text(last.power + " Kw");
+                                $("#lastRevolution").text(last.revolution + " rpm");
+                                $("#lastTemperature").text(last.temperature + " °C");
+                            }
+                    kneaderChart1.update();
+                }
+            });
+        }
+
+        function cargarDatosKneader2() {
+            $.ajax({
+                url: '/Kneader/GetKneaderData2',
+                type: 'GET',
+                data: { fecha: new Date().toISOString() },
+                success: function (response) {
+
+                    if (!response.success) return;
+
+                    const registros = response.data;
+
+                    kneaderChart2.data.labels = registros.map(r => r.hora);
+                    kneaderChart2.data.datasets[0].data = registros.map(r => r.pressure);
+                    kneaderChart2.data.datasets[1].data = registros.map(r => r.power);
+                    kneaderChart2.data.datasets[2].data = registros.map(r => r.revolution);
+                    kneaderChart2.data.datasets[3].data = registros.map(r => r.temperature);
+
+                    // Último registro para el badge
+                            if (registros.length > 0) {
+                                const last = registros[registros.length - 1];
+
+                                $("#lastPressure2").text(last.pressure + " psi");
+                                $("#lastPower2").text(last.power + " Kw");
+                                $("#lastRevolution2").text(last.revolution + " rpm");
+                                $("#lastTemperature2").text(last.temperature + " °C");
+                            }
+                    kneaderChart2.update();
+                }
+            });
+        }
+
+        function cargarDatosKneader3() {
+            $.ajax({
+                url: '/Kneader/GetKneaderData3',
+                type: 'GET',
+                data: { fecha: new Date().toISOString() },
+                success: function (response) {
+
+                    if (!response.success) return;
+
+                    const registros = response.data;
+
+                    kneaderChart3.data.labels = registros.map(r => r.hora);
+                    kneaderChart3.data.datasets[0].data = registros.map(r => r.pressure);
+                    kneaderChart3.data.datasets[1].data = registros.map(r => r.power);
+                    kneaderChart3.data.datasets[2].data = registros.map(r => r.revolution);
+                    kneaderChart3.data.datasets[3].data = registros.map(r => r.temperature);
+
+                    // Último registro para el badge
+                            if (registros.length > 0) {
+                                const last = registros[registros.length - 1];
+
+                                $("#lastPressure3").text(last.pressure + " psi");
+                                $("#lastPower3").text(last.power + " Kw");
+                                $("#lastRevolution3").text(last.revolution + " rpm");
+                                $("#lastTemperature3").text(last.temperature + " °C");
+                            }
+                    kneaderChart3.update();
+                }
+            });
+        }
+
+        // Cargar al inicio
+        cargarDatosKneader1();
+        cargarDatosKneader2();
+        cargarDatosKneader3();
+
+        // Actualizar cada 10 segundos
+        setInterval(cargarDatosKneader1, 10000);
+        setInterval(cargarDatosKneader2, 10000);
+        setInterval(cargarDatosKneader3, 10000);
+
+    </script>
+ }

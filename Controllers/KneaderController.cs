@@ -71,4 +71,133 @@ public class KneaderController : Controller
         return Json(last);
     }
 
+    public IActionResult Chart()
+    {
+
+        return View();
+    }
+
+    [HttpGet]
+    public IActionResult GetKneaderData1(DateTime fecha)
+    {
+        var hoy = DateTime.Today;
+        DateTime haceVeinteMin = DateTime.Now.AddMinutes(-5);
+
+        try
+        {
+            var data = _context.KneaderM
+                .Where(x => x.Date.Date == hoy && x.Kneader == "Kneader1")
+                .AsEnumerable()
+                .Select(x => new
+                {
+                    FechaCompleta = x.Date.Add(x.Time),
+
+                    // 🔥 Convertir string → decimal con TryParse
+                    Pressure = decimal.TryParse(x.Pressure, out var p) ? (p < 0 ? 0 : Math.Round(p, 0)) : 0,
+                    Power = decimal.TryParse(x.Power, out var pw) ? (pw < 0 ? 0 : Math.Round(pw, 0)) : 0,
+                    Revolution = decimal.TryParse(x.Revolution, out var r) ? (r < 0 ? 0 : Math.Round(r, 0)) : 0,
+                    Temperature = decimal.TryParse(x.Temperature, out var t) ? (t < 0 ? 0 : Math.Round(t, 0)) : 0
+                })
+                .Where(x => x.FechaCompleta >= haceVeinteMin)
+                .OrderBy(x => x.FechaCompleta)
+                .Select(x => new
+                {
+                    Hora = x.FechaCompleta.ToString("HH:mm:ss"),
+                    x.Pressure,
+                    x.Power,
+                    x.Revolution,
+                    x.Temperature
+                })
+                .ToList();
+
+            return Json(new { success = true, data });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public IActionResult GetKneaderData2(DateTime fecha)
+    {
+        var hoy = DateTime.Today;
+        DateTime haceVeinteMin = DateTime.Now.AddMinutes(-5);
+
+        try
+        {
+            var data = _context.KneaderM
+                .Where(x => x.Date.Date == hoy && x.Kneader == "Kneader2")
+                .AsEnumerable()
+                .Select(x => new
+                {
+                    FechaCompleta = x.Date.Add(x.Time),
+
+                    // 🔥 Convertir string → decimal con TryParse
+                    Pressure = decimal.TryParse(x.Pressure, out var p) ? (p < 0 ? 0 : Math.Round(p, 0)) : 0,
+                    Power = decimal.TryParse(x.Power, out var pw) ? (pw < 0 ? 0 : Math.Round(pw, 0)) : 0,
+                    Revolution = decimal.TryParse(x.Revolution, out var r) ? (r < 0 ? 0 : Math.Round(r, 0)) : 0,
+                    Temperature = decimal.TryParse(x.Temperature, out var t) ? (t < 0 ? 0 : Math.Round(t, 0)) : 0
+                })
+                .Where(x => x.FechaCompleta >= haceVeinteMin)
+                .OrderBy(x => x.FechaCompleta)
+                .Select(x => new
+                {
+                    Hora = x.FechaCompleta.ToString("HH:mm:ss"),
+                    x.Pressure,
+                    x.Power,
+                    x.Revolution,
+                    x.Temperature
+                })
+                .ToList();
+
+            return Json(new { success = true, data });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public IActionResult GetKneaderData3(DateTime fecha)
+    {
+        var hoy = DateTime.Today;
+        DateTime haceVeinteMin = DateTime.Now.AddMinutes(-5);
+
+        try
+        {
+            var data = _context.KneaderM
+                .Where(x => x.Date.Date == hoy && x.Kneader == "Kneader3")
+                .AsEnumerable()
+                .Select(x => new
+                {
+                    FechaCompleta = x.Date.Add(x.Time),
+
+                    // 🔥 Convertir string → decimal con TryParse
+                    Pressure = decimal.TryParse(x.Pressure, out var p) ? (p < 0 ? 0 : Math.Round(p, 0)) : 0,
+                    Power = decimal.TryParse(x.Power, out var pw) ? (pw < 0 ? 0 : Math.Round(pw, 0)) : 0,
+                    Revolution = decimal.TryParse(x.Revolution, out var r) ? (r < 0 ? 0 : Math.Round(r, 0)) : 0,
+                    Temperature = decimal.TryParse(x.Temperature, out var t) ? (t < 0 ? 0 : Math.Round(t, 0)) : 0
+                })
+                .Where(x => x.FechaCompleta >= haceVeinteMin)
+                .OrderBy(x => x.FechaCompleta)
+                .Select(x => new
+                {
+                    Hora = x.FechaCompleta.ToString("HH:mm:ss"),
+                    x.Pressure,
+                    x.Power,
+                    x.Revolution,
+                    x.Temperature
+                })
+                .ToList();
+
+            return Json(new { success = true, data });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
 }

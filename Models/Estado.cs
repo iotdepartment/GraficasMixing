@@ -21,6 +21,16 @@ namespace GraficasMixing.Models
         [Column("Contador")]
         public int Contador { get; set; }
 
+        // 🔹 Nuevos campos en la tabla
+        [Column("Tubo1")]
+        public int Tubo1 { get; set; }
+
+        [Column("Tubo2")]
+        public int Tubo2 { get; set; }
+
+        [Column("Cover")]
+        public int Cover { get; set; }
+
         [ForeignKey("ExtruderId")]
         public Extruder ExtruderRef { get; set; }
 

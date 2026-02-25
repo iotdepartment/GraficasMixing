@@ -541,7 +541,6 @@ namespace GraficasMixing.Controllers
 
             if (estado == null)
             {
-                // Devuelve un modelo vacío para evitar null en la vista
                 return View(new EstadoCardViewModel
                 {
                     Extruder = "N/A",
@@ -549,7 +548,10 @@ namespace GraficasMixing.Controllers
                     NumeroEmpleado = "N/A",
                     Mandril = "N/A",
                     Familia = "N/A",
-                    Contador = 0
+                    Contador = 0,
+                    Tubo1 = 0,
+                    Tubo2 = 0,
+                    Cover = 0
                 });
             }
 
@@ -557,11 +559,13 @@ namespace GraficasMixing.Controllers
             {
                 Extruder = estado.ExtruderRef?.NombreExtruder,
                 Empleado = estado.EmpleadoRef?.Nombre,
-                // Convertimos el int a string para mostrarlo en la vista
                 NumeroEmpleado = estado.EmpleadoRef?.NumeroEmpleado.ToString(),
                 Mandril = estado.MandrilRef?.NombreMandril,
                 Familia = estado.MandrilRef?.Familia,
-                Contador = estado.Contador
+                Contador = estado.Contador,
+                Tubo1 = estado.Tubo1,
+                Tubo2 = estado.Tubo2,
+                Cover = estado.Cover
             };
 
             return View(cardInfo);

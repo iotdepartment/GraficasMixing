@@ -8,5 +8,9 @@
         public string Mandril { get; set; }
         public string Familia { get; set; }
         public int Contador { get; set; }
+        public int Tubo1 { get; set; }
+        public int Tubo2 { get; set; }
+        public int Cover { get; set; }
+
     }
 }
