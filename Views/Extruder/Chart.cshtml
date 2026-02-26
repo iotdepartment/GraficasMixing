@@ -116,9 +116,9 @@
                 .catch(err => console.error("Error actualizando contador:", err));
         }
 
-        // ---------------------------
+     
         // Gráfica de pie eficiencia diaria
-        // ---------------------------
+
         let totmChart;
 
         function cargarOperacionVsDowntimeChart() {
@@ -172,9 +172,9 @@
                 .catch(err => console.error("Error cargando datos:", err));
         }
 
-        // ---------------------------
+        
         // Gráfica de barras por turno
-        // ---------------------------
+        
         let productionChart = echarts.init(document.getElementById('productionDowntimeChart'));
 
         function cargarProductionVsDowntimeChart() {
@@ -263,7 +263,7 @@
         setInterval(cargarProductionVsDowntimeChart, 10000);
 
 
-              let speedChart = echarts.init(document.getElementById('SpeedLineChart'), null, {
+        let speedChart = echarts.init(document.getElementById('SpeedLineChart'), null, {
             devicePixelRatio: window.devicePixelRatio
         });
 

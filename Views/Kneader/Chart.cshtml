@@ -288,7 +288,7 @@
 
         function cargarDatosKneader3() {
             $.ajax({
-                url: '/Kneader/GetKneaderData3',
+                url: '~/Kneader/GetKneaderData3',
                 type: 'GET',
                 data: { fecha: new Date().toISOString() },
                 success: function (response) {
