@@ -226,7 +226,7 @@
 
         function cargarDatosKneader1() {
             $.ajax({
-                url: '/Kneader/GetKneaderData1',
+                url: '@Url.Action("GetKneaderData1", "Kneader")',
                 type: 'GET',
                 data: { fecha: new Date().toISOString() },
                 success: function (response) {
@@ -288,7 +288,7 @@
 
         function cargarDatosKneader3() {
             $.ajax({
-                url: '~/Kneader/GetKneaderData3',
+                url: '/Kneader/GetKneaderData3',
                 type: 'GET',
                 data: { fecha: new Date().toISOString() },
                 success: function (response) {
