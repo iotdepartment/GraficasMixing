@@ -78,39 +78,45 @@ public class KneaderController : Controller
     }
 
     [HttpGet]
-    public IActionResult GetKneaderData1(DateTime fecha)
+    public JsonResult GetKneaderData1()
     {
-        var hoy = DateTime.Today;
-        DateTime haceVeinteMin = DateTime.Now.AddMinutes(-500);
-
         try
         {
-            var data = _context.KneaderM
-                .Where(x => x.Date.Date == hoy && x.Kneader == "Kneader1")
-                .AsEnumerable()
-                .Select(x => new
-                {
-                    FechaCompleta = x.Date.Add(x.Time),
+            // Ajustar a zona horaria de México
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time (Mexico)");
+            var nowLocal = TimeZoneInfo.ConvertTime(DateTime.UtcNow, tz);
 
-                    // 🔥 Convertir string → decimal con TryParse
-                    Pressure = decimal.TryParse(x.Pressure, out var p) ? (p < 0 ? 0 : Math.Round(p, 0)) : 0,
-                    Power = decimal.TryParse(x.Power, out var pw) ? (pw < 0 ? 0 : Math.Round(pw, 0)) : 0,
-                    Revolution = decimal.TryParse(x.Revolution, out var r) ? (r < 0 ? 0 : Math.Round(r, 0)) : 0,
-                    Temperature = decimal.TryParse(x.Temperature, out var t) ? (t < 0 ? 0 : Math.Round(t, 0)) : 0
-                })
-                .Where(x => x.FechaCompleta >= haceVeinteMin)
-                .OrderBy(x => x.FechaCompleta)
-                .Select(x => new
+            // Últimos 5 minutos desde la hora local
+            var haceCincoMin = nowLocal.AddMinutes(-5);
+            var kneader = "Kneader1";
+
+            var registrosRaw = _context.KneaderM
+                .Where(x => x.Kneader == kneader)
+                .AsEnumerable()
+                .Select(x =>
                 {
-                    Hora = x.FechaCompleta.ToString("HH:mm:ss"),
-                    x.Pressure,
-                    x.Power,
-                    x.Revolution,
-                    x.Temperature
+                    var fechaCompleta = x.Date.Add(x.Time);
+
+                    decimal.TryParse(x.Pressure, out var p);
+                    decimal.TryParse(x.Power, out var pw);
+                    decimal.TryParse(x.Revolution, out var r);
+                    decimal.TryParse(x.Temperature, out var t);
+
+                    return new
+                    {
+                        FechaCompleta = fechaCompleta,
+                        Hora = fechaCompleta.ToString("HH:mm:ss"),
+                        Pressure = p < 0 ? 0 : Math.Round(p, 0),
+                        Power = pw < 0 ? 0 : Math.Round(pw, 0),
+                        Revolution = r < 0 ? 0 : Math.Round(r, 0),
+                        Temperature = t < 0 ? 0 : Math.Round(t, 0)
+                    };
                 })
+                .Where(x => x.FechaCompleta >= haceCincoMin && x.FechaCompleta <= nowLocal)
+                .OrderBy(x => x.FechaCompleta) // cronológico para la gráfica
                 .ToList();
 
-            return Json(new { success = true, data });
+            return Json(new { success = true, data = registrosRaw });
         }
         catch (Exception ex)
         {
@@ -122,7 +128,7 @@ public class KneaderController : Controller
     public IActionResult GetKneaderData2(DateTime fecha)
     {
         var hoy = DateTime.Today;
-        DateTime haceVeinteMin = DateTime.Now.AddMinutes(-500);
+        DateTime haceVeinteMin = DateTime.Now.AddMinutes(-5);
 
         try
         {
@@ -163,7 +169,7 @@ public class KneaderController : Controller
     public IActionResult GetKneaderData3(DateTime fecha)
     {
         var hoy = DateTime.Today;
-        DateTime haceVeinteMin = DateTime.Now.AddMinutes(-500);
+        DateTime haceVeinteMin = DateTime.Now.AddMinutes(-5);
 
         try
         {
