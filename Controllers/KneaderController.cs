@@ -81,7 +81,7 @@ public class KneaderController : Controller
     public IActionResult GetKneaderData1(DateTime fecha)
     {
         var hoy = DateTime.Today;
-        DateTime haceVeinteMin = DateTime.Now.AddMinutes(-300);
+        DateTime haceVeinteMin = DateTime.Now.AddMinutes(-500);
 
         try
         {
@@ -122,7 +122,7 @@ public class KneaderController : Controller
     public IActionResult GetKneaderData2(DateTime fecha)
     {
         var hoy = DateTime.Today;
-        DateTime haceVeinteMin = DateTime.Now.AddMinutes(-300);
+        DateTime haceVeinteMin = DateTime.Now.AddMinutes(-500);
 
         try
         {
@@ -163,7 +163,7 @@ public class KneaderController : Controller
     public IActionResult GetKneaderData3(DateTime fecha)
     {
         var hoy = DateTime.Today;
-        DateTime haceVeinteMin = DateTime.Now.AddMinutes(-300);
+        DateTime haceVeinteMin = DateTime.Now.AddMinutes(-500);
 
         try
         {
