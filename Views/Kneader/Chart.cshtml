@@ -226,31 +226,30 @@
 
         function cargarDatosKneader1() {
             $.ajax({
-                url: '@Url.Action("GetKneaderData1", "Kneader")',
+                url: '@Url.Content("~/Kneader/GetKneaderData1")',
                 type: 'GET',
                 data: { fecha: new Date().toISOString() },
                 success: function (response) {
-
                     if (!response.success) return;
 
                     const registros = response.data;
-
                     kneaderChart1.data.labels = registros.map(r => r.hora);
                     kneaderChart1.data.datasets[0].data = registros.map(r => r.pressure);
                     kneaderChart1.data.datasets[1].data = registros.map(r => r.power);
                     kneaderChart1.data.datasets[2].data = registros.map(r => r.revolution);
                     kneaderChart1.data.datasets[3].data = registros.map(r => r.temperature);
 
-                    // Último registro para el badge
-                            if (registros.length > 0) {
-                                const last = registros[registros.length - 1];
-
-                                $("#lastPressure").text(last.pressure + " psi");
-                                $("#lastPower").text(last.power + " Kw");
-                                $("#lastRevolution").text(last.revolution + " rpm");
-                                $("#lastTemperature").text(last.temperature + " °C");
-                            }
+                    if (registros.length > 0) {
+                        const last = registros[registros.length - 1];
+                        $("#lastPressure").text(last.pressure + " psi");
+                        $("#lastPower").text(last.power + " Kw");
+                        $("#lastRevolution").text(last.revolution + " rpm");
+                        $("#lastTemperature").text(last.temperature + " °C");
+                    }
                     kneaderChart1.update();
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error en AJAX:", status, error, xhr.responseText);
                 }
             });
         }
