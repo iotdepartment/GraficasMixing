@@ -225,12 +225,14 @@
         });
 
         function cargarDatosKneader1() {
-            fetch('@Url.Content("~/Kneader/GetKneaderData1")?fecha=' + new Date().toISOString())
-                .then(response => response.json())
-                .then(data => {
-                    if (!data.success) return;
+            $.ajax({
+                url: '@Url.Content("~/Kneader/GetKneaderData1")',
+                type: 'GET',
+                data: { fecha: new Date().toISOString() },
+                success: function (response) {
+                    if (!response.success) return;
 
-                    const registros = data.data;
+                    const registros = response.data;
                     kneaderChart1.data.labels = registros.map(r => r.hora);
                     kneaderChart1.data.datasets[0].data = registros.map(r => r.pressure);
                     kneaderChart1.data.datasets[1].data = registros.map(r => r.power);
@@ -239,77 +241,80 @@
 
                     if (registros.length > 0) {
                         const last = registros[registros.length - 1];
-                        document.querySelector("#lastPressure").textContent = last.pressure + " psi";
-                        document.querySelector("#lastPower").textContent = last.power + " Kw";
-                        document.querySelector("#lastRevolution").textContent = last.revolution + " rpm";
-                        document.querySelector("#lastTemperature").textContent = last.temperature + " °C";
+                        $("#lastPressure").text(last.pressure + " psi");
+                        $("#lastPower").text(last.power + " Kw");
+                        $("#lastRevolution").text(last.revolution + " rpm");
+                        $("#lastTemperature").text(last.temperature + " °C");
                     }
                     kneaderChart1.update();
-                })
-                .catch(error => console.error("Error en fetch:", error));
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error en AJAX:", status, error, xhr.responseText);
+                }
+            });
         }
 
-        // function cargarDatosKneader2() {
-        //     $.ajax({
-        //         url: '@Url.Action("GetKneaderData2", "Kneader")',
-        //         type: 'GET',
-        //         data: { fecha: new Date().toISOString() },
-        //         success: function (response) {
+        function cargarDatosKneader2() {
+            $.ajax({
+                url: '@Url.Action("GetKneaderData2", "Kneader")',
+                type: 'GET',
+                data: { fecha: new Date().toISOString() },
+                success: function (response) {
 
-        //             if (!response.success) return;
+                    if (!response.success) return;
 
-        //             const registros = response.data;
+                    const registros = response.data;
 
-        //             kneaderChart2.data.labels = registros.map(r => r.hora);
-        //             kneaderChart2.data.datasets[0].data = registros.map(r => r.pressure);
-        //             kneaderChart2.data.datasets[1].data = registros.map(r => r.power);
-        //             kneaderChart2.data.datasets[2].data = registros.map(r => r.revolution);
-        //             kneaderChart2.data.datasets[3].data = registros.map(r => r.temperature);
+                    kneaderChart2.data.labels = registros.map(r => r.hora);
+                    kneaderChart2.data.datasets[0].data = registros.map(r => r.pressure);
+                    kneaderChart2.data.datasets[1].data = registros.map(r => r.power);
+                    kneaderChart2.data.datasets[2].data = registros.map(r => r.revolution);
+                    kneaderChart2.data.datasets[3].data = registros.map(r => r.temperature);
 
-        //             // Último registro para el badge
-        //                     if (registros.length > 0) {
-        //                         const last = registros[registros.length - 1];
+                    // Último registro para el badge
+                            if (registros.length > 0) {
+                                const last = registros[registros.length - 1];
 
-        //                         $("#lastPressure2").text(last.pressure + " psi");
-        //                         $("#lastPower2").text(last.power + " Kw");
-        //                         $("#lastRevolution2").text(last.revolution + " rpm");
-        //                         $("#lastTemperature2").text(last.temperature + " °C");
-        //                     }
-        //             kneaderChart2.update();
-        //         }
-        //     });
-        // }
+                                $("#lastPressure2").text(last.pressure + " psi");
+                                $("#lastPower2").text(last.power + " Kw");
+                                $("#lastRevolution2").text(last.revolution + " rpm");
+                                $("#lastTemperature2").text(last.temperature + " °C");
+                            }
+                    kneaderChart2.update();
+                }
+            });
+        }
 
-        // function cargarDatosKneader3() {
-        //     $.ajax({
-        //         url: '@Url.Action("GetKneaderData3", "Kneader")',
-        //         type: 'GET',
-        //         data: { fecha: new Date().toISOString() },
-        //         success: function (response) {
+        function cargarDatosKneader3() {
+            $.ajax({
+                url: '@Url.Action("GetKneaderData3", "Kneader")',
+                type: 'GET',
+                data: { fecha: new Date().toISOString() },
+                success: function (response) {
 
-        //             if (!response.success) return;
+                    if (!response.success) return;
 
-        //             const registros = response.data;
+                    const registros = response.data;
 
-        //             kneaderChart3.data.labels = registros.map(r => r.hora);
-        //             kneaderChart3.data.datasets[0].data = registros.map(r => r.pressure);
-        //             kneaderChart3.data.datasets[1].data = registros.map(r => r.power);
-        //             kneaderChart3.data.datasets[2].data = registros.map(r => r.revolution);
-        //             kneaderChart3.data.datasets[3].data = registros.map(r => r.temperature);
+                    kneaderChart3.data.labels = registros.map(r => r.hora);
+                    kneaderChart3.data.datasets[0].data = registros.map(r => r.pressure);
+                    kneaderChart3.data.datasets[1].data = registros.map(r => r.power);
+                    kneaderChart3.data.datasets[2].data = registros.map(r => r.revolution);
+                    kneaderChart3.data.datasets[3].data = registros.map(r => r.temperature);
 
-        //             // Último registro para el badge
-        //                     if (registros.length > 0) {
-        //                         const last = registros[registros.length - 1];
+                    // Último registro para el badge
+                            if (registros.length > 0) {
+                                const last = registros[registros.length - 1];
 
-        //                         $("#lastPressure3").text(last.pressure + " psi");
-        //                         $("#lastPower3").text(last.power + " Kw");
-        //                         $("#lastRevolution3").text(last.revolution + " rpm");
-        //                         $("#lastTemperature3").text(last.temperature + " °C");
-        //                     }
-        //             kneaderChart3.update();
-        //         }
-        //     });
-        // }
+                                $("#lastPressure3").text(last.pressure + " psi");
+                                $("#lastPower3").text(last.power + " Kw");
+                                $("#lastRevolution3").text(last.revolution + " rpm");
+                                $("#lastTemperature3").text(last.temperature + " °C");
+                            }
+                    kneaderChart3.update();
+                }
+            });
+        }
 
         // Cargar al inicio
         cargarDatosKneader1();
@@ -317,7 +322,7 @@
         // cargarDatosKneader3();
 
         // // Actualizar cada 10 segundos
-        setInterval(cargarDatosKneader1, 10000);
+        // setInterval(cargarDatosKneader1, 10000);
         // setInterval(cargarDatosKneader2, 10000);
         // setInterval(cargarDatosKneader3, 10000);
 
