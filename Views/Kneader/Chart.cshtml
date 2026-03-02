@@ -10,125 +10,135 @@
 
 <div class="container-fluid">
         <!-- Fila inferior -->
-    <div class="row align-items-end mb-2">
-            <div class="col-10 mb-2">
-                <div class="card shadow-sm border border-1 rounded-4 p-3 position-relative" style="height: 300px;">
-                    <h3 class="card-title">Kneader 1</h3>
-                    <!-- Gráfica -->
-                    <canvas id="KneaderChart1" style="width:100%; height:100%;"></canvas> 
-                </div>
-            </div>
-        <div class="col-2" style="height: 300px">
+    <div class="row align-items-end mb-0">
             <div class="row">
-                <div class="col-6">
+                <div class="col-4">
+                    <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                        <div class="fw-bold fs-1">Kneader 1</div>
+                    </div>
+                </div>
+
+                <div class="col-2">
                     <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
                         <div class="fw-bold fs-5">Pressure:</div>
-                        <span id="lastPressure" class="badge bg-warning text-dark rounded-pill fs-4"></span>
+                        <span id="lastPressure" class="badge bg-warning text-dark rounded-pill fs-5"></span>
                     </div>
                 </div>
-                <div class="col-6">
+                <div class="col-2">
                     <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
                         <div class="fw-bold fs-5">Power:</div>
-                        <span id="lastPower" class="badge bg-primary rounded-pill fs-4"></span>
+                        <span id="lastPower" class="badge bg-primary rounded-pill fs-5"></span>
                     </div>
                 </div>
 
-                <div class="col-6">
+                <div class="col-2">
                     <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
                         <div class="fw-bold fs-5">Revolution:</div>
-                        <span id="lastRevolution" class="badge bg-dark rounded-pill fs-4"></span>
+                        <span id="lastRevolution" class="badge bg-dark rounded-pill fs-5"></span>
                     </div>
                 </div>
 
-                <div class="col-6">
+                <div class="col-2">
                     <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
                         <div class="fw-bold fs-5">Temp:</div>
-                        <span id="lastTemperature" class="badge bg-danger rounded-pill fs-4"></span>
+                        <span id="lastTemperature" class="badge bg-danger rounded-pill fs-5"></span>
                     </div>
+                </div>
+            </div>
+    </div>
+    <div class="row align-items-end mb-4">
+          <div class="card shadow-sm border border-1 rounded-4 p-3 position-relative" style="height: 200px;">
+              <canvas id="KneaderChart1" style="width:100%; height:100%;"></canvas> 
+          </div>
+    </div>
+
+
+
+    <div class="row align-items-end mb-0">
+        <div class="row">
+            <div class="col-4">
+                <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                    <div class="fw-bold fs-1">Kneader 2</div>
+                </div>
+            </div>
+
+            <div class="col-2">
+                <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                    <div class="fw-bold fs-5">Pressure:</div>
+                    <span id="lastPressure2" class="badge bg-warning text-dark rounded-pill fs-5"></span>
+                </div>
+            </div>
+            <div class="col-2">
+                <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                    <div class="fw-bold fs-5">Power:</div>
+                    <span id="lastPower2" class="badge bg-primary rounded-pill fs-5"></span>
+                </div>
+            </div>
+
+            <div class="col-2">
+                <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                    <div class="fw-bold fs-5">Revolution:</div>
+                    <span id="lastRevolution2" class="badge bg-dark rounded-pill fs-5"></span>
+                </div>
+            </div>
+
+            <div class="col-2">
+                <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                    <div class="fw-bold fs-5">Temp:</div>
+                    <span id="lastTemperature2" class="badge bg-danger rounded-pill fs-5"></span>
                 </div>
             </div>
         </div>
     </div>
-
-    <div class="row align-items-end mb-2">
-        <div class="col-10 mb-2">
-            <div class="card shadow-sm border border-1 rounded-4 p-3 position-relative" style="height: 300px;">
-                <h3 class="card-title">Kneader 2</h3>
-                <!-- Gráfica -->
-                <canvas id="KneaderChart2" style="width:100%; height:100%;"></canvas>
-            </div>
+    <div class="row align-items-end mb-4">
+        <div class="card shadow-sm border border-1 rounded-4 p-3 position-relative" style="height: 200px;">
+            <canvas id="KneaderChart2" style="width:100%; height:100%;"></canvas>
         </div>
-        <div class="col-2" style="height: 300px">
-            <div class="row">
-                <div class="col-6">
-                    <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
-                        <div class="fw-bold fs-5">Pressure:</div>
-                        <span id="lastPressure2" class="badge bg-warning text-dark rounded-pill fs-4"></span>
-                    </div>
-                </div>
-                <div class="col-6">
-                    <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
-                        <div class="fw-bold fs-5">Power:</div>
-                        <span id="lastPower2" class="badge bg-primary rounded-pill fs-4"></span>
-                    </div>
-                </div>
+    </div>
 
-                <div class="col-6">
-                    <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
-                        <div class="fw-bold fs-5">Revolution:</div>
-                        <span id="lastRevolution2" class="badge bg-dark rounded-pill fs-4"></span>
-                    </div>
-                </div>
 
-                <div class="col-6">
-                    <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
-                        <div class="fw-bold fs-5">Temp:</div>
-                        <span id="lastTemperature2" class="badge bg-danger rounded-pill fs-4"></span>
-                    </div>
+    <div class="row align-items-end mb-0">
+        <div class="row">
+            <div class="col-4">
+                <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                    <div class="fw-bold fs-1">Kneader 3</div>
+                </div>
+            </div>
+
+            <div class="col-2">
+                <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                    <div class="fw-bold fs-5">Pressure:</div>
+                    <span id="lastPressure3" class="badge bg-warning text-dark rounded-pill fs-5"></span>
+                </div>
+            </div>
+            <div class="col-2">
+                <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                    <div class="fw-bold fs-5">Power:</div>
+                    <span id="lastPower3" class="badge bg-primary rounded-pill fs-5"></span>
+                </div>
+            </div>
+
+            <div class="col-2">
+                <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                    <div class="fw-bold fs-5">Revolution:</div>
+                    <span id="lastRevolution3" class="badge bg-dark rounded-pill fs-5"></span>
+                </div>
+            </div>
+
+            <div class="col-2">
+                <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                    <div class="fw-bold fs-5">Temp:</div>
+                    <span id="lastTemperature3" class="badge bg-danger rounded-pill fs-5"></span>
                 </div>
             </div>
         </div>
     </div>
-
     <div class="row align-items-end mb-2">
-        <div class="col-10 mb-2">
-            <div class="card shadow-sm border border-1 rounded-4 p-3 position-relative" style="height: 300px;">
-                <h3 class="card-title">Kneader 3</h3>
-                <!-- Gráfica -->
-                <canvas id="KneaderChart3" style="width:100%; height:100%;"></canvas>
-            </div>
-        </div>
-        <div class="col-2" style="height: 300px">
-            <div class="row">
-                <div class="col-6">
-                    <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
-                        <div class="fw-bold fs-5">Pressure:</div>
-                        <span id="lastPressure3" class="badge bg-warning text-dark rounded-pill fs-4"></span>
-                    </div>
-                </div>
-                <div class="col-6">
-                    <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
-                        <div class="fw-bold fs-5">Power:</div>
-                        <span id="lastPower3" class="badge bg-primary rounded-pill fs-4"></span>
-                    </div>
-                </div>
-
-                <div class="col-6">
-                    <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
-                        <div class="fw-bold fs-5">Revolution:</div>
-                        <span id="lastRevolution3" class="badge bg-dark rounded-pill fs-4"></span>
-                    </div>
-                </div>
-
-                <div class="col-6">
-                    <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
-                        <div class="fw-bold fs-5">Temp:</div>
-                        <span id="lastTemperature3" class="badge bg-danger rounded-pill fs-4"></span>
-                    </div>
-                </div>
-            </div>
+        <div class="card shadow-sm border border-1 rounded-4 p-3 position-relative" style="height: 200px;">
+            <canvas id="KneaderChart3" style="width:100%; height:100%;"></canvas>
         </div>
     </div>
+
 </div>
 
  @section scripts {
