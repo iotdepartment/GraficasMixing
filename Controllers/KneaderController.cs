@@ -80,39 +80,37 @@ public class KneaderController : Controller
     [HttpGet]
     public IActionResult GetKneaderData1(DateTime fecha)
     {
+        var hoy = DateTime.Today;
+        DateTime haceVeinteMin = DateTime.Now.AddMinutes(-500);
+
         try
         {
-            // Traemos los registros de DB y pasamos a memoria
-            var registros = _context.KneaderM
-                .Where(x => x.Kneader == "Kneader1")
-                .OrderByDescending(x => x.Date) // EF sí entiende esto
-                .Take(100) // traemos un poco más para luego filtrar en memoria
-                .AsEnumerable() // 👈 pasamos a LINQ to Objects
-                .Select(x =>
+            var data = _context.KneaderM
+                .Where(x => x.Date.Date == hoy && x.Kneader == "Kneader1")
+                .AsEnumerable()
+                .Select(x => new
                 {
-                    var fechaCompleta = x.Date.Add(x.Time);
+                    FechaCompleta = x.Date.Add(x.Time),
 
-                    decimal.TryParse(x.Pressure, out var p);
-                    decimal.TryParse(x.Power, out var pw);
-                    decimal.TryParse(x.Revolution, out var r);
-                    decimal.TryParse(x.Temperature, out var t);
-
-                    return new
-                    {
-                        FechaCompleta = fechaCompleta,
-                        Hora = fechaCompleta.ToString("HH:mm:ss"),
-                        Pressure = p < 0 ? 0 : Math.Round(p, 0),
-                        Power = pw < 0 ? 0 : Math.Round(pw, 0),
-                        Revolution = r < 0 ? 0 : Math.Round(r, 0),
-                        Temperature = t < 0 ? 0 : Math.Round(t, 0)
-                    };
+                    // 🔥 Convertir string → decimal con TryParse
+                    Pressure = decimal.TryParse(x.Pressure, out var p) ? (p < 0 ? 0 : Math.Round(p, 0)) : 0,
+                    Power = decimal.TryParse(x.Power, out var pw) ? (pw < 0 ? 0 : Math.Round(pw, 0)) : 0,
+                    Revolution = decimal.TryParse(x.Revolution, out var r) ? (r < 0 ? 0 : Math.Round(r, 0)) : 0,
+                    Temperature = decimal.TryParse(x.Temperature, out var t) ? (t < 0 ? 0 : Math.Round(t, 0)) : 0
                 })
-                .OrderByDescending(x => x.FechaCompleta)
-                .Take(30) // 👈 ahora sí, últimos 30 registros
-                .OrderBy(x => x.FechaCompleta) // para graficar en orden cronológico
+                .Where(x => x.FechaCompleta >= haceVeinteMin)
+                .OrderBy(x => x.FechaCompleta)
+                .Select(x => new
+                {
+                    Hora = x.FechaCompleta.ToString("HH:mm:ss"),
+                    x.Pressure,
+                    x.Power,
+                    x.Revolution,
+                    x.Temperature
+                })
                 .ToList();
 
-            return Json(new { success = true, data = registros });
+            return Json(new { success = true, data });
         }
         catch (Exception ex)
         {
