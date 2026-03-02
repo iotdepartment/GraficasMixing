@@ -90,9 +90,15 @@ public class KneaderController : Controller
             var haceCincoMin = nowLocal.AddMinutes(-5);
             var kneader = "Kneader1";
 
+            // Filtrar directamente en SQL por rango de fecha
             var registrosRaw = _context.KneaderM
-                .Where(x => x.Kneader == kneader)
-                .AsEnumerable()
+                .Where(x => x.Kneader == kneader &&
+                            x.Date >= haceCincoMin.Date && x.Date <= nowLocal.Date)
+                .OrderByDescending(x => x.Date)
+                .ToList(); // 👈 EF ejecuta el filtro en SQL
+
+            // Ahora procesamos en memoria los campos que requieren lógica adicional
+            var registros = registrosRaw
                 .Select(x =>
                 {
                     var fechaCompleta = x.Date.Add(x.Time);
@@ -113,10 +119,10 @@ public class KneaderController : Controller
                     };
                 })
                 .Where(x => x.FechaCompleta >= haceCincoMin && x.FechaCompleta <= nowLocal)
-                .OrderBy(x => x.FechaCompleta) // cronológico para la gráfica
+                .OrderBy(x => x.FechaCompleta)
                 .ToList();
 
-            return Json(new { success = true, data = registrosRaw });
+            return Json(new { success = true, data = registros });
         }
         catch (Exception ex)
         {
@@ -129,21 +135,21 @@ public class KneaderController : Controller
     {
         try
         {
-            // Ajustar a zona horaria de México
             var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time (Mexico)");
             var nowLocal = TimeZoneInfo.ConvertTime(DateTime.UtcNow, tz);
-
-            // Últimos 5 minutos desde la hora local
             var haceCincoMin = nowLocal.AddMinutes(-5);
             var kneader = "Kneader2";
 
             var registrosRaw = _context.KneaderM
-                .Where(x => x.Kneader == kneader)
-                .AsEnumerable()
+                .Where(x => x.Kneader == kneader &&
+                            x.Date >= haceCincoMin.Date && x.Date <= nowLocal.Date)
+                .OrderByDescending(x => x.Date)
+                .ToList();
+
+            var registros = registrosRaw
                 .Select(x =>
                 {
                     var fechaCompleta = x.Date.Add(x.Time);
-
                     decimal.TryParse(x.Pressure, out var p);
                     decimal.TryParse(x.Power, out var pw);
                     decimal.TryParse(x.Revolution, out var r);
@@ -160,10 +166,10 @@ public class KneaderController : Controller
                     };
                 })
                 .Where(x => x.FechaCompleta >= haceCincoMin && x.FechaCompleta <= nowLocal)
-                .OrderBy(x => x.FechaCompleta) // cronológico para la gráfica
+                .OrderBy(x => x.FechaCompleta)
                 .ToList();
 
-            return Json(new { success = true, data = registrosRaw });
+            return Json(new { success = true, data = registros });
         }
         catch (Exception ex)
         {
@@ -176,21 +182,21 @@ public class KneaderController : Controller
     {
         try
         {
-            // Ajustar a zona horaria de México
             var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time (Mexico)");
             var nowLocal = TimeZoneInfo.ConvertTime(DateTime.UtcNow, tz);
-
-            // Últimos 5 minutos desde la hora local
             var haceCincoMin = nowLocal.AddMinutes(-5);
             var kneader = "Kneader3";
 
             var registrosRaw = _context.KneaderM
-                .Where(x => x.Kneader == kneader)
-                .AsEnumerable()
+                .Where(x => x.Kneader == kneader &&
+                            x.Date >= haceCincoMin.Date && x.Date <= nowLocal.Date)
+                .OrderByDescending(x => x.Date)
+                .ToList();
+
+            var registros = registrosRaw
                 .Select(x =>
                 {
                     var fechaCompleta = x.Date.Add(x.Time);
-
                     decimal.TryParse(x.Pressure, out var p);
                     decimal.TryParse(x.Power, out var pw);
                     decimal.TryParse(x.Revolution, out var r);
@@ -207,10 +213,10 @@ public class KneaderController : Controller
                     };
                 })
                 .Where(x => x.FechaCompleta >= haceCincoMin && x.FechaCompleta <= nowLocal)
-                .OrderBy(x => x.FechaCompleta) // cronológico para la gráfica
+                .OrderBy(x => x.FechaCompleta)
                 .ToList();
 
-            return Json(new { success = true, data = registrosRaw });
+            return Json(new { success = true, data = registros });
         }
         catch (Exception ex)
         {
