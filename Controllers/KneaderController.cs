@@ -86,18 +86,23 @@ public class KneaderController : Controller
             var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time (Mexico)");
             var nowLocal = TimeZoneInfo.ConvertTime(DateTime.UtcNow, tz);
 
-            // Últimos 5 minutos desde la hora local
-            var haceCincoMin = nowLocal.AddMinutes(-5);
+            // Día laboral: si estamos antes de las 7:00 am, retrocedemos un día
+            var fechaHoy = nowLocal.Hour < 7 ? nowLocal.Date.AddDays(-1) : nowLocal.Date;
+
+            // Rango de tiempo: de hoy 7:00 am a mañana 7:00 am
+            var inicio = fechaHoy.AddHours(7);
+            var fin = fechaHoy.AddDays(1).AddHours(7);
+
             var kneader = "Kneader1";
 
-            // Filtrar directamente en SQL por rango de fecha
+            // Filtrar registros en SQL por fecha aproximada
             var registrosRaw = _context.KneaderM
                 .Where(x => x.Kneader == kneader &&
-                            x.Date >= haceCincoMin.Date && x.Date <= nowLocal.Date)
-                .OrderByDescending(x => x.Date)
-                .ToList(); // 👈 EF ejecuta el filtro en SQL
+                            (x.Date.Date == fechaHoy || x.Date.Date == fechaHoy.AddDays(1)))
+                .OrderBy(x => x.Date)
+                .ToList();
 
-            // Ahora procesamos en memoria los campos que requieren lógica adicional
+            // Procesar en memoria
             var registros = registrosRaw
                 .Select(x =>
                 {
@@ -118,7 +123,7 @@ public class KneaderController : Controller
                         Temperature = t < 0 ? 0 : Math.Round(t, 0)
                     };
                 })
-                .Where(x => x.FechaCompleta >= haceCincoMin && x.FechaCompleta <= nowLocal)
+                .Where(x => x.FechaCompleta >= inicio && x.FechaCompleta < fin)
                 .OrderBy(x => x.FechaCompleta)
                 .ToList();
 
@@ -137,13 +142,20 @@ public class KneaderController : Controller
         {
             var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time (Mexico)");
             var nowLocal = TimeZoneInfo.ConvertTime(DateTime.UtcNow, tz);
-            var haceCincoMin = nowLocal.AddMinutes(-5);
+
+            // Día laboral: si estamos antes de las 7:00 am, retrocedemos un día
+            var fechaHoy = nowLocal.Hour < 7 ? nowLocal.Date.AddDays(-1) : nowLocal.Date;
+
+            // Rango de tiempo: de hoy 7:00 am a mañana 7:00 am
+            var inicio = fechaHoy.AddHours(7);
+            var fin = fechaHoy.AddDays(1).AddHours(7);
+
             var kneader = "Kneader2";
 
             var registrosRaw = _context.KneaderM
                 .Where(x => x.Kneader == kneader &&
-                            x.Date >= haceCincoMin.Date && x.Date <= nowLocal.Date)
-                .OrderByDescending(x => x.Date)
+                            (x.Date.Date == fechaHoy || x.Date.Date == fechaHoy.AddDays(1)))
+                .OrderBy(x => x.Date)
                 .ToList();
 
             var registros = registrosRaw
@@ -165,7 +177,7 @@ public class KneaderController : Controller
                         Temperature = t < 0 ? 0 : Math.Round(t, 0)
                     };
                 })
-                .Where(x => x.FechaCompleta >= haceCincoMin && x.FechaCompleta <= nowLocal)
+                .Where(x => x.FechaCompleta >= inicio && x.FechaCompleta < fin)
                 .OrderBy(x => x.FechaCompleta)
                 .ToList();
 
@@ -184,13 +196,20 @@ public class KneaderController : Controller
         {
             var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time (Mexico)");
             var nowLocal = TimeZoneInfo.ConvertTime(DateTime.UtcNow, tz);
-            var haceCincoMin = nowLocal.AddMinutes(-5);
+
+            // Día laboral: si estamos antes de las 7:00 am, retrocedemos un día
+            var fechaHoy = nowLocal.Hour < 7 ? nowLocal.Date.AddDays(-1) : nowLocal.Date;
+
+            // Rango de tiempo: de hoy 7:00 am a mañana 7:00 am
+            var inicio = fechaHoy.AddHours(7);
+            var fin = fechaHoy.AddDays(1).AddHours(7);
+
             var kneader = "Kneader3";
 
             var registrosRaw = _context.KneaderM
                 .Where(x => x.Kneader == kneader &&
-                            x.Date >= haceCincoMin.Date && x.Date <= nowLocal.Date)
-                .OrderByDescending(x => x.Date)
+                            (x.Date.Date == fechaHoy || x.Date.Date == fechaHoy.AddDays(1)))
+                .OrderBy(x => x.Date)
                 .ToList();
 
             var registros = registrosRaw
@@ -212,7 +231,7 @@ public class KneaderController : Controller
                         Temperature = t < 0 ? 0 : Math.Round(t, 0)
                     };
                 })
-                .Where(x => x.FechaCompleta >= haceCincoMin && x.FechaCompleta <= nowLocal)
+                .Where(x => x.FechaCompleta >= inicio && x.FechaCompleta < fin)
                 .OrderBy(x => x.FechaCompleta)
                 .ToList();
 
