@@ -29,45 +29,45 @@
     </div>
         <!-- Fila inferior -->
     <div class="row align-items-end mb-0 mt-2">
-            <div class="row">
-                <div class="col-4">
-                    <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
-                        <div class="fw-bold fs-1">Kneader 1</div>
-                    </div>
-                </div>
-
-                <div class="col-2">
-                    <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
-                        <div class="fw-bold fs-5">Pressure:</div>
-                        <span id="lastPressure" class="badge bg-warning text-dark rounded-pill fs-5"></span>
-                    </div>
-                </div>
-                <div class="col-2">
-                    <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
-                        <div class="fw-bold fs-5">Power:</div>
-                        <span id="lastPower" class="badge bg-primary rounded-pill fs-5"></span>
-                    </div>
-                </div>
-
-                <div class="col-2">
-                    <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
-                        <div class="fw-bold fs-5">Revolution:</div>
-                        <span id="lastRevolution" class="badge bg-dark rounded-pill fs-5"></span>
-                    </div>
-                </div>
-
-                <div class="col-2">
-                    <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
-                        <div class="fw-bold fs-5">Temp:</div>
-                        <span id="lastTemperature" class="badge bg-danger rounded-pill fs-5"></span>
-                    </div>
+        <div class="row">
+            <div class="col-4">
+                <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                    <div class="fw-bold fs-1">Kneader 1</div>
                 </div>
             </div>
+
+            <div class="col-2">
+                <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                    <div class="fw-bold fs-5">Pressure:</div>
+                    <span id="lastPressure" class="badge bg-warning text-dark rounded-pill fs-5"></span>
+                </div>
+            </div>
+            <div class="col-2">
+                <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                    <div class="fw-bold fs-5">Power:</div>
+                    <span id="lastPower" class="badge bg-primary rounded-pill fs-5"></span>
+                </div>
+            </div>
+
+            <div class="col-2">
+                <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                    <div class="fw-bold fs-5">Revolution:</div>
+                    <span id="lastRevolution" class="badge bg-dark rounded-pill fs-5"></span>
+                </div>
+            </div>
+
+            <div class="col-2">
+                <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative">
+                    <div class="fw-bold fs-5">Temp:</div>
+                    <span id="lastTemperature" class="badge bg-danger rounded-pill fs-5"></span>
+                </div>
+            </div>
+        </div>
     </div>
     <div class="row align-items-end mb-4">
-          <div class="card shadow-sm border border-1 rounded-4 p-3 position-relative" style="height: 200px;">
-              <canvas id="KneaderChart1" style="width:100%; height:100%;"></canvas> 
-          </div>
+        <div class="card shadow-sm border border-1 rounded-4 p-3 position-relative" style="height: 200px;">
+            <canvas id="KneaderChart1" style="width:100%; height:100%;"></canvas>
+        </div>
     </div>
 
 
@@ -165,16 +165,17 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
     <script>
+        //Grafica Kneader 1
         var ctx = document.getElementById('KneaderChart1').getContext('2d');
         var kneaderChart1 = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: [],
                 datasets: [
-                    { label: 'Pressure', data: [], borderColor: 'rgba(248, 195, 40, 1)', fill: false, pointRadius: 0, tension: 0, stepped: true },
-                    { label: 'Power', data: [], borderColor: 'rgba(54, 162, 235, 1)', fill: false, pointRadius: 0, tension: 0, stepped: true },
-                    { label: 'Revolution', data: [], borderColor: 'rgba(0, 0, 0, 1)', fill: false, pointRadius: 0, tension: 0, stepped: true },
-                    { label: 'Temperature', data: [], borderColor: 'rgba(211, 63, 73, 1)', fill: false, pointRadius: 0, tension: 0, stepped: true }
+                    { label: 'Pressure', data: [], borderColor: 'rgba(248, 195, 40, 1)', fill: false, pointRadius: 0, tension: 0, stepped: true, borderWidth: 1 },
+                    { label: 'Power', data: [], borderColor: 'rgba(54, 162, 235, 1)', fill: false, pointRadius: 0, tension: 0, stepped: true, borderWidth: 1 },
+                    { label: 'Revolution', data: [], borderColor: 'rgba(0, 0, 0, 1)', fill: false, pointRadius: 0, tension: 0, stepped: true, borderWidth: 1 },
+                    { label: 'Temperature', data: [], borderColor: 'rgba(211, 63, 73, 1)', fill: false, pointRadius: 0, tension: 0, stepped: true, borderWidth: 1 }
                 ]
             },
             options: {
@@ -186,32 +187,36 @@
                     }
                 },
                 elements: {
-                    line: {
-                        tension: 0 // rectas
-                    },
-                    point: {
-                        radius: 0 // sin puntos
-                    }
+                    line: { tension: 0 },
+                    point: { radius: 0 }
                 },
                 scales: {
                     x: {
                         type: 'category',
-                        title: { display: true, text: '' }
+                        title: { display: true, text: '' },
+                        ticks: {
+                            callback: function(value, index, ticks) {
+                                
+                                let label = this.getLabelForValue(value);
+                                return label.substring(0,5); 
+                            }
+                        }
                     }
                 }
             }
         });
 
+        //Grafica Kneader 2
         var ctx = document.getElementById('KneaderChart2').getContext('2d');
         var kneaderChart2 = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: [],
+                labels: [], 
                 datasets: [
-                    { label: 'Pressure', data: [], borderColor: 'rgba(248, 195, 40, 1)', fill: false, pointRadius: 0, tension: 0, stepped: true },
-                    { label: 'Power', data: [], borderColor: 'rgba(54, 162, 235, 1)', fill: false, pointRadius: 0, tension: 0, stepped: true },
-                    { label: 'Revolution', data: [], borderColor: 'rgba(0, 0, 0, 1)', fill: false, pointRadius: 0, tension: 0, stepped: true },
-                    { label: 'Temperature', data: [], borderColor: 'rgba(211, 63, 73, 1)', fill: false, pointRadius: 0, tension: 0, stepped: true }
+                    { label: 'Pressure', data: [], borderColor: 'rgba(248, 195, 40, 1)', fill: false, pointRadius: 0, tension: 0, stepped: true, borderWidth: 1 },
+                    { label: 'Power', data: [], borderColor: 'rgba(54, 162, 235, 1)', fill: false, pointRadius: 0, tension: 0, stepped: true, borderWidth: 1 },
+                    { label: 'Revolution', data: [], borderColor: 'rgba(0, 0, 0, 1)', fill: false, pointRadius: 0, tension: 0, stepped: true, borderWidth: 1 },
+                    { label: 'Temperature', data: [], borderColor: 'rgba(211, 63, 73, 1)', fill: false, pointRadius: 0, tension: 0, stepped: true, borderWidth: 1 }
                 ]
             },
             options: {
@@ -223,59 +228,67 @@
                     }
                 },
                 elements: {
-                    line: {
-                        tension: 0 // rectas
-                    },
-                    point: {
-                        radius: 0 // sin puntos
-                    }
+                    line: { tension: 0 },
+                    point: { radius: 0 }
                 },
                 scales: {
                     x: {
                         type: 'category',
-                        title: { display: true, text: '' }
+                        title: { display: true, text: '' },
+                        ticks: {
+                            callback: function(value, index, ticks) {
+                                
+                                let label = this.getLabelForValue(value);
+                                return label.substring(0,5);
+                            }
+                        }
                     }
                 }
             }
         });
 
+        //Grafica Kneader 3
         var ctx = document.getElementById('KneaderChart3').getContext('2d');
         var kneaderChart3 = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: [
-                    { label: 'Pressure', data: [], borderColor: 'rgba(248, 195, 40, 1)', fill: false, pointRadius: 0, tension: 0, stepped: true },
-                    { label: 'Power', data: [], borderColor: 'rgba(54, 162, 235, 1)', fill: false, pointRadius: 0, tension: 0, stepped: true },
-                    { label: 'Revolution', data: [], borderColor: 'rgba(0, 0, 0, 1)', fill: false, pointRadius: 0, tension: 0, stepped: true },
-                    { label: 'Temperature', data: [], borderColor: 'rgba(211, 63, 73, 1)', fill: false, pointRadius: 0, tension: 0, stepped: true }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                elements: {
-                    line: {
-                        tension: 0 // rectas
-                    },
-                    point: {
-                        radius: 0 // sin puntos
-                    }
-                },
-                scales: {
-                    x: {
-                        type: 'category',
-                        title: { display: true, text: '' }
-                    }
-                }
-            }
-        });
+             type: 'line',
+             data: {
+                 labels: [],
+                 datasets: [
+                     { label: 'Pressure', data: [], borderColor: 'rgba(248, 195, 40, 1)', fill: false, pointRadius: 0, tension: 0, stepped: true, borderWidth: 1 },
+                     { label: 'Power', data: [], borderColor: 'rgba(54, 162, 235, 1)', fill: false, pointRadius: 0, tension: 0, stepped: true, borderWidth: 1 },
+                     { label: 'Revolution', data: [], borderColor: 'rgba(0, 0, 0, 1)', fill: false, pointRadius: 0, tension: 0, stepped: true, borderWidth: 1 },
+                     { label: 'Temperature', data: [], borderColor: 'rgba(211, 63, 73, 1)', fill: false, pointRadius: 0, tension: 0, stepped: true, borderWidth: 1 }
+                 ]
+             },
+             options: {
+                 responsive: true,
+                 maintainAspectRatio: false,
+                 plugins: {
+                     legend: {
+                         display: false
+                     }
+                 },
+                 elements: {
+                     line: { tension: 0 },
+                     point: { radius: 0 }
+                 },
+                 scales: {
+                     x: {
+                         type: 'category',
+                         title: { display: true, text: '' },
+                         ticks: {
+                             callback: function(value, index, ticks) {
+                                 
+                                 let label = this.getLabelForValue(value);
+                                 return label.substring(0,5);
+                             }
+                         }
+                     }
+                 }
+             }
+         });
 
+         //Carga datos de la Kneader 1
         function cargarDatosKneader1() {
             $.ajax({
                 url: '@Url.Content("~/Kneader/GetKneaderData1")',
@@ -306,6 +319,7 @@
             });
         }
 
+        //Carga datos de la Kneader 2
         function cargarDatosKneader2() {
             $.ajax({
                 url: '@Url.Action("GetKneaderData2", "Kneader")',
@@ -323,7 +337,7 @@
                     kneaderChart2.data.datasets[2].data = registros.map(r => r.revolution);
                     kneaderChart2.data.datasets[3].data = registros.map(r => r.temperature);
 
-                    // Último registro para el badge
+                    
                             if (registros.length > 0) {
                                 const last = registros[registros.length - 1];
 
@@ -337,6 +351,7 @@
             });
         }
 
+        //Carga datos de la Kneader 3
         function cargarDatosKneader3() {
             $.ajax({
                 url: '@Url.Action("GetKneaderData3", "Kneader")',
@@ -354,7 +369,7 @@
                     kneaderChart3.data.datasets[2].data = registros.map(r => r.revolution);
                     kneaderChart3.data.datasets[3].data = registros.map(r => r.temperature);
 
-                    // Último registro para el badge
+                   
                             if (registros.length > 0) {
                                 const last = registros[registros.length - 1];
 
