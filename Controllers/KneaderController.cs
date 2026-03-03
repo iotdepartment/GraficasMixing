@@ -225,7 +225,7 @@ public class KneaderController : Controller
                     {
                         FechaCompleta = fechaCompleta,
                         Hora = fechaCompleta.ToString("HH:mm:ss"),
-                        Pressure = p < 0 ? 0 : Math.Round(p, 0),
+                        Pressure = p < 0 ? 0 : Math.Round(p, 2),
                         Power = pw < 0 ? 0 : Math.Round(pw, 0),
                         Revolution = r < 0 ? 0 : Math.Round(r, 0),
                         Temperature = t < 0 ? 0 : Math.Round(t, 0)
