@@ -12,14 +12,34 @@
 
 <!-- Nuevo botón para ir a la vista de Chart -->
 
-
 <div class="row mb-3 mt-2">
-    <div class="col-12 text-end">
-        <a href="@Url.Action("Chart", "Extruder")" class="btn btn-info rounded-pill">
-            <i class="bi bi-bar-chart"></i> Ver Gráfica
-        </a>
+    <div class="col-12 d-flex justify-content-end align-items-center gap-2">
+        <!-- Texto a la izquierda -->
+        <span class="fw-bold me-2">Ver resumen de Extruder:</span>
+
+        <!-- Select de extruder -->
+        <select id="extruderSelect" class="form-select w-auto" onchange="redirigirExtruder()">
+            <option value="">-- Selecciona Extruder --</option>
+            <option value="1">Extruder 1</option>
+            <option value="2">Extruder 2</option>
+            <option value="3">Extruder 3</option>
+            <option value="4">Extruder 4</option>
+            <option value="5">Extruder 5</option>
+            <option value="6">Extruder 6</option>
+        </select>
     </div>
 </div>
+
+<script>
+    function redirigirExtruder() {
+        const id = document.getElementById("extruderSelect").value;
+        if (id) {
+            window.location.href = '/Extruder/Chart?id=' + encodeURIComponent(id);
+        }
+    }
+</script>
+
+
 <div class="card shadow-sm border border-1 bg-white rounded-4 p-3">
     <div class="row align-items-end">
         
@@ -182,8 +202,6 @@
         </div>
     </div>
 
-
-
     <!-- Mensaje de error inline -->
     <div id="errorMessage" class="text-danger fw-bold mt-3"></div>
 
@@ -191,6 +209,16 @@
     <!-- Importar Chart.js y el plugin de datalabels -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+
+    <script>
+        function redirigirExtruder() {
+            const id = document.getElementById("extruderSelect").value;
+            if (id) {
+                window.location.href = '/Extruder/Chart?id=' + encodeURIComponent(id);
+            }
+        }
+    </script>
+
 
     <script>
         // Abrir modal al hacer clic en el botón

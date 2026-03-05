@@ -531,7 +531,7 @@ namespace GraficasMixing.Controllers
         }
 
 
-        public IActionResult Chart()
+        public IActionResult Chart(int id)
         {
             var estado = _context.Estado
                 .Include(e => e.ExtruderRef)
@@ -540,8 +540,7 @@ namespace GraficasMixing.Controllers
                 .Include(e => e.Tubo1Ref)
                 .Include(e => e.Tubo2Ref)
                 .Include(e => e.CoverRef)
-
-                .FirstOrDefault();
+                .FirstOrDefault(e => e.ExtruderId == id);
 
             if (estado == null)
             {
@@ -572,6 +571,9 @@ namespace GraficasMixing.Controllers
                 Cover = estado.CoverRef?.Batch
             };
 
+            // 🔹 Pasamos también el id del extruder a la vista
+            ViewBag.ExtruderId = id;
+
             return View(cardInfo);
         }
 
@@ -598,18 +600,16 @@ namespace GraficasMixing.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetDailyTotmData()
+        public IActionResult GetDailyTotmData(int id)
         {
             var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time (Mexico)");
             var nowLocal = TimeZoneInfo.ConvertTime(DateTime.UtcNow, tz);
 
-            // Día laboral: si estamos entre 00:00 y 6:59, retrocedemos un día
             var parsedDate = nowLocal.Hour < 7 ? nowLocal.Date.AddDays(-1) : nowLocal.Date;
+            var extruder = "Extruder" + id;
 
-            var extruder = "Extruder1";
-
-            var inicio = parsedDate.AddHours(7);                // 7:00 am del día laboral
-            var fin = parsedDate.AddDays(1).AddHours(6).AddMinutes(59); // 6:59 am del siguiente día
+            var inicio = parsedDate.AddHours(7);
+            var fin = parsedDate.AddDays(1).AddHours(6).AddMinutes(59);
 
             var registros = _context.ScadaExtrudermaster
                 .Where(x => x.Extruder == extruder &&
@@ -635,38 +635,32 @@ namespace GraficasMixing.Controllers
         }
 
         [HttpGet]
-        public JsonResult GetProductionVsDowntimeByShift()
+        public JsonResult GetProductionVsDowntimeByShift(int id)
         {
             var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time (Mexico)");
             var nowLocal = TimeZoneInfo.ConvertTime(DateTime.UtcNow, tz);
 
-            // Día laboral: si estamos antes de las 7:00 am, retrocedemos un día
             var parsedDate = nowLocal.Hour < 7 ? nowLocal.Date.AddDays(-1) : nowLocal.Date;
-            var extruder = "Extruder1";
+            var extruder = "Extruder" + id;
 
-            // Turno 1: 07:00 - 15:29
             var turno1 = _context.ScadaExtrudermaster
                 .Where(x => x.Extruder == extruder &&
                             x.Fecha.Date == parsedDate &&
                             x.Hora >= new TimeSpan(7, 0, 0) && x.Hora <= new TimeSpan(15, 29, 59))
                 .ToList();
 
-            // Turno 2: 15:30 - 23:29
             var turno2 = _context.ScadaExtrudermaster
                 .Where(x => x.Extruder == extruder &&
                             x.Fecha.Date == parsedDate &&
                             x.Hora >= new TimeSpan(15, 30, 0) && x.Hora <= new TimeSpan(23, 29, 59))
                 .ToList();
 
-            // Turno 3: dividido en dos partes
-            // Parte 1: 23:30 - 23:59 del mismo día
             var turno3Parte1 = _context.ScadaExtrudermaster
                 .Where(x => x.Extruder == extruder &&
                             x.Fecha.Date == parsedDate &&
                             x.Hora >= new TimeSpan(23, 30, 0) && x.Hora <= new TimeSpan(23, 59, 59))
                 .ToList();
 
-            // Parte 2: 00:00 - 06:59 del día siguiente
             var turno3Parte2 = _context.ScadaExtrudermaster
                 .Where(x => x.Extruder == extruder &&
                             x.Fecha.Date == parsedDate.AddDays(1) &&
@@ -685,21 +679,18 @@ namespace GraficasMixing.Controllers
             return Json(data);
         }
 
-
         [HttpGet]
-        public JsonResult GetExtruder1SpeedHistoryByShift()
+        public JsonResult GetSpeedHistoryByShift(int id)
         {
             var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time (Mexico)");
             var nowLocal = TimeZoneInfo.ConvertTime(DateTime.UtcNow, tz);
 
-            // Día laboral: si estamos antes de las 7:00 am, retrocedemos un día
             var fechaHoy = nowLocal.Hour < 7 ? nowLocal.Date.AddDays(-1) : nowLocal.Date;
-            var extruder = "Extruder1";
+            var extruder = "Extruder" + id;
 
             var inicio = fechaHoy.AddHours(7);
             var fin = fechaHoy.AddDays(1).AddHours(7);
 
-            // Traer registros del extruder
             var registrosRaw = _context.ScadaExtrudermaster
                 .Where(x => x.Extruder == extruder &&
                             (x.Fecha.Date == fechaHoy || x.Fecha.Date == fechaHoy.AddDays(1)))
@@ -714,12 +705,10 @@ namespace GraficasMixing.Controllers
                 .Where(x => x.fechaHora >= inicio && x.fechaHora < fin)
                 .ToList();
 
-            // Traer todos los setpoints en memoria
             var setpoints = _context.SetPointExtruder
                 .Where(sp => sp.extruder == extruder)
                 .ToDictionary(sp => sp.familia, sp => sp.setpoint);
 
-            // Proyectar registros con setpoint correspondiente
             var registros = registrosRaw.Select(x => new
             {
                 hora = x.fechaHora.ToString("HH:mm"),
@@ -731,11 +720,9 @@ namespace GraficasMixing.Controllers
                 setpoint = setpoints.ContainsKey(x.familia) ? setpoints[x.familia] : 0
             }).ToList();
 
-            return Json(new
-            {
-                registros = registros
-            });
+            return Json(new { registros });
         }
+
 
         [HttpGet]
         public JsonResult GetContador(int numeroEmpleado)

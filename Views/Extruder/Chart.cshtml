@@ -108,21 +108,21 @@
     <script>
 
         function actualizarContador() {
-            fetch(`/Extruder/GetContador?numeroEmpleado=${@Model.NumeroEmpleado}`)
+            fetch(`/Extruder/GetContador?numeroEmpleado=@Model.NumeroEmpleado`)
                 .then(res => res.json())
                 .then(data => {
                     document.getElementById("contador").innerText = data.contador;
                 })
                 .catch(err => console.error("Error actualizando contador:", err));
         }
-
-     
         // Gráfica de pie eficiencia diaria
 
-        let totmChart;
+                let totmChart;
 
         function cargarOperacionVsDowntimeChart() {
-            fetch('/Extruder/GetDailyTotmData')
+            const extruderId = '@ViewBag.ExtruderId'; // viene del controlador Chart(int id)
+
+            fetch(`/Extruder/GetDailyTotmData?id=${extruderId}`)
                 .then(response => response.json())
                 .then(data => {
                     const ctx = document.getElementById('TotmPieChart').getContext('2d');
@@ -138,7 +138,7 @@
                                 labels: data.map(d => d.label),
                                 datasets: [{
                                     data: data.map(d => d.value),
-                                    backgroundColor: ['#66BB6A', '#EF5350'], 
+                                    backgroundColor: ['#66BB6A', '#EF5350'],
                                     borderColor: '#fff',
                                     borderWidth: 2
                                 }]
@@ -149,7 +149,7 @@
                                     legend: { position: 'bottom', labels: { font: { size: 14 } } },
                                     title: {
                                         display: true,
-                                                text: " Eficiencia diaria % - Extruder 1 ",
+                                        text: `Eficiencia diaria % - Extruder ${extruderId}`,
                                         font: { size: 22, weight: 'bold' },
                                         color: '#333'
                                     },
@@ -171,19 +171,20 @@
                 })
                 .catch(err => console.error("Error cargando datos:", err));
         }
-
         
         // Gráfica de barras por turno
-        
-        let productionChart = echarts.init(document.getElementById('productionDowntimeChart'));
+
+              let productionChart = echarts.init(document.getElementById('productionDowntimeChart'));
 
         function cargarProductionVsDowntimeChart() {
-            fetch('/Extruder/GetProductionVsDowntimeByShift')
+            const extruderId = '@ViewBag.ExtruderId'; // viene del controlador Chart(int id)
+
+            fetch(`/Extruder/GetProductionVsDowntimeByShift?id=${extruderId}`)
                 .then(response => response.json())
                 .then(data => {
                     const option = {
                         title: {
-                            text: 'Operación vs Downtime por Turno - Extruder 1',
+                            text: `Operación vs Downtime por Turno - Extruder ${extruderId}`,
                             left: 'center',
                             textStyle: { fontSize: 20, fontWeight: 'bold' }
                         },
@@ -259,171 +260,183 @@
                 .catch(err => console.error("Error cargando datos:", err));
         }
 
-        cargarProductionVsDowntimeChart();
+        // Ejecutar al cargar
+        document.addEventListener("DOMContentLoaded", function() {
+            cargarProductionVsDowntimeChart();
+        });
+
+        // Refrescar cada 10 segundos
         setInterval(cargarProductionVsDowntimeChart, 10000);
 
 
-        let speedChart = echarts.init(document.getElementById('SpeedLineChart'), null, {
+               let speedChart = echarts.init(document.getElementById('SpeedLineChart'), null, {
             devicePixelRatio: window.devicePixelRatio
         });
 
         function cargarSpeedLineChart() {
-            fetch('/Extruder/GetExtruder1SpeedHistoryByShift')
-            .then(response => response.json())
-            .then(data => {
-                const registros = data.registros;
+            const extruderId = '@ViewBag.ExtruderId'; // viene del controlador Chart(int id)
 
-                // Último registro
-                const ultimo = registros[registros.length - 1];
-                document.getElementById("ultimoRegistro").innerText =
-                    `${ultimo.velocidad.toFixed(2)} m/min`;
+            fetch(`/Extruder/GetSpeedHistoryByShift?id=${extruderId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const registros = data.registros;
 
-                // Colores por familia
-                const familyColors = {
-                            "37 THIN LAYER": "#FF0000", // rojo
-                            "37X47 CHS": "#00AA00", // verde
-                            "33 WATER": "#0000FF", // azul
-                    "FamiliaD": "#FFA500"  // naranja
-                };
-
-                // Detectar cambios de familia y crear segmentos de setpoint
-                const setpointSeries = [];
-                let currentSegment = [];
-                let currentFamilia = registros[0].familia;
-
-                for (let i = 0; i < registros.length; i++) {
-                    const reg = registros[i];
-                    const color = familyColors[reg.familia] || "red";
-
-                    // Si cambia la familia, cerramos el segmento anterior y ponemos marcador al final
-                    if (i > 0 && reg.familia !== registros[i - 1].familia) {
-                        const lastReg = registros[i - 1];
-                        const prevFamilia = registros[i - 1].familia;
-                        const prevColor = familyColors[prevFamilia] || "red";
-
-                        setpointSeries.push({
-                            name: `Setpoint ${prevFamilia}`,
-                            type: 'line',
-                            smooth: false,
-                            data: currentSegment,
-                            lineStyle: { color: prevColor, width: 2, type: 'dashed' },
-                            itemStyle: { color: prevColor },
-                            markPoint: {
-                                data: [{
-                                    coord: [lastReg.hora, lastReg.setpoint],
-                                    value: lastReg.setpoint.toFixed(2),
-                                    symbolSize: 20,
-                                    label: {
-                                        show: true,
-                                        position: 'top',
-                                        formatter: () => `Setpoint (${prevFamilia}):\n${lastReg.setpoint.toFixed(2)} m/min`,
-                                        color: prevColor,
-                                        fontWeight: 'bold',
-                                        fontSize: 11,
-                                        lineHeight: 14
-                                    },
-                                    itemStyle: { color: prevColor }
-                                }]
-                            }
-                        });
-
-                        // Reiniciar segmento
-                        currentSegment = [];
-                        currentFamilia = reg.familia;
+                    if (!registros || registros.length === 0) {
+                        console.warn("No hay registros para este extruder");
+                        return;
                     }
 
-                    currentSegment.push([reg.hora, reg.setpoint]);
-                }
+                    // Último registro
+                    const ultimo = registros[registros.length - 1];
+                    document.getElementById("ultimoRegistro").innerText =
+                        `${ultimo.velocidad.toFixed(2)} m/min`;
 
-                // Agregar último segmento con marcador al final
-                const lastReg = registros[registros.length - 1];
-                const lastColor = familyColors[currentFamilia] || "red";
-                setpointSeries.push({
-                    name: `Setpoint ${currentFamilia}`,
-                    type: 'line',
-                    smooth: false,
-                    data: currentSegment,
-                    lineStyle: { color: lastColor, width: 2, type: 'dashed' },
-                    itemStyle: { color: lastColor },
-                    markPoint: {
-                        data: [{
-                            coord: [lastReg.hora, lastReg.setpoint],
-                            value: lastReg.setpoint.toFixed(2),
-                            symbolSize: 20,
-                            label: {
-                                show: true,
-                                position: 'top',
-                                formatter: () => `Setpoint (${currentFamilia}):\n${lastReg.setpoint.toFixed(2)} m/min`,
-                                color: lastColor,
-                                fontWeight: 'bold',
-                                fontSize: 11,
-                                lineHeight: 14
-                            },
-                            itemStyle: { color: lastColor }
-                        }]
-                    }
-                });
+                    // Colores por familia
+                    const familyColors = {
+                        "37 THIN LAYER": "#FF0000", // rojo
+                        "37X47 CHS": "#00AA00",     // verde
+                        "33 WATER": "#0000FF",      // azul
+                        "FamiliaD": "#FFA500"       // naranja
+                    };
 
-                const option = {
-                    title: {
-                        text: 'Velocidad por Turno - Extruder 1 (7:00 am a 7:00 am)',
-                        left: 'center',
-                        textStyle: { fontSize: 20, fontWeight: 'bold' }
-                    },
-                    tooltip: {
-                        trigger: 'axis',
-                        formatter: params => {
-                            const idx = params[0].dataIndex;
-                            const registro = registros[idx];
-                            return `
-                                Hora: ${registro.hora}<br>
-                                Velocidad: ${registro.velocidad.toFixed(2)} m/min<br>
-                                Turno: ${registro.turno}<br>
-                                Familia: ${registro.familia}<br>
-                                Setpoint: ${registro.setpoint.toFixed(2)} m/min
-                            `;
-                        }
-                    },
-                    grid: { left: '3%', right: '4%', bottom: '10%', containLabel: true },
-                    xAxis: {
-                        type: 'category',
-                        data: registros.map(d => d.hora),
-                        axisLabel: { fontSize: 12 }
-                    },
-                    yAxis: {
-                        type: 'value',
-                        name: 'Velocidad (m/min)',
-                        axisLabel: { fontSize: 12 }
-                    },
-                    series: [
-                        {
-                            name: 'Velocidad',
-                            type: 'line',
-                            smooth: true,
-                            data: registros.map(d => d.velocidad),
-                            lineStyle: { width: 3 },
-                            itemStyle: {
-                                color: params => {
-                                    const turno = registros[params.dataIndex].turno;
-                                    if (turno === "Turno 1") return '#42A5F5'; // azul
-                                    if (turno === "Turno 2") return '#66BB6A'; // verde
-                                    return '#EF5350'; // rojo
+                    // Detectar cambios de familia y crear segmentos de setpoint
+                    const setpointSeries = [];
+                    let currentSegment = [];
+                    let currentFamilia = registros[0].familia;
+
+                    for (let i = 0; i < registros.length; i++) {
+                        const reg = registros[i];
+                        const color = familyColors[reg.familia] || "red";
+
+                        if (i > 0 && reg.familia !== registros[i - 1].familia) {
+                            const lastReg = registros[i - 1];
+                            const prevFamilia = registros[i - 1].familia;
+                            const prevColor = familyColors[prevFamilia] || "red";
+
+                            setpointSeries.push({
+                                name: `Setpoint ${prevFamilia}`,
+                                type: 'line',
+                                smooth: false,
+                                data: currentSegment,
+                                lineStyle: { color: prevColor, width: 2, type: 'dashed' },
+                                itemStyle: { color: prevColor },
+                                markPoint: {
+                                    data: [{
+                                        coord: [lastReg.hora, lastReg.setpoint],
+                                        value: lastReg.setpoint.toFixed(2),
+                                        symbolSize: 20,
+                                        label: {
+                                            show: true,
+                                            position: 'top',
+                                            formatter: () => `Setpoint (${prevFamilia}):\n${lastReg.setpoint.toFixed(2)} m/min`,
+                                            color: prevColor,
+                                            fontWeight: 'bold',
+                                            fontSize: 11,
+                                            lineHeight: 14
+                                        },
+                                        itemStyle: { color: prevColor }
+                                    }]
                                 }
+                            });
+
+                            currentSegment = [];
+                            currentFamilia = reg.familia;
+                        }
+
+                        currentSegment.push([reg.hora, reg.setpoint]);
+                    }
+
+                    // Último segmento
+                    const lastReg = registros[registros.length - 1];
+                    const lastColor = familyColors[currentFamilia] || "red";
+                    setpointSeries.push({
+                        name: `Setpoint ${currentFamilia}`,
+                        type: 'line',
+                        smooth: false,
+                        data: currentSegment,
+                        lineStyle: { color: lastColor, width: 2, type: 'dashed' },
+                        itemStyle: { color: lastColor },
+                        markPoint: {
+                            data: [{
+                                coord: [lastReg.hora, lastReg.setpoint],
+                                value: lastReg.setpoint.toFixed(2),
+                                symbolSize: 20,
+                                label: {
+                                    show: true,
+                                    position: 'top',
+                                    formatter: () => `Setpoint (${currentFamilia}):\n${lastReg.setpoint.toFixed(2)} m/min`,
+                                    color: lastColor,
+                                    fontWeight: 'bold',
+                                    fontSize: 11,
+                                    lineHeight: 14
+                                },
+                                itemStyle: { color: lastColor }
+                            }]
+                        }
+                    });
+
+                    const option = {
+                        title: {
+                            text: `Velocidad por Turno - Extruder ${extruderId} (7:00 am a 7:00 am)`,
+                            left: 'center',
+                            textStyle: { fontSize: 20, fontWeight: 'bold' }
+                        },
+                        tooltip: {
+                            trigger: 'axis',
+                            formatter: params => {
+                                const idx = params[0].dataIndex;
+                                const registro = registros[idx];
+                                return `
+                                    Hora: ${registro.hora}<br>
+                                    Velocidad: ${registro.velocidad.toFixed(2)} m/min<br>
+                                    Turno: ${registro.turno}<br>
+                                    Familia: ${registro.familia}<br>
+                                    Setpoint: ${registro.setpoint.toFixed(2)} m/min
+                                `;
                             }
                         },
-                        ...setpointSeries
-                    ]
-                };
+                        grid: { left: '3%', right: '4%', bottom: '10%', containLabel: true },
+                        xAxis: {
+                            type: 'category',
+                            data: registros.map(d => d.hora),
+                            axisLabel: { fontSize: 12 }
+                        },
+                        yAxis: {
+                            type: 'value',
+                            name: 'Velocidad (m/min)',
+                            axisLabel: { fontSize: 12 }
+                        },
+                        series: [
+                            {
+                                name: 'Velocidad',
+                                type: 'line',
+                                smooth: true,
+                                data: registros.map(d => d.velocidad),
+                                lineStyle: { width: 3 },
+                                itemStyle: {
+                                    color: params => {
+                                        const turno = registros[params.dataIndex].turno;
+                                        if (turno === "Turno 1") return '#42A5F5'; // azul
+                                        if (turno === "Turno 2") return '#66BB6A'; // verde
+                                        return '#EF5350'; // rojo
+                                    }
+                                }
+                            },
+                            ...setpointSeries
+                        ]
+                    };
 
-                speedChart.setOption(option);
-            })
-            .catch(err => console.error("Error cargando datos:", err));
+                    speedChart.setOption(option);
+                })
+                .catch(err => console.error("Error cargando datos:", err));
         }
 
         // Ejecutar al cargar
-        cargarSpeedLineChart();
-        actualizarContador();
-        cargarOperacionVsDowntimeChart();
+        document.addEventListener("DOMContentLoaded", function() {
+            cargarSpeedLineChart();
+            actualizarContador();
+            cargarOperacionVsDowntimeChart();
+        });
 
         // Refrescar cada 10 segundos
         setInterval(cargarSpeedLineChart, 10000);

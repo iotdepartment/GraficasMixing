@@ -21,7 +21,6 @@ namespace GraficasMixing.Models
         [Column("Contador")]
         public int Contador { get; set; }
 
-
         [ForeignKey("ExtruderId")]
         public Extruder ExtruderRef { get; set; }
 
@@ -31,21 +30,20 @@ namespace GraficasMixing.Models
         [ForeignKey("MandrilId")]
         public Mandril MandrilRef { get; set; }
 
-
+        // 🔹 Ahora son opcionales (nullable)
         [Column("Tubo1")]
-        public int Tubo1 { get; set; }
+        public int? Tubo1 { get; set; }
         [ForeignKey("Tubo1")]
         public Materiales Tubo1Ref { get; set; }
 
         [Column("Tubo2")]
-        public int Tubo2 { get; set; }
+        public int? Tubo2 { get; set; }
         [ForeignKey("Tubo2")]
         public Materiales Tubo2Ref { get; set; }
 
         [Column("Cover")]
-        public int Cover { get; set; }
+        public int? Cover { get; set; }
         [ForeignKey("Cover")]
         public Materiales CoverRef { get; set; }
-
     }
 }
