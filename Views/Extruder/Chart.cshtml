@@ -3,7 +3,7 @@
 
 @{
     Layout = "~/Views/Extruder/Partials/_LayoutNoNav.cshtml";
-    ViewData["Title"] = "Extruder 1";
+    ViewData["Title"] = "Extruder " + ViewBag.ExtruderId;
 }
 
 <!-- Bootstrap CSS -->
@@ -117,7 +117,7 @@
         }
         // Gráfica de pie eficiencia diaria
 
-                let totmChart;
+        let totmChart;
 
         function cargarOperacionVsDowntimeChart() {
             const extruderId = '@ViewBag.ExtruderId'; // viene del controlador Chart(int id)
@@ -174,10 +174,10 @@
         
         // Gráfica de barras por turno
 
-              let productionChart = echarts.init(document.getElementById('productionDowntimeChart'));
+        let productionChart = echarts.init(document.getElementById('productionDowntimeChart'));
 
         function cargarProductionVsDowntimeChart() {
-            const extruderId = '@ViewBag.ExtruderId'; // viene del controlador Chart(int id)
+            const extruderId = '@ViewBag.ExtruderId'; 
 
             fetch(`/Extruder/GetProductionVsDowntimeByShift?id=${extruderId}`)
                 .then(response => response.json())
@@ -269,7 +269,7 @@
         setInterval(cargarProductionVsDowntimeChart, 10000);
 
 
-               let speedChart = echarts.init(document.getElementById('SpeedLineChart'), null, {
+        let speedChart = echarts.init(document.getElementById('SpeedLineChart'), null, {
             devicePixelRatio: window.devicePixelRatio
         });
 

@@ -5,9 +5,8 @@
 
     ViewData["Title"] = "Extruder Efficiency";
 }
-
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-    <h2 class="text-end">Mesus Charts (Extruder Area) <i class="bi bi-clipboard-data"></i></h2>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <h2 class="text-start">Mesus Charts (Extruder Area) <i class="bi bi-clipboard-data"></i></h2>
     <hr class="border border-dark border-0 mb-4 opacity-100">
 
 <!-- Nuevo botón para ir a la vista de Chart -->
@@ -29,16 +28,6 @@
         </select>
     </div>
 </div>
-
-<script>
-    function redirigirExtruder() {
-        const id = document.getElementById("extruderSelect").value;
-        if (id) {
-            window.location.href = '/Extruder/Chart?id=' + encodeURIComponent(id);
-        }
-    }
-</script>
-
 
 <div class="card shadow-sm border border-1 bg-white rounded-4 p-3">
     <div class="row align-items-end">
@@ -75,6 +64,7 @@
         <div class="col-1 me-0 ">
             <div class="d-grid gap-2">
                 <button type="button" id="applyFilter" class="btn btn-primary rounded-pill">
+                    <i class="bi bi-search"></i>
                     Apply
                     <span id="spinner" class="spinner-border spinner-border-sm" style="display:none;"></span>
                 </button>
@@ -83,20 +73,19 @@
 
         <!-- Export -->
         <div class="col-2">
-            <button id="exportChartBtn" class="btn btn-outline-success">
+            <button id="exportChartBtn" class="btn btn-outline-success rounded-pill" disabled>
                 <i class="bi bi-download"></i> Export Report
             </button>
         </div>
 
         <!-- Botón para abrir modal -->
         <div class="col-2">
+            <div class="d-grid gap-2">
             <button type="button" id="openSetPointModal" class="btn btn-success rounded-pill">
-                Ver SetPoints
+                <i class="bi bi-gear"></i> SetPoints
             </button>
+            </div>
         </div>
-
-     
-
     </div>
 </div>
 
@@ -218,6 +207,7 @@
             }
         }
     </script>
+
 
 
     <script>
@@ -795,20 +785,46 @@
         document.getElementById("applyFilter").addEventListener("click", cargarProduccionFamilias);
 
 
-        // Cargar inicial al abrir la página con fecha actual y turno All
         window.onload = () => {
-            const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-            document.getElementById("startDate").value = today;
+
+            function getLaborDay() {
+                const now = new Date(); // hora local
+                const hour = now.getHours();
+                const minute = now.getMinutes();
+
+                // Turno 3 → pertenece al día anterior
+                if (hour > 23 || (hour === 23 && minute >= 46) || hour < 7) {
+                    now.setDate(now.getDate() - 1);
+                }
+
+                const year  = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day   = String(now.getDate()).padStart(2, '0');
+
+                return `${year}-${month}-${day}`;
+            }
+
+            // Fecha laboral correcta
+            const laborDay = getLaborDay();
+
+            // Asignar al date picker
+            document.getElementById("startDate").value = laborDay;
+
+            // Turno por defecto
             document.getElementById("shiftSelect").value = "All";
+
+            // Extruder seleccionado
             const extruder = document.getElementById("ExtruderSelect").value;
-            loadTotmChart(extruder, "All", today);
-            loadEfficiencyChart();
-            loadDowntimeChart();
-            loadDailyEfficiencyChart();
-            loadFamilyStackedChart();
-            loadFamilyMetersChart();
-            loadSpeedChart();
-            cargarProduccionFamilias();
+
+            // Cargar gráficas con la fecha laboral REAL
+            loadTotmChart(extruder, "All", laborDay);
+            loadEfficiencyChart(extruder, laborDay);
+            loadDowntimeChart(extruder, laborDay);
+            loadDailyEfficiencyChart(extruder, laborDay);
+            loadFamilyStackedChart(extruder, laborDay);
+            loadFamilyMetersChart(extruder, laborDay);
+            loadSpeedChart(extruder, laborDay);
+            cargarProduccionFamilias(extruder, laborDay);
         };
     </script>
 }

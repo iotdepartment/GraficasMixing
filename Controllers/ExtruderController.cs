@@ -19,40 +19,54 @@ namespace GraficasMixing.Controllers
 
         public IActionResult Index()
         {
-            // Extruders distintos
+            // Normalizar extruders desde ScadaExtrudermaster
             var extruders = _context.ScadaExtrudermaster
                 .Where(r => !string.IsNullOrEmpty(r.Extruder))
-                .Select(r => r.Extruder)
+                .Select(r => r.Extruder.Replace(" ", "").Trim()) // quitar espacios
                 .Distinct()
                 .OrderBy(e => e)
                 .ToList();
 
-            // Todos los setpoints
+            // Normalizar setpoints también
             var setpoints = _context.SetPointExtruder
+                .Select(sp => new SetPointExtruder
+                {
+                    id = sp.id,
+                    extruder = sp.extruder.Replace(" ", "").Trim(),
+                    familia = sp.familia,
+                    setpoint = sp.setpoint
+                })
                 .OrderBy(x => x.extruder)
                 .ThenBy(x => x.familia)
                 .ToList();
 
             ViewBag.Extruders = extruders;
 
-            // Pasamos la lista de setpoints como modelo
             return View(setpoints);
         }
+
         [HttpGet]
         public IActionResult GetSetPointModal()
         {
-            // Traer todos los extruders distintos
             var extruders = _context.ScadaExtrudermaster
                 .Where(r => !string.IsNullOrEmpty(r.Extruder))
-                .Select(r => r.Extruder)
+                .Select(r => r.Extruder.Replace(" ", "").Trim())
                 .Distinct()
                 .OrderBy(e => e)
                 .ToList();
 
             ViewBag.Extruders = extruders;
 
-            // Pasamos todos los setpoints para que el modal tenga la info
-            var setpoints = _context.SetPointExtruder.ToList();
+            var setpoints = _context.SetPointExtruder
+                .Select(sp => new SetPointExtruder
+                {
+                    id = sp.id,
+                    extruder = sp.extruder.Replace(" ", "").Trim(),
+                    familia = sp.familia,
+                    setpoint = sp.setpoint
+                })
+                .ToList();
+
             return PartialView("Partials/_ExtruderModal", setpoints);
         }
 

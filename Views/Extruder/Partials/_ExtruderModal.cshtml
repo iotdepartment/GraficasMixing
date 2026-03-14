@@ -17,7 +17,7 @@
                     <!-- Select de Extruder -->
                     <div class="mb-3">
                         <label for="extruderSelect" class="form-label">Extrusora</label>
-                        <select id="extruderSelect" name="extruder" class="form-select">
+                        <select id="modalExtruderSelect" name="extruder" class="form-select">
                             <option value="">-- Selecciona Extrusora --</option>
                             @foreach (var extruder in extruders)
                             {
@@ -51,7 +51,7 @@
 <script>
     const allSetpoints = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model));
 
-    const extruderSelect = document.getElementById("extruderSelect");
+    const extruderSelect = document.getElementById("modalExtruderSelect");
     const familiaSelect = document.getElementById("familiaSelect");
     const setpointInput = document.getElementById("setpointInput");
     const setpointId = document.getElementById("setpointId");
