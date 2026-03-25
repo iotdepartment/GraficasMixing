@@ -54,14 +54,12 @@
             </select>
         </div>
 
-        <!-- Fecha -->
         <div class="col-2">
             <label for="startDate">Fecha:</label><br>
             <input type="date" id="startDate" class="form-control">
         </div>
 
-        <!-- Submit button-->
-        <div class="col-1 me-0 ">
+        <div class="col-1">
             <div class="d-grid gap-2">
                 <button type="button" id="applyFilter" class="btn btn-primary rounded-pill">
                     <i class="bi bi-search"></i>
@@ -71,19 +69,29 @@
             </div>
         </div>
 
-        <!-- Export -->
-        <div class="col-2">
-            <button id="exportChartBtn" class="btn btn-outline-success rounded-pill" disabled>
-                <i class="bi bi-download"></i> Export Report
-            </button>
+        <div class="col-1">
+            <div class="d-grid gap-2">
+                <button id="exportChartBtn" class="btn btn-outline-success rounded-pill">
+                    <i class="bi bi-download"></i> Export
+                </button>
+            </div>
         </div>
 
-        <!-- Botón para abrir modal -->
+        <div class="col-1">
+            <div class="d-grid gap-2">
+                <button type="button" id="openSetPointModal" class="btn btn-success rounded-pill">
+                    <i class="bi bi-gear"></i> SetPoints
+                </button>
+            </div>
+        </div>
+
         <div class="col-2">
             <div class="d-grid gap-2">
-            <button type="button" id="openSetPointModal" class="btn btn-success rounded-pill">
-                <i class="bi bi-gear"></i> SetPoints
-            </button>
+                <button id="ButtonGeneralChart"
+                        class="btn btn-info rounded-pill"
+                        onclick="location.href='@Url.Action("GeneralChart", "Extruder")'">
+                    <i class="bi bi-Chart"></i> Open General Chart
+                </button>
             </div>
         </div>
     </div>

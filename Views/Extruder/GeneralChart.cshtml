@@ -1,0 +1,467 @@
+﻿@model List<GraficasMixing.Models.ScadaExtrudermaster>
+
+@{
+    Layout = "~/Views/Extruder/Partials/_LayoutNoNav.cshtml";
+    ViewData["Title"] = "Extruder ";
+}
+<div class="row align-items-end mt-2">
+    <div class="row">
+        <div class="col-2 d-flex align-items-stretch">
+            <div class="card shadow-sm border-0 rounded-4 d-flex justify-content-center align-items-center text-center w-100 h-75">
+                <img src="~/Images/Logo.png"
+                     alt="Logo empresa"
+                     class="img-fluid"
+                     style="max-width: 100px; height: auto;">
+            </div>
+        </div>
+        <div class="col-10">
+            <div class="card shadow-sm border border-1 rounded-4 p-2 mb-2 position-relative bg-info">
+
+                <div class="fw-bold fs-1">Sistema de graficas de Extruder</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row mt-1">
+    <div class="col-12">
+        <div class="row align-items-end mb-2">
+            <div class="card shadow-sm border border-1 rounded-4 p-1 position-relative" style="height: 250px;">
+                <canvas id="ExtruderChart1" style="width:100%; height:100%;"></canvas>
+            </div>
+        </div>
+        <div class="row align-items-end mb-2">
+            <div class="card shadow-sm border border-1 rounded-4 p-1 position-relative" style="height: 250px;">
+                <canvas id="ExtruderChart3" style="width:100%; height:100%;"></canvas>
+            </div>
+        </div>
+        <div class="row align-items-end mb-2">
+            <div class="card shadow-sm border border-1 rounded-4 p-1 position-relative" style="height: 250px;">
+                <canvas id="ExtruderChart4" style="width:100%; height:100%;"></canvas>
+            </div>
+        </div>
+        <div class="row align-items-end mb-2">
+            <div class="card shadow-sm border border-1 rounded-4 p-1 position-relative" style="height: 250px;">
+                <canvas id="ExtruderChart5" style="width:100%; height:100%;"></canvas>
+            </div>
+        </div>
+        <div class="row align-items-end mb-2">
+            <div class="card shadow-sm border border-1 rounded-4 p-1 position-relative" style="height: 250px;">
+                <canvas id="ExtruderChart6" style="width:100%; height:100%;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script>
+        let speedChart1;
+        let speedChart3;
+        let speedChart4;
+        let speedChart5;
+        let speedChart6;
+
+        async function loadSpeedChart1() {
+            const response = await fetch('/Extruder/GetSpeedDataToday1');
+            const data = await response.json();
+
+            const ctx = document.getElementById('ExtruderChart1').getContext('2d');
+
+            if (!data || data.length === 0) {
+                ctx.font = "16px Arial";
+                ctx.fillText("No hay datos disponibles para hoy", 50, 100);
+                return;
+            }
+
+            const labels = [...new Set(data.map(item => item.timestamp))];
+            const familias = [...new Set(data.map(item => item.family))];
+
+            const datasets = familias.map((fam, index) => {
+                const speeds = labels.map(ts => {
+                    const registro = data.find(d => d.timestamp === ts && d.family === fam);
+                    return registro ? registro.speed : null;
+                });
+
+                const colors = [
+                    "rgba(255, 99, 132, 1)",
+                    "rgba(54, 162, 235, 1)",
+                    "rgba(75, 192, 192, 1)",
+                    "rgba(255, 206, 86, 1)",
+                    "rgba(153, 102, 255, 1)",
+                    "rgba(255, 159, 64, 1)"
+                ];
+
+                return {
+                    label: fam,
+                    data: speeds,
+                    borderColor: colors[index % colors.length],
+                    backgroundColor: colors[index % colors.length].replace("1)", "0.2)"),
+                    tension: 0.3
+                };
+            });
+
+            if (!speedChart1) {
+                speedChart1 = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: labels, datasets: datasets },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'top' },
+                            title: {
+                                display: true,
+                                text: 'Extruder 1',
+                                align: 'start',
+                                font: { size: 16, weight: 'bold' },
+                                color: '#333'
+                            }
+                        },
+                        scales: {
+                            y: { title: { display: true, text: 'Velocidad (m/min)' } },
+                            x: {
+                                title: { display: true, text: 'Hora' },
+                                ticks: {
+                                    callback: function(value) {
+                                        const label = this.getLabelForValue(value);
+                                        const dateObj = new Date(label);
+                                        return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                speedChart1.data.labels = labels;
+                speedChart1.data.datasets = datasets;
+                speedChart1.update();
+            }
+        }
+
+        async function loadSpeedChart3() {
+            const response = await fetch('/Extruder/GetSpeedDataToday3');
+            const data = await response.json();
+
+            const ctx = document.getElementById('ExtruderChart3').getContext('2d');
+
+            if (!data || data.length === 0) {
+                ctx.font = "16px Arial";
+                ctx.fillText("No hay datos disponibles para hoy", 50, 100);
+                return;
+            }
+
+            const labels = [...new Set(data.map(item => item.timestamp))];
+            const familias = [...new Set(data.map(item => item.family))];
+
+            const datasets = familias.map((fam, index) => {
+                const speeds = labels.map(ts => {
+                    const registro = data.find(d => d.timestamp === ts && d.family === fam);
+                    return registro ? registro.speed : null;
+                });
+
+                const colors = [
+                    "rgba(255, 99, 132, 1)",
+                    "rgba(54, 162, 235, 1)",
+                    "rgba(75, 192, 192, 1)",
+                    "rgba(255, 206, 86, 1)",
+                    "rgba(153, 102, 255, 1)",
+                    "rgba(255, 159, 64, 1)"
+                ];
+
+                return {
+                    label: fam,
+                    data: speeds,
+                    borderColor: colors[index % colors.length],
+                    backgroundColor: colors[index % colors.length].replace("1)", "0.2)"),
+                    tension: 0.3
+                };
+            });
+
+            if (!speedChart3) {
+                speedChart3 = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: labels, datasets: datasets },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'top' },
+                            title: {
+                                display: true,
+                                text: 'Extruder 3',
+                                align: 'start',
+                                font: { size: 16, weight: 'bold' },
+                                color: '#333'
+                            }
+                        },
+                        scales: {
+                            y: { title: { display: true, text: 'Velocidad (m/min)' } },
+                            x: {
+                                title: { display: true, text: 'Hora' },
+                                ticks: {
+                                    callback: function(value) {
+                                        const label = this.getLabelForValue(value);
+                                        const dateObj = new Date(label);
+                                        return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                speedChart3.data.labels = labels;
+                speedChart3.data.datasets = datasets;
+                speedChart3.update();
+            }
+        }
+
+        async function loadSpeedChart4() {
+            const response = await fetch('/Extruder/GetSpeedDataToday4');
+            const data = await response.json();
+
+            const ctx = document.getElementById('ExtruderChart4').getContext('2d');
+
+            if (!data || data.length === 0) {
+                ctx.font = "16px Arial";
+                ctx.fillText("No hay datos disponibles para hoy", 50, 100);
+                return;
+            }
+
+            const labels = [...new Set(data.map(item => item.timestamp))];
+            const familias = [...new Set(data.map(item => item.family))];
+
+            const datasets = familias.map((fam, index) => {
+                const speeds = labels.map(ts => {
+                    const registro = data.find(d => d.timestamp === ts && d.family === fam);
+                    return registro ? registro.speed : null;
+                });
+
+                const colors = [
+                    "rgba(255, 99, 132, 1)",
+                    "rgba(54, 162, 235, 1)",
+                    "rgba(75, 192, 192, 1)",
+                    "rgba(255, 206, 86, 1)",
+                    "rgba(153, 102, 255, 1)",
+                    "rgba(255, 159, 64, 1)"
+                ];
+
+                return {
+                    label: fam,
+                    data: speeds,
+                    borderColor: colors[index % colors.length],
+                    backgroundColor: colors[index % colors.length].replace("1)", "0.2)"),
+                    tension: 0.3
+                };
+            });
+
+            if (!speedChart4) {
+                speedChart4 = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: labels, datasets: datasets },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'top' },
+                            title: {
+                                display: true,
+                                text: 'Extruder 4',
+                                align: 'start',
+                                font: { size: 16, weight: 'bold' },
+                                color: '#333'
+                            }
+                        },
+                        scales: {
+                            y: { title: { display: true, text: 'Velocidad (m/min)' } },
+                            x: {
+                                title: { display: true, text: 'Hora' },
+                                ticks: {
+                                    callback: function(value) {
+                                        const label = this.getLabelForValue(value);
+                                        const dateObj = new Date(label);
+                                        return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                speedChart4.data.labels = labels;
+                speedChart4.data.datasets = datasets;
+                speedChart4.update();
+            }
+        }
+
+        async function loadSpeedChart5() {
+            const response = await fetch('/Extruder/GetSpeedDataToday5');
+            const data = await response.json();
+
+            const ctx = document.getElementById('ExtruderChart5').getContext('2d');
+
+            if (!data || data.length === 0) {
+                ctx.font = "16px Arial";
+                ctx.fillText("No hay datos disponibles para hoy", 50, 100);
+                return;
+            }
+
+            const labels = [...new Set(data.map(item => item.timestamp))];
+            const familias = [...new Set(data.map(item => item.family))];
+
+            const datasets = familias.map((fam, index) => {
+                const speeds = labels.map(ts => {
+                    const registro = data.find(d => d.timestamp === ts && d.family === fam);
+                    return registro ? registro.speed : null;
+                });
+
+                const colors = [
+                    "rgba(255, 99, 132, 1)",
+                    "rgba(54, 162, 235, 1)",
+                    "rgba(75, 192, 192, 1)",
+                    "rgba(255, 206, 86, 1)",
+                    "rgba(153, 102, 255, 1)",
+                    "rgba(255, 159, 64, 1)"
+                ];
+
+                return {
+                    label: fam,
+                    data: speeds,
+                    borderColor: colors[index % colors.length],
+                    backgroundColor: colors[index % colors.length].replace("1)", "0.2)"),
+                    tension: 0.3
+                };
+            });
+
+            if (!speedChart5) {
+                speedChart5 = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: labels, datasets: datasets },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'top' },
+                            title: {
+                                display: true,
+                                text: 'Extruder 5',
+                                align: 'start',
+                                font: { size: 16, weight: 'bold' },
+                                color: '#333'
+                            }
+                        },
+                        scales: {
+                            y: { title: { display: true, text: 'Velocidad (m/min)' } },
+                            x: {
+                                title: { display: true, text: 'Hora' },
+                                ticks: {
+                                    callback: function(value) {
+                                        const label = this.getLabelForValue(value);
+                                        const dateObj = new Date(label);
+                                        return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                speedChart5.data.labels = labels;
+                speedChart5.data.datasets = datasets;
+                speedChart5.update();
+            }
+        }
+
+        async function loadSpeedChart6() {
+            const response = await fetch('/Extruder/GetSpeedDataToday6');
+            const data = await response.json();
+
+            const ctx = document.getElementById('ExtruderChart6').getContext('2d');
+
+            if (!data || data.length === 0) {
+                ctx.font = "16px Arial";
+                ctx.fillText("No hay datos disponibles para hoy", 50, 100);
+                return;
+            }
+
+            const labels = [...new Set(data.map(item => item.timestamp))];
+            const familias = [...new Set(data.map(item => item.family))];
+
+            const datasets = familias.map((fam, index) => {
+                const speeds = labels.map(ts => {
+                    const registro = data.find(d => d.timestamp === ts && d.family === fam);
+                    return registro ? registro.speed : null;
+                });
+
+                const colors = [
+                    "rgba(255, 99, 132, 1)",
+                    "rgba(54, 162, 235, 1)",
+                    "rgba(75, 192, 192, 1)",
+                    "rgba(255, 206, 86, 1)",
+                    "rgba(153, 102, 255, 1)",
+                    "rgba(255, 159, 64, 1)"
+                ];
+
+                return {
+                    label: fam,
+                    data: speeds,
+                    borderColor: colors[index % colors.length],
+                    backgroundColor: colors[index % colors.length].replace("1)", "0.2)"),
+                    tension: 0.3
+                };
+            });
+
+            if (!speedChart6) {
+                speedChart6 = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: labels, datasets: datasets },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'top' },
+                            title: {
+                                display: true,
+                                text: 'Extruder 6',
+                                align: 'start',
+                                font: { size: 16, weight: 'bold' },
+                                color: '#333'
+                            }
+                        },
+                        scales: {
+                            y: { title: { display: true, text: 'Velocidad (m/min)' } },
+                            x: {
+                                title: { display: true, text: 'Hora' },
+                                ticks: {
+                                    callback: function(value) {
+                                        const label = this.getLabelForValue(value);
+                                        const dateObj = new Date(label);
+                                        return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                speedChart6.data.labels = labels;
+                speedChart6.data.datasets = datasets;
+                speedChart6.update();
+            }
+        }
+
+        // Cargar al inicio
+        $(document).ready(function () {
+            loadSpeedChart1();
+            loadSpeedChart3();
+            loadSpeedChart4();
+            loadSpeedChart5();
+            loadSpeedChart6();
+            // Actualizar cada 30 segundos (30,000 ms)
+            setInterval(loadSpeedChart1, 30000);
+            setInterval(loadSpeedChart3, 30000);
+            setInterval(loadSpeedChart4, 30000);
+            setInterval(loadSpeedChart5, 30000);
+            setInterval(loadSpeedChart6, 30000);
+        });
+    </script>
+}
+

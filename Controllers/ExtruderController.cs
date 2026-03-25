@@ -544,7 +544,6 @@ namespace GraficasMixing.Controllers
             return Json(produccionFamilias);
         }
 
-
         public IActionResult Chart(int id)
         {
             var estado = _context.Estado
@@ -744,13 +743,269 @@ namespace GraficasMixing.Controllers
             // Buscar el último estado asociado al empleado
             var estado = _context.Estado
                 .Where(e => e.EmpleadoRef.NumeroEmpleado == numeroEmpleado)
-                .OrderByDescending(e => e.ID) // o por fecha si tienes una columna
+                .OrderByDescending(e => e.ID)
                 .FirstOrDefault();
 
             return Json(new
             {
                 contador = estado?.Contador ?? 0
             });
+        }
+
+        public IActionResult GeneralChart()
+        {
+
+            return View();
+        }
+
+        public IActionResult GetSpeedDataToday1()
+        {
+            var extruder = "Extruder1";
+            var hoy = DateTime.Today;
+            var ahora = DateTime.Now.TimeOfDay;
+
+            IQueryable<ScadaExtrudermaster> query;
+
+            // Determinar turno actual según la hora
+            if (ahora >= new TimeSpan(7, 0, 0) && ahora < new TimeSpan(15, 0, 0))
+            {
+                // Turno 1
+                query = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == hoy &&
+                    x.Hora >= new TimeSpan(7, 0, 0) &&
+                    x.Hora < new TimeSpan(15, 0, 0));
+            }
+            else if (ahora >= new TimeSpan(15, 0, 0) && ahora <= new TimeSpan(23, 59, 59))
+            {
+                // Turno 2
+                query = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == hoy &&
+                    x.Hora >= new TimeSpan(15, 0, 0) &&
+                    x.Hora <= new TimeSpan(23, 59, 59));
+            }
+            else
+            {
+                // Turno 3 (de madrugada, pertenece al día siguiente)
+                query = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == hoy.AddDays(1).Date &&
+                    x.Hora < new TimeSpan(7, 0, 0));
+            }
+
+            var data = query
+                .OrderBy(x => x.Fecha)
+                .ThenBy(x => x.Hora)
+                .Select(x => new
+                {
+                    timestamp = x.Fecha.ToString("yyyy-MM-dd") + " " + x.Hora.ToString(@"hh\:mm"),
+                    speed = x.Velocidad,
+                    family = x.Familia
+                })
+                .ToList();
+
+            return Json(data);
+        }
+
+        public IActionResult GetSpeedDataToday3()
+        {
+            var extruder = "Extruder3";
+            var hoy = DateTime.Today;
+            var ahora = DateTime.Now.TimeOfDay;
+
+            IQueryable<ScadaExtrudermaster> query;
+
+            // Determinar turno actual según la hora
+            if (ahora >= new TimeSpan(7, 0, 0) && ahora < new TimeSpan(15, 0, 0))
+            {
+                // Turno 1
+                query = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == hoy &&
+                    x.Hora >= new TimeSpan(7, 0, 0) &&
+                    x.Hora < new TimeSpan(15, 0, 0));
+            }
+            else if (ahora >= new TimeSpan(15, 0, 0) && ahora <= new TimeSpan(23, 59, 59))
+            {
+                // Turno 2
+                query = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == hoy &&
+                    x.Hora >= new TimeSpan(15, 0, 0) &&
+                    x.Hora <= new TimeSpan(23, 59, 59));
+            }
+            else
+            {
+                // Turno 3 (de madrugada, pertenece al día siguiente)
+                query = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == hoy.AddDays(1).Date &&
+                    x.Hora < new TimeSpan(7, 0, 0));
+            }
+
+            var data = query
+                .OrderBy(x => x.Fecha)
+                .ThenBy(x => x.Hora)
+                .Select(x => new
+                {
+                    timestamp = x.Fecha.ToString("yyyy-MM-dd") + " " + x.Hora.ToString(@"hh\:mm"),
+                    speed = x.Velocidad,
+                    family = x.Familia
+                })
+                .ToList();
+
+            return Json(data);
+        }
+
+        public IActionResult GetSpeedDataToday4()
+        {
+            var extruder = "Extruder4";
+            var hoy = DateTime.Today;
+            var ahora = DateTime.Now.TimeOfDay;
+
+            IQueryable<ScadaExtrudermaster> query;
+
+            // Determinar turno actual según la hora
+            if (ahora >= new TimeSpan(7, 0, 0) && ahora < new TimeSpan(15, 0, 0))
+            {
+                // Turno 1
+                query = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == hoy &&
+                    x.Hora >= new TimeSpan(7, 0, 0) &&
+                    x.Hora < new TimeSpan(15, 0, 0));
+            }
+            else if (ahora >= new TimeSpan(15, 0, 0) && ahora <= new TimeSpan(23, 59, 59))
+            {
+                // Turno 2
+                query = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == hoy &&
+                    x.Hora >= new TimeSpan(15, 0, 0) &&
+                    x.Hora <= new TimeSpan(23, 59, 59));
+            }
+            else
+            {
+                // Turno 3 (de madrugada, pertenece al día siguiente)
+                query = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == hoy.AddDays(1).Date &&
+                    x.Hora < new TimeSpan(7, 0, 0));
+            }
+
+            var data = query
+                .OrderBy(x => x.Fecha)
+                .ThenBy(x => x.Hora)
+                .Select(x => new
+                {
+                    timestamp = x.Fecha.ToString("yyyy-MM-dd") + " " + x.Hora.ToString(@"hh\:mm"),
+                    speed = x.Velocidad,
+                    family = x.Familia
+                })
+                .ToList();
+
+            return Json(data);
+        }
+
+        public IActionResult GetSpeedDataToday5()
+        {
+            var extruder = "Extruder5";
+            var hoy = DateTime.Today;
+            var ahora = DateTime.Now.TimeOfDay;
+
+            IQueryable<ScadaExtrudermaster> query;
+
+            // Determinar turno actual según la hora
+            if (ahora >= new TimeSpan(7, 0, 0) && ahora < new TimeSpan(15, 0, 0))
+            {
+                // Turno 1
+                query = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == hoy &&
+                    x.Hora >= new TimeSpan(7, 0, 0) &&
+                    x.Hora < new TimeSpan(15, 0, 0));
+            }
+            else if (ahora >= new TimeSpan(15, 0, 0) && ahora <= new TimeSpan(23, 59, 59))
+            {
+                // Turno 2
+                query = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == hoy &&
+                    x.Hora >= new TimeSpan(15, 0, 0) &&
+                    x.Hora <= new TimeSpan(23, 59, 59));
+            }
+            else
+            {
+                // Turno 3 (de madrugada, pertenece al día siguiente)
+                query = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == hoy.AddDays(1).Date &&
+                    x.Hora < new TimeSpan(7, 0, 0));
+            }
+
+            var data = query
+                .OrderBy(x => x.Fecha)
+                .ThenBy(x => x.Hora)
+                .Select(x => new
+                {
+                    timestamp = x.Fecha.ToString("yyyy-MM-dd") + " " + x.Hora.ToString(@"hh\:mm"),
+                    speed = x.Velocidad,
+                    family = x.Familia
+                })
+                .ToList();
+
+            return Json(data);
+        }
+
+        public IActionResult GetSpeedDataToday6()
+        {
+            var extruder = "Extruder6";
+            var hoy = DateTime.Today;
+            var ahora = DateTime.Now.TimeOfDay;
+
+            IQueryable<ScadaExtrudermaster> query;
+
+            // Determinar turno actual según la hora
+            if (ahora >= new TimeSpan(7, 0, 0) && ahora < new TimeSpan(15, 0, 0))
+            {
+                // Turno 1
+                query = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == hoy &&
+                    x.Hora >= new TimeSpan(7, 0, 0) &&
+                    x.Hora < new TimeSpan(15, 0, 0));
+            }
+            else if (ahora >= new TimeSpan(15, 0, 0) && ahora <= new TimeSpan(23, 59, 59))
+            {
+                // Turno 2
+                query = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == hoy &&
+                    x.Hora >= new TimeSpan(15, 0, 0) &&
+                    x.Hora <= new TimeSpan(23, 59, 59));
+            }
+            else
+            {
+                // Turno 3 (de madrugada, pertenece al día siguiente)
+                query = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == hoy.AddDays(1).Date &&
+                    x.Hora < new TimeSpan(7, 0, 0));
+            }
+
+            var data = query
+                .OrderBy(x => x.Fecha)
+                .ThenBy(x => x.Hora)
+                .Select(x => new
+                {
+                    timestamp = x.Fecha.ToString("yyyy-MM-dd") + " " + x.Hora.ToString(@"hh\:mm"),
+                    speed = x.Velocidad,
+                    family = x.Familia
+                })
+                .ToList();
+
+            return Json(data);
         }
 
     }
