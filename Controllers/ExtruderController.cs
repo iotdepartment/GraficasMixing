@@ -761,7 +761,6 @@ namespace GraficasMixing.Controllers
         {
             var extruder = "Extruder1";
 
-            // Convertir la hora actual a la zona horaria de México
             var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
             var ahoraLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
 
@@ -813,13 +812,16 @@ namespace GraficasMixing.Controllers
         public IActionResult GetSpeedDataToday3()
         {
             var extruder = "Extruder3";
-            var hoy = DateTime.Today;
-            var ahora = DateTime.Now.TimeOfDay;
+
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
+            var ahoraLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+
+            var hoy = ahoraLocal.Date;
+            var horaActual = ahoraLocal.TimeOfDay;
 
             IQueryable<ScadaExtrudermaster> query;
 
-            // Determinar turno actual según la hora
-            if (ahora >= new TimeSpan(7, 0, 0) && ahora < new TimeSpan(15, 0, 0))
+            if (horaActual >= new TimeSpan(7, 0, 0) && horaActual < new TimeSpan(15, 0, 0))
             {
                 // Turno 1
                 query = _context.ScadaExtrudermaster.Where(x =>
@@ -828,7 +830,7 @@ namespace GraficasMixing.Controllers
                     x.Hora >= new TimeSpan(7, 0, 0) &&
                     x.Hora < new TimeSpan(15, 0, 0));
             }
-            else if (ahora >= new TimeSpan(15, 0, 0) && ahora <= new TimeSpan(23, 59, 59))
+            else if (horaActual >= new TimeSpan(15, 0, 0) && horaActual <= new TimeSpan(23, 59, 59))
             {
                 // Turno 2
                 query = _context.ScadaExtrudermaster.Where(x =>
@@ -839,10 +841,10 @@ namespace GraficasMixing.Controllers
             }
             else
             {
-                // Turno 3 (de madrugada, pertenece al día siguiente)
+                // Turno 3 (madrugada del mismo día)
                 query = _context.ScadaExtrudermaster.Where(x =>
                     x.Extruder == extruder &&
-                    x.Fecha.Date == hoy.AddDays(1).Date &&
+                    x.Fecha.Date == hoy &&
                     x.Hora < new TimeSpan(7, 0, 0));
             }
 
@@ -863,13 +865,16 @@ namespace GraficasMixing.Controllers
         public IActionResult GetSpeedDataToday4()
         {
             var extruder = "Extruder4";
-            var hoy = DateTime.Today;
-            var ahora = DateTime.Now.TimeOfDay;
+
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
+            var ahoraLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+
+            var hoy = ahoraLocal.Date;
+            var horaActual = ahoraLocal.TimeOfDay;
 
             IQueryable<ScadaExtrudermaster> query;
 
-            // Determinar turno actual según la hora
-            if (ahora >= new TimeSpan(7, 0, 0) && ahora < new TimeSpan(15, 0, 0))
+            if (horaActual >= new TimeSpan(7, 0, 0) && horaActual < new TimeSpan(15, 0, 0))
             {
                 // Turno 1
                 query = _context.ScadaExtrudermaster.Where(x =>
@@ -878,7 +883,7 @@ namespace GraficasMixing.Controllers
                     x.Hora >= new TimeSpan(7, 0, 0) &&
                     x.Hora < new TimeSpan(15, 0, 0));
             }
-            else if (ahora >= new TimeSpan(15, 0, 0) && ahora <= new TimeSpan(23, 59, 59))
+            else if (horaActual >= new TimeSpan(15, 0, 0) && horaActual <= new TimeSpan(23, 59, 59))
             {
                 // Turno 2
                 query = _context.ScadaExtrudermaster.Where(x =>
@@ -889,10 +894,10 @@ namespace GraficasMixing.Controllers
             }
             else
             {
-                // Turno 3 (de madrugada, pertenece al día siguiente)
+                // Turno 3 (madrugada del mismo día)
                 query = _context.ScadaExtrudermaster.Where(x =>
                     x.Extruder == extruder &&
-                    x.Fecha.Date == hoy.AddDays(1).Date &&
+                    x.Fecha.Date == hoy &&
                     x.Hora < new TimeSpan(7, 0, 0));
             }
 
@@ -913,13 +918,16 @@ namespace GraficasMixing.Controllers
         public IActionResult GetSpeedDataToday5()
         {
             var extruder = "Extruder5";
-            var hoy = DateTime.Today;
-            var ahora = DateTime.Now.TimeOfDay;
+
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
+            var ahoraLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+
+            var hoy = ahoraLocal.Date;
+            var horaActual = ahoraLocal.TimeOfDay;
 
             IQueryable<ScadaExtrudermaster> query;
 
-            // Determinar turno actual según la hora
-            if (ahora >= new TimeSpan(7, 0, 0) && ahora < new TimeSpan(15, 0, 0))
+            if (horaActual >= new TimeSpan(7, 0, 0) && horaActual < new TimeSpan(15, 0, 0))
             {
                 // Turno 1
                 query = _context.ScadaExtrudermaster.Where(x =>
@@ -928,7 +936,7 @@ namespace GraficasMixing.Controllers
                     x.Hora >= new TimeSpan(7, 0, 0) &&
                     x.Hora < new TimeSpan(15, 0, 0));
             }
-            else if (ahora >= new TimeSpan(15, 0, 0) && ahora <= new TimeSpan(23, 59, 59))
+            else if (horaActual >= new TimeSpan(15, 0, 0) && horaActual <= new TimeSpan(23, 59, 59))
             {
                 // Turno 2
                 query = _context.ScadaExtrudermaster.Where(x =>
@@ -939,10 +947,10 @@ namespace GraficasMixing.Controllers
             }
             else
             {
-                // Turno 3 (de madrugada, pertenece al día siguiente)
+                // Turno 3 (madrugada del mismo día)
                 query = _context.ScadaExtrudermaster.Where(x =>
                     x.Extruder == extruder &&
-                    x.Fecha.Date == hoy.AddDays(1).Date &&
+                    x.Fecha.Date == hoy &&
                     x.Hora < new TimeSpan(7, 0, 0));
             }
 
@@ -963,13 +971,16 @@ namespace GraficasMixing.Controllers
         public IActionResult GetSpeedDataToday6()
         {
             var extruder = "Extruder6";
-            var hoy = DateTime.Today;
-            var ahora = DateTime.Now.TimeOfDay;
+
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
+            var ahoraLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+
+            var hoy = ahoraLocal.Date;
+            var horaActual = ahoraLocal.TimeOfDay;
 
             IQueryable<ScadaExtrudermaster> query;
 
-            // Determinar turno actual según la hora
-            if (ahora >= new TimeSpan(7, 0, 0) && ahora < new TimeSpan(15, 0, 0))
+            if (horaActual >= new TimeSpan(7, 0, 0) && horaActual < new TimeSpan(15, 0, 0))
             {
                 // Turno 1
                 query = _context.ScadaExtrudermaster.Where(x =>
@@ -978,7 +989,7 @@ namespace GraficasMixing.Controllers
                     x.Hora >= new TimeSpan(7, 0, 0) &&
                     x.Hora < new TimeSpan(15, 0, 0));
             }
-            else if (ahora >= new TimeSpan(15, 0, 0) && ahora <= new TimeSpan(23, 59, 59))
+            else if (horaActual >= new TimeSpan(15, 0, 0) && horaActual <= new TimeSpan(23, 59, 59))
             {
                 // Turno 2
                 query = _context.ScadaExtrudermaster.Where(x =>
@@ -989,10 +1000,10 @@ namespace GraficasMixing.Controllers
             }
             else
             {
-                // Turno 3 (de madrugada, pertenece al día siguiente)
+                // Turno 3 (madrugada del mismo día)
                 query = _context.ScadaExtrudermaster.Where(x =>
                     x.Extruder == extruder &&
-                    x.Fecha.Date == hoy.AddDays(1).Date &&
+                    x.Fecha.Date == hoy &&
                     x.Hora < new TimeSpan(7, 0, 0));
             }
 
