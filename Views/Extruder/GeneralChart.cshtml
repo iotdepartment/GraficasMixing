@@ -64,11 +64,11 @@
         let speedChart6;
 
         async function loadSpeedChart1() {
-            const response = await fetch(`/Extruder/GetSpeedDataToday1`);
+            const response = await fetch('@Url.Content("~/Extruder/GetSpeedDataToday1")')
 
             const data = await response.json();
 
-            const ctx = document.getElementById('ExtruderChart1').getContext('2d');
+            const ctx = document.getElementById("ExtruderChart1").getContext('2d');
 
             if (!data || data.length === 0) {
                 ctx.font = "8px Arial";
