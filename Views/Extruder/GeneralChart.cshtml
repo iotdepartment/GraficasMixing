@@ -442,7 +442,7 @@
             const ctx = document.getElementById('ExtruderChart6').getContext('2d');
 
             if (!data || data.length === 0) {
-                ctx.font = "8px Arial";
+                ctx.font = "16px Arial";
                 ctx.fillText("No hay datos disponibles para hoy", 50, 100);
                 return;
             }
@@ -450,30 +450,27 @@
             const labels = [...new Set(data.map(item => item.timestamp))];
             const familias = [...new Set(data.map(item => item.family))];
 
-            const colors = [
-                "rgba(255, 99, 132, 1)",
-                "rgba(54, 162, 235, 1)",
-                "rgba(75, 192, 192, 1)",
-                "rgba(255, 206, 86, 1)",
-                "rgba(153, 102, 255, 1)",
-                "rgba(255, 159, 64, 1)"
-            ];
-
             const datasets = familias.map((fam, index) => {
                 const speeds = labels.map(ts => {
                     const registro = data.find(d => d.timestamp === ts && d.family === fam);
                     return registro ? registro.speed : null;
                 });
 
+                const colors = [
+                    "rgba(255, 99, 132, 1)",
+                    "rgba(54, 162, 235, 1)",
+                    "rgba(75, 192, 192, 1)",
+                    "rgba(255, 206, 86, 1)",
+                    "rgba(153, 102, 255, 1)",
+                    "rgba(255, 159, 64, 1)"
+                ];
+
                 return {
                     label: fam,
                     data: speeds,
                     borderColor: colors[index % colors.length],
                     backgroundColor: colors[index % colors.length].replace("1)", "0.2)"),
-                    tension: 0.3,
-                    borderWidth: 5,
-                    pointRadius: 0,
-                    pointHoverRadius: 0
+                    tension: 0.3
                 };
             });
 
@@ -484,29 +481,17 @@
                     options: {
                         responsive: true,
                         plugins: {
-                            legend: {
-                                position: 'top',
-                                labels: {
-                                    font: {
-                                        size: 12,
-                                        weight: 'bold'
-                                    },
-                                    color: '#333'
-                                }
-                            },
+                            legend: { position: 'top' },
                             title: {
                                 display: true,
                                 text: 'Extruder 6',
                                 align: 'start',
-                                font: { size: 20, weight: 'bold' },
+                                font: { size: 16, weight: 'bold' },
                                 color: '#333'
                             }
                         },
                         scales: {
-                            y: {
-                                min: 0,
-                                title: { display: true, text: 'Velocidad (m/min)' }
-                            },
+                            y: { title: { display: true, text: 'Velocidad (m/min)' } },
                             x: {
                                 title: { display: true, text: 'Hora' },
                                 ticks: {
@@ -525,7 +510,6 @@
                 speedChart6.data.datasets = datasets;
                 speedChart6.update();
             }
-
         }
 
         // Cargar al inicio
