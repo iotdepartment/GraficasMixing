@@ -20,10 +20,6 @@ namespace GraficasMixing.Controllers
             return View();
         }
 
-        // ---------------------------------------------------------
-        //  GET: /BatchOff/GetData?fecha=2025-01-18&turno=Turno1
-        // ---------------------------------------------------------
-
         [HttpGet]
         public JsonResult GetData(DateTime fecha, string turno)
         {

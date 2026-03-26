@@ -736,7 +736,6 @@ namespace GraficasMixing.Controllers
             return Json(new { registros });
         }
 
-
         [HttpGet]
         public JsonResult GetContador(int numeroEmpleado)
         {
