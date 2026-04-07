@@ -1,9 +1,7 @@
 ﻿using GraficasMixing.Models;
+using GraficasMixing.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Linq;
-using GraficasMixing.ViewModels;
 
 
 namespace GraficasMixing.Controllers
@@ -396,6 +394,14 @@ namespace GraficasMixing.Controllers
             var produccionFamilias = grouped
                 .Select(g =>
                 {
+                    var metrosProducidos = g.Sum(x => x.Metros ?? 0);
+
+                    // ❗❗ NO incluir familias sin metros producidos
+                    if (metrosProducidos <= 0)
+                    {
+                        return null;
+                    }
+
                     var velocidadPromedio = g
                         .Where(v => v.Velocidad > 0)
                         .Select(v => v.Velocidad ?? 0)
@@ -414,12 +420,13 @@ namespace GraficasMixing.Controllers
                     return new ProduccionFamiliaViewModel
                     {
                         Familia = g.Key,
-                        MetrosProducidos = g.Sum(x => x.Metros ?? 0),
+                        MetrosProducidos = metrosProducidos,
                         VelocidadPromedio = velocidadPromedio,
                         SetPointVelocidad = setpoint,
                         PorcentajeEfectividad = porcentajeEfectividad
                     };
                 })
+                .Where(x => x != null) // ← eliminar familias sin metros
                 .ToList();
 
             // --- PROMEDIO DE PORCENTAJE DE EFECTIVIDAD ---
@@ -671,7 +678,7 @@ namespace GraficasMixing.Controllers
             return Json(data);
         }
 
-        
+
 
         public IActionResult Chart(int id)
         {
