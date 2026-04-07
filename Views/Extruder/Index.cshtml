@@ -5,12 +5,25 @@
 
     ViewData["Title"] = "Extruder Efficiency";
 }
+
+<style>
+    .sticky-filters {
+        position: sticky;
+        top: 0; /* o la altura de tu navbar si tienes una */
+        z-index: 999; /* para que quede encima de las gráficas */
+        background: white; /* evita transparencia al hacer scroll */
+    }
+
+    .sticky-filters {
+        top: 5px;
+    }
+</style>
+
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
     <h2 class="text-start">Mesus Charts (Extruder Area) <i class="bi bi-clipboard-data"></i></h2>
     <hr class="border border-dark border-0 mb-4 opacity-100">
 
 <!-- Nuevo botón para ir a la vista de Chart -->
-
 <div class="row mb-3 mt-2">
     <div class="col-12 d-flex justify-content-end align-items-center gap-2">
         <!-- Texto a la izquierda -->
@@ -28,13 +41,14 @@
         </select>
     </div>
 </div>
+@* CONTROLES PARA LAS CHARTS *@
 
-<div class="card shadow-sm border border-1 bg-white rounded-4 p-3">
+<div class="card shadow-sm border border-1 bg-white rounded-4 p-3 sticky-filters">
     <div class="row align-items-end">
         
         <!-- Extruder -->
         <div class="col-2">
-            <label for="ExtruderSelect">Extrusora:</label><br>
+            <label for="ExtruderSelect" class="fw-bold ">Extrusora:</label><br>
             <select id="ExtruderSelect" class="form-select">
                 @foreach (var extruder in extruders)
                 {
@@ -45,7 +59,7 @@
 
         <!-- Shift -->
         <div class="col-2">
-            <label for="shiftSelect">Turno:</label><br>
+            <label for="shiftSelect" class="fw-bold">Turno:</label><br>
             <select id="shiftSelect" class="form-select">
                 <option value="Turno1" selected>Turno 1(7:00 - 15:00)</option>
                 <option value="Turno2">Turno 2(15:00 - 24:00)</option>
@@ -55,8 +69,8 @@
         </div>
 
         <div class="col-2">
-            <label for="startDate">Fecha:</label><br>
-            <input type="date" id="startDate" class="form-control">
+            <label for="startDate" class="fw-bold">Fecha:</label><br>
+            <input type="date" id="startDate" class="form-control" max="@DateTime.Now.ToString("yyyy-MM-dd")">
         </div>
 
         <div class="col-1">
@@ -69,13 +83,7 @@
             </div>
         </div>
 
-        <div class="col-1">
-            <div class="d-grid gap-2">
-                <button id="exportChartBtn" class="btn btn-outline-success rounded-pill">
-                    <i class="bi bi-download"></i> Export
-                </button>
-            </div>
-        </div>
+       
 
         <div class="col-1">
             <div class="d-grid gap-2">
@@ -94,113 +102,146 @@
                 </button>
             </div>
         </div>
+
+        <div class="col-1">
+            <div class="d-grid gap-2">
+                <button id="exportChartBtn" class="btn btn-outline-success rounded-pill">
+                    <i class="bi bi-download"></i> Export
+                </button>
+            </div>
+        </div>  
+
     </div>
 </div>
 
-<!-- Renderizamos el modal fijo con los datos -->
+<!-- MODAL PARA EDITAR LOS SETPOINTS -->
 @await Html.PartialAsync("Partials/_ExtruderModal", Model)
 
-    @* //Primera Fila  *@
+@* //Primera Fila 
+    EFICIENCIA DEL DÍA | PORCENTAJE DE PRODUCCION POR TURNO | PORCENTAJE DE TIEMPO MUERTO POR TURNO
+*@
 
-    <div class="row g-3 mt-1 mb-5">
+<div class="row g-3 mt-1 mb-4">
 
-        <!-- Gráfica 1 -->
-        <div class="col-4">
-            <div class="card shadow-sm border border-1 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 360px;">
-                <canvas id="TotmPieChart"></canvas>
-            </div>
+    <!-- Gráfica 1 -->
+    <div class="col-4">
+        <div class="card shadow-sm border border-1 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 360px;">
+            <canvas id="EficienciaRealPieChart" width="200" height="200"></canvas>
+
         </div>
-
-        <!-- Gráfica 2 -->
-        <div class="col-4">
-            <div class="card shadow-sm border border-1 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 360px;">
-                <canvas id="EfficiencyBarChart"></canvas>
-            </div>
-        </div>
-
-        <!-- Gráfica 3 -->
-        <div class="col-4">
-            <div class="card shadow-sm border border-1 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 360px;">
-                <canvas id="DowntimeBarChart"></canvas>
-            </div>
-        </div>
-
     </div>
 
-    <hr class="border border-dark border-0 mb-4 opacity-100">
+    <!-- Gráfica 2 -->
+    <div class="col-4">
+        <div class="card shadow-sm border border-1 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 360px;">
+            <canvas id="EfficiencyBarChart"></canvas>
+        </div>
+    </div>
 
-    <div class="card shadow-sm border border-1 rounded-4 p-3 mt-4">
-        <h5 class="mb-3">Producción por familia</h5>
-        <div class="table-responsive">
-            <table id="produccionTable" class="table table-striped table-hover align-middle">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Familia</th>
-                        <th>Metros Producidos</th>
-                        <th>Velocidad Promedio (m/min)</th>
-                        <th>SetPoint Velocidad (m/min)</th>
-                        <th>% Efectividad</th>
+    <!-- Gráfica 3 -->
+    <div class="col-4">
+        <div class="card shadow-sm border border-1 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 360px;">
+            <canvas id="DowntimeBarChart"></canvas>
+        </div>
+    </div>
 
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in Model)
-                    {
+</div>
+
+@* <hr class="border border-dark border-0 mb-4 opacity-100"> *@
+
+
+@* PRODUCCION POR FAMILIA (TABLA) *@
+
+<div class="row">
+     <div class="col-3">
+        <div class="card mx-auto text-center shadow-sm border-0 rounded-pill p-4 mt-2">
+            <h5 class="m-0 fw-bold">PRODUCCIÓN POR FAMILIA</h5>
+        </div>
+     </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm border border-0 rounded-4  p-4 mt-2">
+
+            <div class="table-responsive">
+                <table id="produccionTable" class="table mb-0 table-striped table-hover align-middle">
+                    <thead class="table-dark">
                         <tr>
+                            <th>Familia</th>
+                            <th>Metros Producidos</th>
+                            <th>Velocidad Promedio (m/min)</th>
+                            <th>SetPoint Velocidad (m/min)</th>
+                            <th>% Efectividad</th>
+
                         </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
-    
-    <hr class="border border-dark border-0 mb-4 opacity-100">
-
-
-    @* //Segunda Fila *@
-
-    <div class="row align-items-end mb-5 mt-4">
-        <div class="col-12 mb-2">
-            <div class="card shadow-sm border border-1 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 360px;">
-                <canvas id="DailyEfficiencyChart" width="50" height="10"></canvas>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
+</div>
+@* 
+<hr class="border border-dark border-0 mb-4 opacity-100"> *@
+
+@* //Segunda Fila 
+    EFICIENCIA DIARIA DE LOS ULTIMOS 7 DÍAS
+*@
+
+<div class="row align-items-end mb-4">
+    <div class="col-12 mb-2">
+        <div class="card shadow-sm border border-1 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 360px;">
+            <canvas id="DailyEfficiencyChart" width="50" height="10"></canvas>
+        </div>
+    </div>
+</div>
         
-    <hr class="border border-dark border-0 mb-4 opacity-100">
+@* <hr class="border border-dark border-0 mb-4 opacity-100"> *@
 
-    @* //Tercera Fila     *@
+@* //Tercera Fila     
+    TIEMPO DE PRODUCCION POR FAMILIA | METROS EXTRUIDOS POR FAMILIA
+*@
 
-    <div class="row g-3 mb-5 mt-1">
+<div class="row g-3 mb-4">
 
-        <div class="col-6">
-            <div class="card shadow-sm border border-1 rounded-4 p-3">
-                <canvas id="FamilyStackedChart" style="width:100%; height:360px;"></canvas>
-            </div>
-        </div>
-
-        <div class="col-6">
-            <div class="card shadow-sm border border-1 rounded-4 p-3">
-                <canvas id="FamilyMetersChart" style="width:100%; height:360px;"></canvas>
-            </div>
-        </div>
-
-    </div>
-
-    <hr class="border border-dark border-0 mb-4 opacity-100">
-
-    @* // Cuarta Fila *@
-    <div class="row align-items-end mb-5 mt-4">
-        <div class="col-12 mb-2">
-            <div class="card shadow-sm border border-1 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 360px;">
-
-                    <canvas id="SpeedLineChart" style="width:100%; height:100%;"></canvas>
-            </div>
+    <div class="col-6">
+        <div class="card shadow-sm border border-1 rounded-4 p-3">
+            <canvas id="FamilyStackedChart" style="width:100%; height:360px;"></canvas>
         </div>
     </div>
 
-    <!-- Mensaje de error inline -->
-    <div id="errorMessage" class="text-danger fw-bold mt-3"></div>
+    <div class="col-6">
+        <div class="card shadow-sm border border-1 rounded-4 p-3">
+            <canvas id="FamilyMetersChart" style="width:100%; height:360px;"></canvas>
+        </div>
+    </div>
+
+</div>
+
+@* <hr class="border border-dark border-0 mb-4 opacity-100"> *@
+
+@* // Cuarta Fila 
+    CHART VELOCIODAD DURANTE EL DÍA
+*@
+
+<div class="row align-items-end mb-4">
+    <div class="col-12 mb-2">
+        <div class="card shadow-sm border border-1 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 360px;">
+
+                <canvas id="SpeedLineChart" style="width:100%; height:100%;"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Mensaje de error inline -->
+<div id="errorMessage" class="text-danger fw-bold mt-3"></div>
 
 @section Scripts {
     <!-- Importar Chart.js y el plugin de datalabels -->
@@ -216,8 +257,6 @@
         }
     </script>
 
-
-
     <script>
         // Abrir modal al hacer clic en el botón
         document.getElementById("openSetPointModal").addEventListener("click", function () {
@@ -227,18 +266,23 @@
     </script>
 
     <script>
-        let totmChart;
+        // let totmChart;
         let efficiencyChart;
         let downtimeChart;
         let dailyEfficiencyChart;
         let familyStackedChart;
         let familyMetersChart;
         let speedChart;
+        let eficienciaRealPieChart;
 
-        async function loadTotmChart() {
+
+        //EFICIENCIA DIARIA %
+        async function loadEficienciaRealPieChart() {
+
             const extruder = document.getElementById("ExtruderSelect").value;
             const shift = document.getElementById("shiftSelect").value;
             const date = document.getElementById("startDate").value;
+
             const spinner = document.getElementById("spinner");
             const errorMessage = document.getElementById("errorMessage");
 
@@ -246,34 +290,27 @@
             errorMessage.innerText = "";
 
             try {
-                const response = await fetch(`/Extruder/GetTotmData?extruder=${extruder}&shift=${shift}&date=${date}`);
-                const result = await response.json();
+                const response = await fetch(`/Extruder/GetEficienciaRealData?extruder=${extruder}&shift=${shift}&date=${date}`);
+                const data = await response.json();
 
-                let totm1 = 0;
-                let totm0 = 0;
+                const eficienciaReal = data.eficienciaReal;
+                const perdida = 100 - eficienciaReal;
 
-                result.forEach(r => {
-                    if (r.totm == 1) totm1 = r.count;
-                    else if (r.totm == 0) totm0 = r.count;
-                });
+                const ctx = document.getElementById("EficienciaRealPieChart").getContext("2d");
 
-                const labels = ["Tiempo de Operacion","Tiempo Muerto"];
-                const data = [totm1, totm0];
+                const chartTitle = `Eficiencia – ${extruder} – ${shift} (${date})`;
 
-                const ctx = document.getElementById("TotmPieChart").getContext("2d");
+                if (!eficienciaRealPieChart) {
 
-                // Texto dinámico para el título
-                const chartTitle = `Eficiencia Diaria % – ${extruder} – ${shift} (${date})`;
-
-                if (!totmChart) {
-                    // Crear gráfico inicial
-                    totmChart = new Chart(ctx, {
-                        type: "pie",
+                    eficienciaRealPieChart = new Chart(ctx, {
+                        type: 'pie',
                         data: {
-                            labels: labels,
+                            labels: ["Eficiencia", "Pérdida"],
                             datasets: [{
-                                data: data,
-                                backgroundColor: ["rgba(49, 92, 213)", "rgba(153, 153, 153)"], // verde y rojo
+                                data: [eficienciaReal, perdida],
+                                backgroundColor: ["#4CAF50", "#EF5350"],
+                                borderColor: "#fff",
+                                borderWidth: 2
                             }]
                         },
                         options: {
@@ -286,44 +323,134 @@
                                 legend: { position: "bottom" },
                                 title: {
                                     display: true,
-                                    text: "Eficiencia del dia (min / %)",
-                                    font: {
-                                        size: 18,
-                                        weight: "bold"
-                                    },
-                                    color: "#333",
-                                    padding: {
-                                        top: 10,
-                                        bottom: 20
-                                    }
+                                    text: chartTitle,
+                                    font: { size: 18, weight: "bold" },
+                                    color: "#333"
                                 },
                                 datalabels: {
                                     color: "#fff",
-                                    font: { weight: "bold", size: 14 },
-                                    formatter: (value, ctx) => {
-                                        const dataset = ctx.chart.data.datasets[0].data;
-                                        const total = dataset.reduce((a, b) => a + b, 0);
-                                        if (total === 0) return "0 (0%)";
-                                        const porcentaje = (value / total * 100).toFixed(1);
-                                        return `${value} (${porcentaje}%)`;
+                                    font: { weight: "bold", size: 16 },
+                                    formatter: (value) => `${value.toFixed(1)}%`
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (context) {
+                                            return `${context.label}: ${context.raw.toFixed(2)}%`;
+                                        }
                                     }
                                 }
                             }
                         },
                         plugins: [ChartDataLabels]
                     });
+
                 } else {
-                    // Actualizar datos y título suavemente
-                    totmChart.data.datasets[0].data = data;
-                    totmChart.options.plugins.title.text = chartTitle;
-                    totmChart.update();
+
+                    eficienciaRealPieChart.data.datasets[0].data = [eficienciaReal, perdida];
+                    eficienciaRealPieChart.options.plugins.title.text = chartTitle;
+
+                    eficienciaRealPieChart.update();
                 }
+
             } catch (error) {
-                errorMessage.innerText = "Error cargando datos.";
+                errorMessage.innerText = "Error cargando datos de eficiencia real.";
             } finally {
                 spinner.style.display = "none";
             }
         }
+
+        //EFICIENCIA DIARIA %
+        // async function loadTotmChart() {
+        //     const extruder = document.getElementById("ExtruderSelect").value;
+        //     const shift = document.getElementById("shiftSelect").value;
+        //     const date = document.getElementById("startDate").value;
+        //     const spinner = document.getElementById("spinner");
+        //     const errorMessage = document.getElementById("errorMessage");
+
+        //     spinner.style.display = "inline-block";
+        //     errorMessage.innerText = "";
+
+        //     try {
+        //         const response = await fetch(`/Extruder/GetTotmData?extruder=${extruder}&shift=${shift}&date=${date}`);
+        //         const result = await response.json();
+
+        //         let totm1 = 0;
+        //         let totm0 = 0;
+
+        //         result.forEach(r => {
+        //             if (r.totm == 1) totm1 = r.count;
+        //             else if (r.totm == 0) totm0 = r.count;
+        //         });
+
+        //         const labels = ["Tiempo de Operacion","Tiempo Muerto"];
+        //         const data = [totm1, totm0];
+
+        //         const ctx = document.getElementById("TotmPieChart").getContext("2d");
+
+        //         // Texto dinámico para el título
+        //         const chartTitle = `Eficiencia Diaria % – ${extruder} – ${shift} (${date})`;
+
+        //         if (!totmChart) {
+        //             // Crear gráfico inicial
+        //             totmChart = new Chart(ctx, {
+        //                 type: "pie",
+        //                 data: {
+        //                     labels: labels,
+        //                     datasets: [{
+        //                         data: data,
+        //                         backgroundColor: ["rgba(49, 92, 213)", "rgba(153, 153, 153)"], // verde y rojo
+        //                     }]
+        //                 },
+        //                 options: {
+        //                     responsive: true,
+        //                     animation: {
+        //                         duration: 1200,
+        //                         easing: "easeOutQuart"
+        //                     },
+        //                     plugins: {
+        //                         legend: { position: "bottom" },
+        //                         title: {
+        //                             display: true,
+        //                             text: "Eficiencia del dia (min / %)",
+        //                             font: {
+        //                                 size: 18,
+        //                                 weight: "bold"
+        //                             },
+        //                             color: "#333",
+        //                             padding: {
+        //                                 top: 10,
+        //                                 bottom: 20
+        //                             }
+        //                         },
+        //                         datalabels: {
+        //                             color: "#fff",
+        //                             font: { weight: "bold", size: 14 },
+        //                             formatter: (value, ctx) => {
+        //                                 const dataset = ctx.chart.data.datasets[0].data;
+        //                                 const total = dataset.reduce((a, b) => a + b, 0);
+        //                                 if (total === 0) return "0 (0%)";
+        //                                 const porcentaje = (value / total * 100).toFixed(1);
+        //                                 return `${value} (${porcentaje}%)`;
+        //                             }
+        //                         }
+        //                     }
+        //                 },
+        //                 plugins: [ChartDataLabels]
+        //             });
+        //         } else {
+        //             // Actualizar datos y título suavemente
+        //             totmChart.data.datasets[0].data = data;
+        //             totmChart.options.plugins.title.text = chartTitle;
+        //             totmChart.update();
+        //         }
+        //     } catch (error) {
+        //         errorMessage.innerText = "Error cargando datos.";
+        //     } finally {
+        //         spinner.style.display = "none";
+        //     }
+        // }
+
+        //PORCENTAJE DE PRODUCCION POR TURNO
 
         async function loadEfficiencyChart() {
             const extruder = document.getElementById("ExtruderSelect").value;
@@ -343,7 +470,7 @@
                     data: {
                         labels: labels,
                         datasets: [{
-                            label: "Eficiencia (%)",
+                            label: "Producción (%)",
                             data: data,
                             backgroundColor: ["rgba(49, 92, 213)", "rgba(49, 92, 213)", "rgba(49, 92, 213)"]
                         }]
@@ -368,7 +495,7 @@
                         plugins: {
                             title: {
                                 display: true,
-                                text: "Porcentaje de eficiencia por turno (%)",
+                                text: "Porcentaje de producción por turno (%)",
                                 font: { size: 18, weight: "bold" },
                                 color: "#333",
                                 padding: { top: 20, bottom: 10 } // espacio extra para claridad
@@ -394,7 +521,8 @@
                 efficiencyChart.update();
             }
         }
-
+        
+        //PORCENTAJE DE TIEMPO MUERTO POR TURNO
         async function loadDowntimeChart() {
             const extruder = document.getElementById("ExtruderSelect").value;
             const date = document.getElementById("startDate").value;
@@ -463,6 +591,36 @@
             }
         }
 
+        //TABLA PRODCCION POR FAMILIA
+        function cargarProduccionFamilias() {
+            const fecha = document.getElementById("startDate").value;
+            const turno = document.getElementById("shiftSelect").value;
+            const extruder = document.getElementById("ExtruderSelect").value;
+
+            document.getElementById("spinner").style.display = "inline-block";
+
+            fetch(`/Extruder/GetProduccionFamilias?extruder=${extruder}&shift=${turno}&date=${fecha}`)
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.querySelector("#produccionTable tbody");
+                    tbody.innerHTML = "";
+
+                    data.forEach(item => {
+                        const row = `<tr>
+                            <td>${item.familia}</td>
+                            <td>${item.metrosProducidos}</td>
+                            <td>${item.velocidadPromedio.toFixed(2)}</td>
+                            <td>${item.setPointVelocidad}</td>
+                            <td>${item.porcentajeEfectividad.toFixed(2)} %</td>
+                        </tr>`;
+                        tbody.innerHTML += row;
+                    });
+
+                    document.getElementById("spinner").style.display = "none";
+                });
+        }
+
+        //EFICIENCIA DIARIA DE LOS ULTIMOS 7 DIAS
         async function loadDailyEfficiencyChart() {
             const extruder = document.getElementById("ExtruderSelect").value;
             const date = document.getElementById("startDate").value; // aquí tomamos la fecha seleccionada
@@ -534,6 +692,7 @@
             }
         }
 
+        //TIEMPO DE PRODUCCION POR FAMILIA
         async function loadFamilyStackedChart() {
             const extruder = document.getElementById("ExtruderSelect").value;
             const date = document.getElementById("startDate").value;
@@ -597,6 +756,7 @@
             return `hsl(${Math.floor(Math.random() * 360)}, 70%, 55%)`;
         }
 
+        //METROS EXTRUIDOS POR FAMILIA
         async function loadFamilyMetersChart() {
             const extruder = document.getElementById("ExtruderSelect").value;
             const date = document.getElementById("startDate").value;
@@ -656,6 +816,7 @@
             }
         }
 
+        //VELOCIDAD DURANTE EL DÍA 
         async function loadSpeedChart() {
             const extruder = document.getElementById("ExtruderSelect").value;
             const date = document.getElementById("startDate").value;
@@ -754,36 +915,8 @@
             }
         }
 
-        function cargarProduccionFamilias() {
-            const fecha = document.getElementById("startDate").value;
-            const turno = document.getElementById("shiftSelect").value;
-            const extruder = document.getElementById("ExtruderSelect").value;
-
-            document.getElementById("spinner").style.display = "inline-block";
-
-            fetch(`/Extruder/GetProduccionFamilias?extruder=${extruder}&shift=${turno}&date=${fecha}`)
-                .then(response => response.json())
-                .then(data => {
-                    const tbody = document.querySelector("#produccionTable tbody");
-                    tbody.innerHTML = "";
-
-                    data.forEach(item => {
-                        const row = `<tr>
-                            <td>${item.familia}</td>
-                            <td>${item.metrosProducidos}</td>
-                            <td>${item.velocidadPromedio.toFixed(2)}</td>
-                            <td>${item.setPointVelocidad}</td>
-                            <td>${item.porcentajeEfectividad.toFixed(2)} %</td>
-                        </tr>`;
-                        tbody.innerHTML += row;
-                    });
-
-                    document.getElementById("spinner").style.display = "none";
-                });
-        }
-
         // Evento del botón Apply
-        document.getElementById("applyFilter").addEventListener("click", loadTotmChart);
+        // document.getElementById("applyFilter").addEventListener("click", loadTotmChart);
         document.getElementById("applyFilter").addEventListener("click", loadEfficiencyChart);
         document.getElementById("applyFilter").addEventListener("click", loadDowntimeChart);
         document.getElementById("applyFilter").addEventListener("click", loadDailyEfficiencyChart);
@@ -791,16 +924,16 @@
         document.getElementById("applyFilter").addEventListener("click", loadFamilyMetersChart);
         document.getElementById("applyFilter").addEventListener("click", loadSpeedChart);
         document.getElementById("applyFilter").addEventListener("click", cargarProduccionFamilias);
+        document.getElementById("applyFilter").addEventListener("click", loadEficienciaRealPieChart);
 
 
-        window.onload = () => {
+            window.onload = () => {
 
             function getLaborDay() {
-                const now = new Date(); // hora local
+                const now = new Date();
                 const hour = now.getHours();
                 const minute = now.getMinutes();
 
-                // Turno 3 → pertenece al día anterior
                 if (hour > 23 || (hour === 23 && minute >= 46) || hour < 7) {
                     now.setDate(now.getDate() - 1);
                 }
@@ -812,20 +945,13 @@
                 return `${year}-${month}-${day}`;
             }
 
-            // Fecha laboral correcta
             const laborDay = getLaborDay();
-
-            // Asignar al date picker
             document.getElementById("startDate").value = laborDay;
-
-            // Turno por defecto
             document.getElementById("shiftSelect").value = "All";
 
-            // Extruder seleccionado
             const extruder = document.getElementById("ExtruderSelect").value;
 
-            // Cargar gráficas con la fecha laboral REAL
-            loadTotmChart(extruder, "All", laborDay);
+            // loadTotmChart(extruder, "All", laborDay);
             loadEfficiencyChart(extruder, laborDay);
             loadDowntimeChart(extruder, laborDay);
             loadDailyEfficiencyChart(extruder, laborDay);
@@ -833,6 +959,7 @@
             loadFamilyMetersChart(extruder, laborDay);
             loadSpeedChart(extruder, laborDay);
             cargarProduccionFamilias(extruder, laborDay);
+            loadEficienciaRealPieChart(extruder, laborDay);
         };
     </script>
 }
