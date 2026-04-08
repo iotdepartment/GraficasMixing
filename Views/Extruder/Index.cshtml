@@ -97,7 +97,7 @@
             <div class="d-grid gap-2">
                 <button id="ButtonGeneralChart"
                         class="btn btn-info rounded-pill"
-                        onclick="location.href='@Url.Action("GeneralChart", "Extruder")'">
+                        onclick="location.href='@Url.Action("GeneralChart", "Extruder")'" >
                     <i class="bi bi-graph-up"></i> Open General Chart
                 </button>
             </div>
@@ -105,7 +105,7 @@
 
         <div class="col-1">
             <div class="d-grid gap-2">
-                <button id="exportChartBtn" class="btn btn-outline-success rounded-pill">
+                <button id="exportChartBtn" class="btn btn-outline-success rounded-pill" disabled>
                     <i class="bi bi-download"></i> Export
                 </button>
             </div>
@@ -622,41 +622,38 @@
 
         //EFICIENCIA DIARIA DE LOS ULTIMOS 7 DIAS
         async function loadDailyEfficiencyChart() {
-            const extruder = document.getElementById("ExtruderSelect").value;
-            const date = document.getElementById("startDate").value; // aquí tomamos la fecha seleccionada
+        const extruder = document.getElementById("ExtruderSelect").value;
+        const shift = document.getElementById("shiftSelect").value;
+        const date = document.getElementById("startDate").value;
 
-            const response = await fetch(`/Extruder/GetDailyEfficiencyLast7Days?extruder=${extruder}&date=${date}`);
+        try {
+            const response = await fetch(`/Extruder/GetDailyEficienciaRealLast7Days?extruder=${extruder}&shift=${shift}&date=${date}`);
             const result = await response.json();
 
+            // Extraemos etiquetas y datos
             const labels = result.map(r => r.date);
-            const data = result.map(r => Number(r.efficiency));
+            const data = result.map(r => Number(r.eficienciaReal));
 
             const ctx = document.getElementById("DailyEfficiencyChart").getContext("2d");
 
-            if (!dailyEfficiencyChart) {
-                dailyEfficiencyChart = new Chart(ctx, {
+            if (!window.dailyEfficiencyChart) {
+                window.dailyEfficiencyChart = new Chart(ctx, {
                     type: "bar",
                     data: {
                         labels: labels,
                         datasets: [{
-                            label: "Eficiencia Diaria (%)",
+                            label: "Eficiencia (%)",
                             data: data,
-                            backgroundColor: "rgba(49, 92, 213)",
-                            borderWidth: 2,
-                            tension: 0.3,
-                            fill: true
+                            backgroundColor: "rgba(76, 175, 80, 0.8)", // verde
+                            borderWidth: 2
                         }]
                     },
                     options: {
                         responsive: true,
-                        animation: {
-                            duration: 1200,
-                            easing: "easeOutQuart"
-                        },
                         scales: {
                             y: {
                                 beginAtZero: true,
-                                max: 100,
+                                max: 120, // puede superar 100
                                 ticks: {
                                     callback: value => value + "%"
                                 }
@@ -665,20 +662,15 @@
                         plugins: {
                             title: {
                                 display: true,
-                                text: "Eficiencia diaria de los últimos 7 días (%)",
+                                text: "Eficiencia de los últimos 7 días",
                                 font: { size: 18, weight: "bold" },
-                                color: "#333",
-                                padding: { top: 20, bottom: 10 }
+                                color: "#333"
                             },
                             datalabels: {
                                 anchor: "center",
                                 align: "center",
-                                formatter: function(value) {
-                                    return value.toFixed(1) + "%";
-                                },
-                                font: {
-                                    weight: "bold"
-                                },
+                                formatter: value => value.toFixed(1) + "%",
+                                font: { weight: "bold" },
                                 color: "#fff"
                             }
                         }
@@ -686,10 +678,13 @@
                     plugins: [ChartDataLabels]
                 });
             } else {
-                dailyEfficiencyChart.data.labels = labels;
-                dailyEfficiencyChart.data.datasets[0].data = data;
-                dailyEfficiencyChart.update();
+                window.dailyEfficiencyChart.data.labels = labels;
+                window.dailyEfficiencyChart.data.datasets[0].data = data;
+                window.dailyEfficiencyChart.update();
             }
+        } catch (error) {
+            console.error("Error cargando datos de eficiencia real:", error);
+        }
         }
 
         //TIEMPO DE PRODUCCION POR FAMILIA
