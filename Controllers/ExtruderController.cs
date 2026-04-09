@@ -1,7 +1,11 @@
-﻿using GraficasMixing.Models;
+﻿using ClosedXML.Excel;
+using GraficasMixing.Models;
 using GraficasMixing.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+
+
+
 
 
 namespace GraficasMixing.Controllers
@@ -147,6 +151,103 @@ namespace GraficasMixing.Controllers
             };
 
             return Json(data);
+        }
+
+        public class ExportRequest
+        {
+            public List<string> Base64Images { get; set; }
+            public string Date { get; set; }   // fecha consultada
+            public string Shift { get; set; }  // turno
+        }
+
+        [HttpPost]
+        public IActionResult ExportMultipleChartsToExcel([FromBody] ExportRequest request)
+        {
+            using (var workbook = new XLWorkbook())
+            {
+                var worksheet = workbook.Worksheets.Add("Graficos");
+
+                int row = 1;
+                int col = 1;
+
+                // 🔹 Fila 1: 3 gráficas lado a lado
+                for (int i = 0; i < 3; i++)
+                {
+                    var imageBytes = Convert.FromBase64String(request.Base64Images[i].Replace("data:image/png;base64,", ""));
+                    using (var ms = new MemoryStream(imageBytes))
+                    {
+                        var pic = worksheet.AddPicture(ms)
+                                           .MoveTo(worksheet.Cell(row, col));
+
+                        if (i == 1 || i == 2)
+                        {
+                            pic.ScaleHeight(1.6);
+                            pic.ScaleWidth(1.2);
+                        }
+                        else
+                        {
+                            pic.Scale(1.2);
+                        }
+                    }
+                    col += 13;
+                }
+
+                // 🔹 Fila 2: DailyEfficiencyChart
+                row += 25;
+                col = 1;
+                var dailyImage = Convert.FromBase64String(request.Base64Images[3].Replace("data:image/png;base64,", ""));
+                using (var ms = new MemoryStream(dailyImage))
+                {
+                    worksheet.AddPicture(ms)
+                             .MoveTo(worksheet.Cell(row, col))
+                             .Scale(1.5);
+                }
+
+                // 🔹 Fila 3: 2 gráficas de familia
+                row += 28;
+                col = 1;
+                for (int i = 4; i < 6; i++)
+                {
+                    var imageBytes = Convert.FromBase64String(request.Base64Images[i].Replace("data:image/png;base64,", ""));
+                    using (var ms = new MemoryStream(imageBytes))
+                    {
+                        worksheet.AddPicture(ms)
+                                 .MoveTo(worksheet.Cell(row, col))
+                                 .Scale(1.3);
+                    }
+
+                    col += (i == 4 ? 20 : 10);
+                }
+
+                // 🔹 Fila 4: SpeedChart
+                row += 28;
+                col = 1;
+                var speedImage = Convert.FromBase64String(request.Base64Images[6].Replace("data:image/png;base64,", ""));
+                using (var ms = new MemoryStream(speedImage))
+                {
+                    worksheet.AddPicture(ms)
+                             .MoveTo(worksheet.Cell(row, col))
+                             .Scale(1.3);
+                }
+
+                // 🔹 Área de impresión
+                worksheet.PageSetup.PrintAreas.Clear();
+                worksheet.PageSetup.PrintAreas.Add("A1:Z200");
+                worksheet.PageSetup.PagesWide = 1;
+                worksheet.PageSetup.PagesTall = 1;
+
+                using (var stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+
+                    string turno = string.IsNullOrEmpty(request.Shift) ? "Todos" : request.Shift;
+                    string fileName = $"Graficos_{request.Date}_{turno}.xlsx";
+
+                    return File(stream.ToArray(),
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        fileName);
+                }
+            }
         }
 
         //TABLA EFICIENCIA
@@ -1050,6 +1151,7 @@ namespace GraficasMixing.Controllers
 
             return Json(data);
         }
+
         public IActionResult GetSpeedDataToday3()
         {
             var extruder = "Extruder3";
