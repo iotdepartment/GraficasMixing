@@ -1,9 +1,9 @@
 ﻿using ClosedXML.Excel;
 using GraficasMixing.Models;
+using GraficasMixing.Utils;
 using GraficasMixing.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
 
 
 
@@ -153,102 +153,6 @@ namespace GraficasMixing.Controllers
             return Json(data);
         }
 
-        public class ExportRequest
-        {
-            public List<string> Base64Images { get; set; }
-            public string Date { get; set; }   // fecha consultada
-            public string Shift { get; set; }  // turno
-        }
-
-        [HttpPost]
-        public IActionResult ExportMultipleChartsToExcel([FromBody] ExportRequest request)
-        {
-            using (var workbook = new XLWorkbook())
-            {
-                var worksheet = workbook.Worksheets.Add("Graficos");
-
-                int row = 1;
-                int col = 1;
-
-                // 🔹 Fila 1: 3 gráficas lado a lado
-                for (int i = 0; i < 3; i++)
-                {
-                    var imageBytes = Convert.FromBase64String(request.Base64Images[i].Replace("data:image/png;base64,", ""));
-                    using (var ms = new MemoryStream(imageBytes))
-                    {
-                        var pic = worksheet.AddPicture(ms)
-                                           .MoveTo(worksheet.Cell(row, col));
-
-                        if (i == 1 || i == 2)
-                        {
-                            pic.ScaleHeight(1.6);
-                            pic.ScaleWidth(1.2);
-                        }
-                        else
-                        {
-                            pic.Scale(1.2);
-                        }
-                    }
-                    col += 13;
-                }
-
-                // 🔹 Fila 2: DailyEfficiencyChart
-                row += 25;
-                col = 1;
-                var dailyImage = Convert.FromBase64String(request.Base64Images[3].Replace("data:image/png;base64,", ""));
-                using (var ms = new MemoryStream(dailyImage))
-                {
-                    worksheet.AddPicture(ms)
-                             .MoveTo(worksheet.Cell(row, col))
-                             .Scale(1.5);
-                }
-
-                // 🔹 Fila 3: 2 gráficas de familia
-                row += 28;
-                col = 1;
-                for (int i = 4; i < 6; i++)
-                {
-                    var imageBytes = Convert.FromBase64String(request.Base64Images[i].Replace("data:image/png;base64,", ""));
-                    using (var ms = new MemoryStream(imageBytes))
-                    {
-                        worksheet.AddPicture(ms)
-                                 .MoveTo(worksheet.Cell(row, col))
-                                 .Scale(1.3);
-                    }
-
-                    col += (i == 4 ? 20 : 10);
-                }
-
-                // 🔹 Fila 4: SpeedChart
-                row += 28;
-                col = 1;
-                var speedImage = Convert.FromBase64String(request.Base64Images[6].Replace("data:image/png;base64,", ""));
-                using (var ms = new MemoryStream(speedImage))
-                {
-                    worksheet.AddPicture(ms)
-                             .MoveTo(worksheet.Cell(row, col))
-                             .Scale(1.3);
-                }
-
-                // 🔹 Área de impresión
-                worksheet.PageSetup.PrintAreas.Clear();
-                worksheet.PageSetup.PrintAreas.Add("A1:Z200");
-                worksheet.PageSetup.PagesWide = 1;
-                worksheet.PageSetup.PagesTall = 1;
-
-                using (var stream = new MemoryStream())
-                {
-                    workbook.SaveAs(stream);
-
-                    string turno = string.IsNullOrEmpty(request.Shift) ? "Todos" : request.Shift;
-                    string fileName = $"Graficos_{request.Date}_{turno}.xlsx";
-
-                    return File(stream.ToArray(),
-                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        fileName);
-                }
-            }
-        }
 
         //TABLA EFICIENCIA
         [HttpGet]
@@ -351,80 +255,82 @@ namespace GraficasMixing.Controllers
             return Json(produccionFamilias);
         }
 
+
         [HttpGet]
-        public IActionResult GetEfficiencyByShift(string extruder, DateTime date)
+        public IActionResult GetReportData(string extruder, DateTime date, string shift)
         {
-            // Definir rangos de cada turno
-            var turno1 = _context.ScadaExtrudermaster
-                .Where(x => x.Extruder == extruder &&
-                            x.Fecha.Date == date.Date &&
-                            x.Hora >= new TimeSpan(7, 0, 0) &&
-                            x.Hora < new TimeSpan(15, 0, 0));
+            var report = new
+            {
+                EfficiencyByShift = CalcularEfficiencyByShift(extruder, date),
+                DowntimeByShift = CalcularDowntimeByShift(extruder, date),
+                EficienciaReal = CalcularEficienciaRealData(extruder, shift, date),
+                FamilyRuntime = CalcularFamilyRuntime(extruder, date, shift),
+                FamilyMeters = CalcularFamilyMeters(extruder, date, shift),
+                SpeedData = CalcularSpeedData(extruder, date, shift),
+                DailyEfficiency = CalcularDailyEficienciaRealLast7Days(extruder, shift, date)
+            };
 
-            var turno2 = _context.ScadaExtrudermaster
-                .Where(x => x.Extruder == extruder &&
-                            x.Fecha.Date == date.Date &&
-                            x.Hora >= new TimeSpan(15, 0, 0) &&
-                            x.Hora <= new TimeSpan(23, 59, 59));
+            return Json(report);
+        }
 
-            var turno3 = _context.ScadaExtrudermaster
-                .Where(x => x.Extruder == extruder &&
-                            x.Fecha.Date == date.AddDays(1).Date &&
-                            x.Hora < new TimeSpan(7, 0, 0));
 
-            // Calcular eficiencia = TOTM=1 / total * 100
+        public class ChartPoint
+        {
+            public string Label { get; set; }
+            public double Value { get; set; }
+        }
+
+        public class EficienciaRealResult
+        {
+            public List<ChartPoint> Familias { get; set; }
+            public double PromedioEfectividad { get; set; }
+            public double CalcEfficiency { get; set; }
+            public double EficienciaReal { get; set; }
+        }
+
+        private List<ChartPoint> CalcularEfficiencyByShift(string extruder, DateTime date)
+        {
+
+            var turno1 = _context.ScadaExtrudermaster.Where(x => x.Extruder == extruder && x.Fecha.Date == date.Date && x.Hora >= new TimeSpan(7, 0, 0) && x.Hora < new TimeSpan(15, 0, 0));
+            var turno2 = _context.ScadaExtrudermaster.Where(x => x.Extruder == extruder && x.Fecha.Date == date.Date && x.Hora >= new TimeSpan(15, 0, 0) && x.Hora <= new TimeSpan(23, 59, 59));
+            var turno3 = _context.ScadaExtrudermaster.Where(x => x.Extruder == extruder && x.Fecha.Date == date.AddDays(1).Date && x.Hora < new TimeSpan(7, 0, 0));
+
             double CalcEfficiency(IQueryable<ScadaExtrudermaster> q) =>
                 q.Count() == 0 ? 0 : (q.Count(x => x.Totm == 1) * 100.0 / q.Count());
 
-            var data = new[]
-            {
-                new { Shift = "Turno1", Efficiency = CalcEfficiency(turno1) },
-                new { Shift = "Turno2", Efficiency = CalcEfficiency(turno2) },
-                new { Shift = "Turno3", Efficiency = CalcEfficiency(turno3) }
-            };
+            return new List<ChartPoint>
+                {
+                    new ChartPoint { Label = "Turno1", Value = CalcEfficiency(turno1) },
+                    new ChartPoint { Label = "Turno2", Value = CalcEfficiency(turno2) },
+                    new ChartPoint { Label = "Turno3", Value = CalcEfficiency(turno3) }
+                };
 
-            return Json(data);
         }
 
-        [HttpGet]
-        public IActionResult GetDowntimeByShift(string extruder, DateTime date)
+
+        private List<ChartPoint> CalcularDowntimeByShift(string extruder, DateTime date)
         {
-            var turno1 = _context.ScadaExtrudermaster
-                .Where(x => x.Extruder == extruder &&
-                            x.Fecha.Date == date.Date &&
-                            x.Hora >= new TimeSpan(7, 0, 0) &&
-                            x.Hora < new TimeSpan(15, 0, 0));
 
-            var turno2 = _context.ScadaExtrudermaster
-                .Where(x => x.Extruder == extruder &&
-                            x.Fecha.Date == date.Date &&
-                            x.Hora >= new TimeSpan(15, 0, 0) &&
-                            x.Hora <= new TimeSpan(23, 59, 59));
-
-            var turno3 = _context.ScadaExtrudermaster
-                .Where(x => x.Extruder == extruder &&
-                            x.Fecha.Date == date.AddDays(1).Date &&
-                            x.Hora < new TimeSpan(7, 0, 0));
+            var turno1 = _context.ScadaExtrudermaster.Where(x => x.Extruder == extruder && x.Fecha.Date == date.Date && x.Hora >= new TimeSpan(7, 0, 0) && x.Hora < new TimeSpan(15, 0, 0));
+            var turno2 = _context.ScadaExtrudermaster.Where(x => x.Extruder == extruder && x.Fecha.Date == date.Date && x.Hora >= new TimeSpan(15, 0, 0) && x.Hora <= new TimeSpan(23, 59, 59));
+            var turno3 = _context.ScadaExtrudermaster.Where(x => x.Extruder == extruder && x.Fecha.Date == date.AddDays(1).Date && x.Hora < new TimeSpan(7, 0, 0));
 
             double CalcDowntime(IQueryable<ScadaExtrudermaster> q) =>
                 q.Count() == 0 ? 0 : (q.Count(x => x.Totm == 0) * 100.0 / q.Count());
 
-            var data = new[]
+            return new List<ChartPoint>
             {
-        new { shift = "Turno1", downtime = CalcDowntime(turno1) },
-        new { shift = "Turno2", downtime = CalcDowntime(turno2) },
-        new { shift = "Turno3", downtime = CalcDowntime(turno3) }
-    };
+                new ChartPoint { Label = "Turno1", Value = CalcDowntime(turno1) },
+                new ChartPoint { Label = "Turno2", Value = CalcDowntime(turno2) },
+                new ChartPoint { Label = "Turno3", Value = CalcDowntime(turno3) }
+            };
 
-            return Json(data);
         }
 
-        [HttpGet]
-        public IActionResult GetEficienciaRealData(string extruder, string shift, DateTime date)
+        private EficienciaRealResult CalcularEficienciaRealData(string extruder, string shift, DateTime date)
         {
             IEnumerable<ScadaExtrudermaster> query;
 
-            // --- FILTRO POR TURNO ---
             switch (shift)
             {
                 case "Turno1":
@@ -489,25 +395,18 @@ namespace GraficasMixing.Controllers
                     break;
             }
 
-            // --- AGRUPAR POR FAMILIA ---
             var grouped = query.GroupBy(x => x.Familia);
 
             var produccionFamilias = grouped
                 .Select(g =>
                 {
                     var metrosProducidos = g.Sum(x => x.Metros ?? 0);
+                    if (metrosProducidos <= 0) return null;
 
-                    // ❗❗ NO incluir familias sin metros producidos
-                    if (metrosProducidos <= 0)
-                    {
-                        return null;
-                    }
-
-                    var velocidadPromedio = g
-                        .Where(v => v.Velocidad > 0)
-                        .Select(v => v.Velocidad ?? 0)
-                        .DefaultIfEmpty(0)
-                        .Average();
+                    var velocidadPromedio = g.Where(v => v.Velocidad > 0)
+                                             .Select(v => v.Velocidad ?? 0)
+                                             .DefaultIfEmpty(0)
+                                             .Average();
 
                     var setpoint = _context.SetPointExtruder
                         .Where(sp => sp.familia == g.Key && sp.extruder == extruder)
@@ -518,42 +417,349 @@ namespace GraficasMixing.Controllers
                         ? (velocidadPromedio * 100 / setpoint)
                         : 0;
 
-                    return new ProduccionFamiliaViewModel
-                    {
-                        Familia = g.Key,
-                        MetrosProducidos = metrosProducidos,
-                        VelocidadPromedio = velocidadPromedio,
-                        SetPointVelocidad = setpoint,
-                        PorcentajeEfectividad = porcentajeEfectividad
-                    };
+                    return new ChartPoint { Label = g.Key, Value = porcentajeEfectividad };
                 })
-                .Where(x => x != null) // ← eliminar familias sin metros
+                .Where(x => x != null)
                 .ToList();
 
-            // --- PROMEDIO DE PORCENTAJE DE EFECTIVIDAD ---
-            double promedioEfectividad = produccionFamilias.Count > 0
-                ? produccionFamilias.Average(x => x.PorcentajeEfectividad)
-                : 0;
-
-            // --- CALCULAR CalcEfficiency ---
+            double promedioEfectividad = produccionFamilias.Count > 0 ? produccionFamilias.Average(x => x.Value) : 0;
             double total = query.Count();
             double operacion = query.Count(x => x.Totm == 1);
             double calcEfficiency = total > 0 ? (operacion * 100.0 / total) : 0;
+            double eficienciaReal = (promedioEfectividad > 0) ? (calcEfficiency / promedioEfectividad) * 100 : 0;
 
-            // --- NUEVA EFICIENCIA REAL ---
-            double eficienciaReal = (promedioEfectividad > 0)
-                ? (calcEfficiency / promedioEfectividad) * 100
-                : 0;
-
-            return Json(new
+            return new EficienciaRealResult
             {
-                familias = produccionFamilias,
-                promedioEfectividad,
-                calcEfficiency,
-                eficienciaReal
-            });
+                Familias = produccionFamilias,
+                PromedioEfectividad = promedioEfectividad,
+                CalcEfficiency = calcEfficiency,
+                EficienciaReal = eficienciaReal
+            };
         }
 
+        private IEnumerable<object> CalcularDailyEficienciaRealLast7Days(string extruder, string shift, DateTime date)
+        {
+            DateTime endDate = date.Date;
+            DateTime startDate = endDate.AddDays(-6);
+
+            var resultados = new List<object>();
+
+            for (DateTime d = startDate; d <= endDate; d = d.AddDays(1))
+            {
+                double eficienciaReal = CalcularEficienciaReal(extruder, shift, d);
+
+                resultados.Add(new
+                {
+                    label = d.ToString("yyyy-MM-dd"),
+                    value = eficienciaReal
+                });
+            }
+
+            return resultados;
+        }
+
+        private IEnumerable<object> CalcularFamilyRuntime(string extruder, DateTime date, string shift)
+        {
+            IQueryable<ScadaExtrudermaster> query;
+
+            if (shift == "Turno1")
+            {
+                query = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == date.Date &&
+                    x.Hora >= new TimeSpan(7, 0, 0) &&
+                    x.Hora < new TimeSpan(15, 0, 0) &&
+                    x.Totm == 1);
+            }
+            else if (shift == "Turno2")
+            {
+                query = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == date.Date &&
+                    x.Hora >= new TimeSpan(15, 0, 0) &&
+                    x.Hora <= new TimeSpan(23, 59, 59) &&
+                    x.Totm == 1);
+            }
+            else if (shift == "Turno3")
+            {
+                query = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == date.AddDays(1).Date &&
+                    x.Hora < new TimeSpan(7, 0, 0) &&
+                    x.Totm == 1);
+            }
+            else // ALL SHIFTS
+            {
+                var turno1 = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == date.Date &&
+                    x.Hora >= new TimeSpan(7, 0, 0) &&
+                    x.Hora < new TimeSpan(15, 0, 0) &&
+                    x.Totm == 1);
+
+                var turno2 = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == date.Date &&
+                    x.Hora >= new TimeSpan(15, 0, 0) &&
+                    x.Hora <= new TimeSpan(23, 59, 59) &&
+                    x.Totm == 1);
+
+                var turno3 = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == date.AddDays(1).Date &&
+                    x.Hora < new TimeSpan(7, 0, 0) &&
+                    x.Totm == 1);
+
+                query = turno1.Concat(turno2).Concat(turno3);
+            }
+
+            var data = query
+                .GroupBy(x => x.Familia)
+                .Select(g => new { label = g.Key, value = g.Count() }) // minutos = count
+                .OrderByDescending(x => x.value)
+                .ToList();
+
+            return data;
+        }
+
+        private IEnumerable<object> CalcularFamilyMeters(string extruder, DateTime date, string shift)
+        {
+            IQueryable<ScadaExtrudermaster> query;
+            if (shift == "Turno1")
+            {
+                query = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == date.Date &&
+                    x.Hora >= new TimeSpan(7, 0, 0) &&
+                    x.Hora < new TimeSpan(15, 0, 0) &&
+                    x.Metros >= 0);   // ← IGNORAR NEGATIVOS
+            }
+            else if (shift == "Turno2")
+            {
+                query = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == date.Date &&
+                    x.Hora >= new TimeSpan(15, 0, 0) &&
+                    x.Hora <= new TimeSpan(23, 59, 59) &&
+                    x.Metros >= 0);   // ← IGNORAR NEGATIVOS
+            }
+            else if (shift == "Turno3")
+            {
+                query = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == date.AddDays(1).Date &&
+                    x.Hora < new TimeSpan(7, 0, 0) &&
+                    x.Metros >= 0);   // ← IGNORAR NEGATIVOS
+            }
+            else // ALL SHIFTS
+            {
+                var turno1 = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == date.Date &&
+                    x.Hora >= new TimeSpan(7, 0, 0) &&
+                    x.Hora < new TimeSpan(15, 0, 0) &&
+                    x.Metros >= 0);
+
+                var turno2 = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == date.Date &&
+                    x.Hora >= new TimeSpan(15, 0, 0) &&
+                    x.Hora <= new TimeSpan(23, 59, 59) &&
+                    x.Metros >= 0);
+
+                var turno3 = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == date.AddDays(1).Date &&
+                    x.Hora < new TimeSpan(7, 0, 0) &&
+                    x.Metros >= 0);
+
+                query = turno1.Concat(turno2).Concat(turno3);
+            }
+
+            var data = query
+                .GroupBy(x => x.Familia)
+                .Select(g => new { label = g.Key, value = g.Sum(x => x.Metros ?? 0) })
+                .OrderByDescending(x => x.value)
+                .ToList();
+
+            return data;
+        }
+
+        private IEnumerable<object> CalcularSpeedData(string extruder, DateTime date, string shift)
+        {
+            IQueryable<ScadaExtrudermaster> query;
+
+            if (shift == "Turno1")
+            {
+                query = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == date.Date &&
+                    x.Hora >= new TimeSpan(7, 0, 0) &&
+                    x.Hora < new TimeSpan(15, 0, 0));
+            }
+            else if (shift == "Turno2")
+            {
+                query = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == date.Date &&
+                    x.Hora >= new TimeSpan(15, 0, 0) &&
+                    x.Hora <= new TimeSpan(23, 59, 59));
+            }
+            else if (shift == "Turno3")
+            {
+                query = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == date.AddDays(1).Date &&
+                    x.Hora < new TimeSpan(7, 0, 0));
+            }
+            else // ALL SHIFTS
+            {
+                var turno1 = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == date.Date &&
+                    x.Hora >= new TimeSpan(7, 0, 0) &&
+                    x.Hora < new TimeSpan(15, 0, 0));
+
+                var turno2 = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == date.Date &&
+                    x.Hora >= new TimeSpan(15, 0, 0) &&
+                    x.Hora <= new TimeSpan(23, 59, 59));
+
+                var turno3 = _context.ScadaExtrudermaster.Where(x =>
+                    x.Extruder == extruder &&
+                    x.Fecha.Date == date.AddDays(1).Date &&
+                    x.Hora < new TimeSpan(7, 0, 0));
+
+                query = turno1.Concat(turno2).Concat(turno3);
+            }
+
+            var data = query
+                .OrderBy(x => x.Fecha)
+                .ThenBy(x => x.Hora)
+                .Select(x => new
+                {
+                    label = x.Fecha.ToString("yyyy-MM-dd") + " " + x.Hora.ToString(),
+                    value = x.Velocidad ?? 0,
+                    family = x.Familia
+                })
+                .ToList();
+
+            return data;
+        }
+
+
+        [HttpPost]
+        public IActionResult GenerateExcelAllExtruders([FromBody] ExportRequest request)
+        {
+            using var workbook = new XLWorkbook();
+
+            DateTime date = DateTime.Parse(request.Date);
+
+            // 🔹 Lista de extruders que quieres incluir en el reporte
+            var extruders = new List<string> { "Extruder1", "Extruder3", "Extruder4", "Extruder5", "Extruder6" };
+
+            foreach (var extruder in extruders)
+            {
+                var ws = workbook.Worksheets.Add(extruder);
+
+                // Cabecera
+                ws.Cell(1, 1).Value = "Extruder";
+                ws.Cell(1, 2).Value = extruder;
+                ws.Cell(2, 1).Value = "Shift";
+                ws.Cell(2, 2).Value = request.Shift ?? "-";
+                ws.Cell(3, 1).Value = "Date";
+                ws.Cell(3, 2).Value = request.Date ?? "-";
+
+                // 🔹 Obtener datos
+                var efficiencyData = CalcularEfficiencyByShift(extruder, date);
+                var downtimeData = CalcularDowntimeByShift(extruder, date);
+                var eficienciaReal = CalcularEficienciaRealData(extruder, "All", date);
+                var dailyEffData = CalcularDailyEficienciaRealLast7Days(extruder, request.Shift, date);
+                var runtimeData = CalcularFamilyRuntime(extruder, date, request.Shift);
+                var metersData = CalcularFamilyMeters(extruder, date, request.Shift);
+                var speedData = CalcularSpeedData(extruder, date, request.Shift);
+
+                // 🔹 Preparar labels y valores
+                var labelsEff = efficiencyData.Select(r => r.Label).ToList();
+                var valuesEff = efficiencyData.Select(r => r.Value).ToList();
+
+                var labelsDown = downtimeData.Select(r => r.Label).ToList();
+                var valuesDown = downtimeData.Select(r => r.Value).ToList();
+
+                var labelsPie = new List<string> { "Eficiencia Real", "Resto" };
+                var valuesPie = new List<double> { eficienciaReal.EficienciaReal, 100 - eficienciaReal.EficienciaReal };
+
+                var labelsDaily = dailyEffData.Select(r => r.GetType().GetProperty("label").GetValue(r).ToString()).ToList();
+                var valuesDaily = dailyEffData.Select(r => Convert.ToDouble(r.GetType().GetProperty("value").GetValue(r))).ToList();
+
+                var labelsRuntime = runtimeData.Select(r => r.GetType().GetProperty("label").GetValue(r).ToString()).ToList();
+                var valuesRuntime = runtimeData.Select(r => Convert.ToDouble(r.GetType().GetProperty("value").GetValue(r))).ToList();
+
+                var labelsMeters = metersData.Select(r => r.GetType().GetProperty("label").GetValue(r).ToString()).ToList();
+                var valuesMeters = metersData.Select(r => Convert.ToDouble(r.GetType().GetProperty("value").GetValue(r))).ToList();
+
+                var labelsSpeed = speedData.Select(r => r.GetType().GetProperty("label").GetValue(r).ToString()).ToList();
+                var valuesSpeed = speedData.Select(r => Convert.ToDouble(r.GetType().GetProperty("value").GetValue(r))).ToList();
+
+                // 🔹 Generar gráficas
+                byte[] barChartEfficiency = ChartHelper.GenerateBarChart(labelsEff, valuesEff, $"Eficiencia {extruder}");
+                byte[] barChartDowntime = ChartHelper.GenerateBarChart(labelsDown, valuesDown, $"Downtime {extruder}");
+                byte[] pieChartEficiencia = ChartHelper.GeneratePieChart(labelsPie, valuesPie, $"Eficiencia Real {extruder}");
+                byte[] barChartDaily = ChartHelper.GenerateBarChart(labelsDaily, valuesDaily, $"Eficiencia Real últimos 7 días");
+                byte[] barChartRuntime = ChartHelper.GenerateBarChart(labelsRuntime, valuesRuntime, $"Runtime por familia {extruder}");
+                byte[] barChartMeters = ChartHelper.GenerateBarChart(labelsMeters, valuesMeters, $"Metros por familia {extruder}");
+
+                // 🔹 Insertar gráficas en estilo grid con separación extra
+                int row = 5;
+
+                // Primera fila (3 gráficas lado a lado con espacio)
+                ws.AddPicture(new MemoryStream(pieChartEficiencia)).MoveTo(ws.Cell(row, 1)).WithSize(500, 360);
+                ws.AddPicture(new MemoryStream(barChartEfficiency)).MoveTo(ws.Cell(row, 10)).WithSize(500, 360);
+                ws.AddPicture(new MemoryStream(barChartDowntime)).MoveTo(ws.Cell(row, 19)).WithSize(500, 360);
+
+                row += 22;
+
+                // Segunda fila (gráfica diaria ocupando todo el ancho)
+                ws.AddPicture(new MemoryStream(barChartDaily)).MoveTo(ws.Cell(row, 1)).WithSize(1600, 360);
+
+                row += 22;
+
+                // Tercera fila (2 gráficas lado a lado con espacio)
+                ws.AddPicture(new MemoryStream(barChartRuntime)).MoveTo(ws.Cell(row, 1)).WithSize(700, 360);
+                ws.AddPicture(new MemoryStream(barChartMeters)).MoveTo(ws.Cell(row, 12)).WithSize(700, 360);
+            }
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+
+            var fileDate = string.IsNullOrEmpty(request.Date)
+                ? DateTime.Now.ToString("yyyyMMdd")
+                : request.Date;
+
+            return File(stream.ToArray(),
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        $"Reporte_TodosExtruders_{fileDate}.xlsx");
+        }
+
+        ////////////////
+        [HttpGet]
+        public IActionResult GetEfficiencyByShift(string extruder, DateTime date)
+        {
+            return Json(CalcularEfficiencyByShift(extruder, date));
+        }
+
+        [HttpGet]
+        public IActionResult GetDowntimeByShift(string extruder, DateTime date)
+        {
+            return Json(CalcularDowntimeByShift(extruder, date));
+        }
+
+        [HttpGet]
+        public IActionResult GetEficienciaRealData(string extruder, string shift, DateTime date)
+        {
+            return Json(CalcularEficienciaRealData(extruder, shift, date));
+        }
 
         private double CalcularEficienciaReal(string extruder, string shift, DateTime date)
         {
@@ -659,229 +865,29 @@ namespace GraficasMixing.Controllers
             return eficienciaReal;
         }
 
+
         [HttpGet]
         public IActionResult GetDailyEficienciaRealLast7Days(string extruder, string shift, DateTime date)
         {
-            DateTime endDate = date.Date;
-            DateTime startDate = endDate.AddDays(-6);
-
-            var resultados = new List<object>();
-
-            for (DateTime d = startDate; d <= endDate; d = d.AddDays(1))
-            {
-                double eficienciaReal = CalcularEficienciaReal(extruder, shift, d);
-
-                resultados.Add(new
-                {
-                    date = d.ToString("yyyy-MM-dd"), // ✅ string para JSON
-                    eficienciaReal
-                });
-            }
-
-            return Json(resultados);
+            return Json(CalcularDailyEficienciaRealLast7Days(extruder, shift, date));
         }
-
 
         [HttpGet]
         public IActionResult GetFamilyRuntime(string extruder, DateTime date, string shift)
         {
-            IQueryable<ScadaExtrudermaster> query;
-
-            if (shift == "Turno1")
-            {
-                query = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.Date &&
-                    x.Hora >= new TimeSpan(7, 0, 0) &&
-                    x.Hora < new TimeSpan(15, 0, 0) &&
-                    x.Totm == 1);
-            }
-            else if (shift == "Turno2")
-            {
-                query = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.Date &&
-                    x.Hora >= new TimeSpan(15, 0, 0) &&
-                    x.Hora <= new TimeSpan(23, 59, 59) &&
-                    x.Totm == 1);
-            }
-            else if (shift == "Turno3")
-            {
-                query = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.AddDays(1).Date &&
-                    x.Hora < new TimeSpan(7, 0, 0) &&
-                    x.Totm == 1);
-            }
-            else // ALL SHIFTS
-            {
-                var turno1 = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.Date &&
-                    x.Hora >= new TimeSpan(7, 0, 0) &&
-                    x.Hora < new TimeSpan(15, 0, 0) &&
-                    x.Totm == 1);
-
-                var turno2 = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.Date &&
-                    x.Hora >= new TimeSpan(15, 0, 0) &&
-                    x.Hora <= new TimeSpan(23, 59, 59) &&
-                    x.Totm == 1);
-
-                var turno3 = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.AddDays(1).Date &&
-                    x.Hora < new TimeSpan(7, 0, 0) &&
-                    x.Totm == 1);
-
-                query = turno1.Concat(turno2).Concat(turno3);
-            }
-
-            var data = query
-                .GroupBy(x => x.Familia)
-                .Select(g => new
-                {
-                    family = g.Key,
-                    minutes = g.Count()
-                })
-                .OrderByDescending(x => x.minutes)
-                .ToList();
-
-            return Json(data);
+            return Json(CalcularFamilyRuntime(extruder, date, shift));
         }
 
         [HttpGet]
         public IActionResult GetFamilyMeters(string extruder, DateTime date, string shift)
         {
-            IQueryable<ScadaExtrudermaster> query;
-
-            if (shift == "Turno1")
-            {
-                query = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.Date &&
-                    x.Hora >= new TimeSpan(7, 0, 0) &&
-                    x.Hora < new TimeSpan(15, 0, 0) &&
-                    x.Metros >= 0);   // ← IGNORAR NEGATIVOS
-            }
-            else if (shift == "Turno2")
-            {
-                query = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.Date &&
-                    x.Hora >= new TimeSpan(15, 0, 0) &&
-                    x.Hora <= new TimeSpan(23, 59, 59) &&
-                    x.Metros >= 0);   // ← IGNORAR NEGATIVOS
-            }
-            else if (shift == "Turno3")
-            {
-                query = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.AddDays(1).Date &&
-                    x.Hora < new TimeSpan(7, 0, 0) &&
-                    x.Metros >= 0);   // ← IGNORAR NEGATIVOS
-            }
-            else // ALL SHIFTS
-            {
-                var turno1 = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.Date &&
-                    x.Hora >= new TimeSpan(7, 0, 0) &&
-                    x.Hora < new TimeSpan(15, 0, 0) &&
-                    x.Metros >= 0);
-
-                var turno2 = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.Date &&
-                    x.Hora >= new TimeSpan(15, 0, 0) &&
-                    x.Hora <= new TimeSpan(23, 59, 59) &&
-                    x.Metros >= 0);
-
-                var turno3 = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.AddDays(1).Date &&
-                    x.Hora < new TimeSpan(7, 0, 0) &&
-                    x.Metros >= 0);
-
-                query = turno1.Concat(turno2).Concat(turno3);
-            }
-
-            var data = query
-                .GroupBy(x => x.Familia)
-                .Select(g => new
-                {
-                    family = g.Key,
-                    meters = g.Sum(x => x.Metros)
-                })
-                .OrderByDescending(x => x.meters)
-                .ToList();
-
-            return Json(data);
+            return Json(CalcularFamilyMeters(extruder, date, shift));
         }
 
         [HttpGet]
         public IActionResult GetSpeedData(string extruder, DateTime date, string shift)
         {
-            IQueryable<ScadaExtrudermaster> query;
-
-            if (shift == "Turno1")
-            {
-                query = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.Date &&
-                    x.Hora >= new TimeSpan(7, 0, 0) &&
-                    x.Hora < new TimeSpan(15, 0, 0));
-            }
-            else if (shift == "Turno2")
-            {
-                query = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.Date &&
-                    x.Hora >= new TimeSpan(15, 0, 0) &&
-                    x.Hora <= new TimeSpan(23, 59, 59));
-            }
-            else if (shift == "Turno3")
-            {
-                query = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.AddDays(1).Date &&
-                    x.Hora < new TimeSpan(7, 0, 0));
-            }
-            else // ALL SHIFTS
-            {
-                var turno1 = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.Date &&
-                    x.Hora >= new TimeSpan(7, 0, 0) &&
-                    x.Hora < new TimeSpan(15, 0, 0));
-
-                var turno2 = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.Date &&
-                    x.Hora >= new TimeSpan(15, 0, 0) &&
-                    x.Hora <= new TimeSpan(23, 59, 59));
-
-                var turno3 = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.AddDays(1).Date &&
-                    x.Hora < new TimeSpan(7, 0, 0));
-
-                query = turno1.Concat(turno2).Concat(turno3);
-            }
-
-            var data = query
-                .OrderBy(x => x.Fecha)
-                .ThenBy(x => x.Hora)
-                .Select(x => new
-                {
-                    timestamp = x.Fecha.ToString("yyyy-MM-dd") + " " + x.Hora.ToString(),
-                    speed = x.Velocidad,   // ← TU CAMPO REAL
-                    family = x.Familia // ← aquí incluyes la familia
-                })
-                .ToList();
-
-            return Json(data);
+            return Json(CalcularSpeedData(extruder, date, shift));
         }
 
 

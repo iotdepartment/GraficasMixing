@@ -20,8 +20,8 @@
 </style>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
-    <h2 class="text-start">Mesus Charts (Extruder Area) <i class="bi bi-clipboard-data"></i></h2>
-    <hr class="border border-dark border-0 mb-4 opacity-100">
+<h2 class="text-start">Mesus Charts (Extruder Area) <i class="bi bi-clipboard-data"></i></h2>
+<hr class="border border-dark border-0 mb-4 opacity-100">
 
 <!-- Nuevo botón para ir a la vista de Chart -->
 <div class="row mb-3 mt-2">
@@ -47,8 +47,8 @@
     <div class="row align-items-end">
 
         <!-- Extruder -->
-        <div class="col-2">
-            <label for="ExtruderSelect" class="fw-bold">Extruder:</label><br>
+        <div class="col-">
+            <label for="ExtruderSelect" class="fw-bold ">Extruder:</label><br>
             <select id="ExtruderSelect" class="form-select">
                 @foreach (var extruder in extruders)
                 {
@@ -58,33 +58,33 @@
         </div>
 
         <!-- Shift -->
-        <div class="col-2">
+        <div class="col-1">
             <label for="shiftSelect" class="fw-bold">Shift:</label><br>
             <select id="shiftSelect" class="form-select">
-                <option value="Turno1" selected>Shift 1 (7:00 - 15:00)</option>
-                <option value="Turno2">Shift 2 (15:00 - 24:00)</option>
-                <option value="Turno3">Shift 3 (00:00 - 7:00)</option>
+                <option value="Turno1" selected>Shift 1(7:00 - 15:00)</option>
+                <option value="Turno2">Shift 2(15:00 - 24:00)</option>
+                <option value="Turno3">Shift 3(00:00 - 7:00)</option>
                 <option value="All">All</option>
             </select>
         </div>
 
-        <!-- Date -->
-        <div class="col-1">
+        <div class="col-2">
             <label for="startDate" class="fw-bold">Date:</label><br>
             <input type="date" id="startDate" class="form-control" max="@DateTime.Now.ToString("yyyy-MM-dd")">
         </div>
 
-        <!-- Apply Filter -->
         <div class="col-1">
             <div class="d-grid gap-2">
                 <button type="button" id="applyFilter" class="btn btn-primary rounded-pill">
-                    <i class="bi bi-search"></i> Apply
+                    <i class="bi bi-search"></i>
+                    Apply
                     <span id="spinner" class="spinner-border spinner-border-sm" style="display:none;"></span>
                 </button>
             </div>
         </div>
 
-        <!-- SetPoints -->
+
+
         <div class="col-1">
             <div class="d-grid gap-2">
                 <button type="button" id="openSetPointModal" class="btn btn-success rounded-pill">
@@ -93,7 +93,6 @@
             </div>
         </div>
 
-        <!-- General Chart -->
         <div class="col-2">
             <div class="d-grid gap-2">
                 <button id="ButtonGeneralChart"
@@ -104,19 +103,16 @@
             </div>
         </div>
 
-        <!-- Export Charts -->
         <div class="col-2">
-            <div class="d-grid gap-2 ">
-                <button id="btnExport" class="rounded-pill btn btn-success">
-                    Export Charts
+            <div class="d-grid gap-2">
+                <button id="btnExportAll" class="btn btn-success rounded-pill">
+                    <i class="bi bi-file-earmark-excel-fill me-2"></i> Export Charts
                 </button>
             </div>
         </div>
+
     </div>
 </div>
-
-<!-- Canvas oculto para renderizar las gráficas -->
-<canvas id="hiddenCanvas" style="display:none;"></canvas>
 
 <!-- MODAL PARA EDITAR LOS SETPOINTS -->
 @await Html.PartialAsync("Partials/_ExtruderModal", Model)
@@ -131,7 +127,6 @@
     <div class="col-4">
         <div class="card shadow-sm border border-1 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 360px;">
             <canvas id="EficienciaRealPieChart" width="200" height="200"></canvas>
-            <canvas id="Extruder2EficienciaRealPieChart" style="display:none"></canvas>
 
         </div>
     </div>
@@ -140,8 +135,6 @@
     <div class="col-4">
         <div class="card shadow-sm border border-1 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 360px;">
             <canvas id="EfficiencyBarChart"></canvas>
-            <canvas id="Extruder2EfficiencyChart" style="display:none"></canvas>
-
         </div>
     </div>
 
@@ -149,8 +142,6 @@
     <div class="col-4">
         <div class="card shadow-sm border border-1 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 360px;">
             <canvas id="DowntimeBarChart"></canvas>
-            <canvas id="Extruder2DowntimeBarChart" style="display:none"></canvas>
-
         </div>
     </div>
 
@@ -162,11 +153,11 @@
 @* PRODUCCION POR FAMILIA (TABLA) *@
 
 <div class="row">
-     <div class="col-3">
+    <div class="col-3">
         <div class="card mx-auto text-center shadow-sm border-0 rounded-pill p-4 mt-2">
             <h5 class="m-0 fw-bold">PRODUCCIÓN POR FAMILIA</h5>
         </div>
-     </div>
+    </div>
 </div>
 
 <div class="row mb-4">
@@ -211,7 +202,7 @@
         </div>
     </div>
 </div>
-        
+
 @* <hr class="border border-dark border-0 mb-4 opacity-100"> *@
 
 @* //Tercera Fila     
@@ -244,7 +235,7 @@
     <div class="col-12 mb-2">
         <div class="card shadow-sm border border-1 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 360px;">
 
-                <canvas id="SpeedLineChart" style="width:100%; height:100%;"></canvas>
+            <canvas id="SpeedLineChart" style="width:100%; height:100%;"></canvas>
         </div>
     </div>
 </div>
@@ -284,7 +275,7 @@
         let speedChart;
         let eficienciaRealPieChart;
 
-        
+
         //EFICIENCIA DIARIA %
         async function loadEficienciaRealPieChart() {
 
@@ -468,9 +459,8 @@
             const response = await fetch(`/Extruder/GetEfficiencyByShift?extruder=${extruder}&date=${date}`);
             const result = await response.json();
 
-            // 🔹 Usa siempre label + value
-            const labels = result.map(r => r.label ?? r.shift);
-            const data = result.map(r => r.value ?? r.efficiency);
+            const labels = result.map(r => r.shift);
+            const data = result.map(r => r.efficiency);
 
             const ctx = document.getElementById("EfficiencyBarChart").getContext("2d");
 
@@ -508,32 +498,22 @@
                                 text: "Porcentaje de producción por turno (%)",
                                 font: { size: 18, weight: "bold" },
                                 color: "#333",
-                                padding: { top: 20, bottom: 10 }
+                                padding: { top: 20, bottom: 10 } // espacio extra para claridad
                             },
                             datalabels: {
-                                anchor: "center",
-                                align: "center",
+                                anchor: "center",   // dentro de la barra
+                                align: "center",    // centrado vertical
                                 formatter: function(value) {
-                                    return (value !== undefined && value !== null && !isNaN(value))
-                                        ? value.toFixed(1) + "%"
-                                        : "";
+                                    return value.toFixed(1) + "%"; // un decimal + símbolo %
                                 },
-                                font: { weight: "bold" },
-                                color: "#fff"
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        const raw = context.raw;
-                                        return (raw !== undefined && raw !== null && !isNaN(raw))
-                                            ? `${context.label}: ${raw.toFixed(2)}%`
-                                            : `${context.label}: -`;
-                                    }
-                                }
+                                font: {
+                                    weight: "bold"
+                                },
+                                color: "#fff" // blanco para contraste sobre azul
                             }
                         }
                     },
-                    plugins: [ChartDataLabels]
+                    plugins: [ChartDataLabels] // activa el plugin
                 });
             } else {
                 efficiencyChart.data.labels = labels;
@@ -542,7 +522,7 @@
             }
         }
 
-              // PORCENTAJE DE TIEMPO MUERTO POR TURNO
+        //PORCENTAJE DE TIEMPO MUERTO POR TURNO
         async function loadDowntimeChart() {
             const extruder = document.getElementById("ExtruderSelect").value;
             const date = document.getElementById("startDate").value;
@@ -550,9 +530,8 @@
             const response = await fetch(`/Extruder/GetDowntimeByShift?extruder=${extruder}&date=${date}`);
             const result = await response.json();
 
-            // 🔹 Usa siempre label + value
-            const labels = result.map(r => r.label ?? r.shift);
-            const data = result.map(r => Number(r.value ?? r.downtime));
+            const labels = result.map(r => r.shift);
+            const data = result.map(r => Number(r.downtime));
 
             const ctx = document.getElementById("DowntimeBarChart").getContext("2d");
 
@@ -588,32 +567,22 @@
                                 text: "Porcentaje de tiempo muerto por turno (%)",
                                 font: { size: 18, weight: "bold" },
                                 color: "#333",
-                                padding: { top: 20, bottom: 10 }
+                                padding: { top: 20, bottom: 10 } // espacio extra para claridad
                             },
                             datalabels: {
-                                anchor: "center",
-                                align: "center",
+                                anchor: "center",   // dentro de la barra
+                                align: "center",    // centrado vertical
                                 formatter: function(value) {
-                                    return (value !== undefined && value !== null && !isNaN(value))
-                                        ? value.toFixed(1) + "%"
-                                        : "";
+                                    return value.toFixed(1) + "%"; // un decimal + símbolo %
                                 },
-                                font: { weight: "bold" },
-                                color: "#fff"
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        const raw = context.raw;
-                                        return (raw !== undefined && raw !== null && !isNaN(raw))
-                                            ? `${context.label}: ${raw.toFixed(2)}%`
-                                            : `${context.label}: -`;
-                                    }
-                                }
+                                font: {
+                                    weight: "bold"
+                                },
+                                color: "#fff" // blanco para contraste sobre gris
                             }
                         }
                     },
-                    plugins: [ChartDataLabels]
+                    plugins: [ChartDataLabels] // activa el plugin
                 });
             } else {
                 downtimeChart.data.labels = labels;
@@ -621,8 +590,6 @@
                 downtimeChart.update();
             }
         }
-
-
 
         //TABLA PRODCCION POR FAMILIA
         function cargarProduccionFamilias() {
@@ -653,88 +620,74 @@
                 });
         }
 
-        // EFICIENCIA DIARIA DE LOS ÚLTIMOS 7 DÍAS
+        //EFICIENCIA DIARIA DE LOS ULTIMOS 7 DIAS
         async function loadDailyEfficiencyChart() {
-            const extruder = document.getElementById("ExtruderSelect").value;
-            const shift = document.getElementById("shiftSelect").value;
-            const date = document.getElementById("startDate").value;
+        const extruder = document.getElementById("ExtruderSelect").value;
+        const shift = document.getElementById("shiftSelect").value;
+        const date = document.getElementById("startDate").value;
 
-            try {
-                const response = await fetch(`/Extruder/GetDailyEficienciaRealLast7Days?extruder=${extruder}&shift=${shift}&date=${date}`);
-                const result = await response.json();
+        try {
+            const response = await fetch(`/Extruder/GetDailyEficienciaRealLast7Days?extruder=${extruder}&shift=${shift}&date=${date}`);
+            const result = await response.json();
 
-                // 🔹 Usa siempre label + value
-                const labels = result.map(r => r.label ?? r.date);
-                const data = result.map(r => Number(r.value ?? r.eficienciaReal));
+            // Extraemos etiquetas y datos
+            const labels = result.map(r => r.date);
+            const data = result.map(r => Number(r.eficienciaReal));
 
-                const ctx = document.getElementById("DailyEfficiencyChart").getContext("2d");
+            const ctx = document.getElementById("DailyEfficiencyChart").getContext("2d");
 
-                if (!window.dailyEfficiencyChart) {
-                    window.dailyEfficiencyChart = new Chart(ctx, {
-                        type: "bar",
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: "Eficiencia (%)",
-                                data: data,
-                                backgroundColor: "rgba(76, 175, 80, 0.8)", // verde
-                                borderWidth: 2
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    max: 120, // puede superar 100
-                                    ticks: {
-                                        callback: value => value + "%"
-                                    }
-                                }
-                            },
-                            plugins: {
-                                title: {
-                                    display: true,
-                                    text: "Eficiencia de los últimos 7 días",
-                                    font: { size: 18, weight: "bold" },
-                                    color: "#333"
-                                },
-                                datalabels: {
-                                    anchor: "center",
-                                    align: "center",
-                                    formatter: function(value) {
-                                        return (value !== undefined && value !== null && !isNaN(value))
-                                            ? value.toFixed(1) + "%"
-                                            : "";
-                                    },
-                                    font: { weight: "bold" },
-                                    color: "#fff"
-                                },
-                                tooltip: {
-                                    callbacks: {
-                                        label: function(context) {
-                                            const raw = context.raw;
-                                            return (raw !== undefined && raw !== null && !isNaN(raw))
-                                                ? `${context.label}: ${raw.toFixed(2)}%`
-                                                : `${context.label}: -`;
-                                        }
-                                    }
+            if (!window.dailyEfficiencyChart) {
+                window.dailyEfficiencyChart = new Chart(ctx, {
+                    type: "bar",
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: "Eficiencia (%)",
+                            data: data,
+                            backgroundColor: "rgba(76, 175, 80, 0.8)", // verde
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 120, // puede superar 100
+                                ticks: {
+                                    callback: value => value + "%"
                                 }
                             }
                         },
-                        plugins: [ChartDataLabels]
-                    });
-                } else {
-                    window.dailyEfficiencyChart.data.labels = labels;
-                    window.dailyEfficiencyChart.data.datasets[0].data = data;
-                    window.dailyEfficiencyChart.update();
-                }
-            } catch (error) {
-                console.error("Error cargando datos de eficiencia real:", error);
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: "Eficiencia de los últimos 7 días",
+                                font: { size: 18, weight: "bold" },
+                                color: "#333"
+                            },
+                            datalabels: {
+                                anchor: "center",
+                                align: "center",
+                                formatter: value => value.toFixed(1) + "%",
+                                font: { weight: "bold" },
+                                color: "#fff"
+                            }
+                        }
+                    },
+                    plugins: [ChartDataLabels]
+                });
+            } else {
+                window.dailyEfficiencyChart.data.labels = labels;
+                window.dailyEfficiencyChart.data.datasets[0].data = data;
+                window.dailyEfficiencyChart.update();
             }
+        } catch (error) {
+            console.error("Error cargando datos de eficiencia real:", error);
+        }
         }
 
-        // TIEMPO DE PRODUCCIÓN POR FAMILIA
+        //TIEMPO DE PRODUCCION POR FAMILIA
         async function loadFamilyStackedChart() {
             const extruder = document.getElementById("ExtruderSelect").value;
             const date = document.getElementById("startDate").value;
@@ -743,11 +696,10 @@
             const response = await fetch(`/Extruder/GetFamilyRuntime?extruder=${extruder}&date=${date}&shift=${shift}`);
             const result = await response.json();
 
-            // 🔹 Usa siempre label + value
             const labels = ["Producción"]; // una sola barra
             const datasets = result.map(r => ({
-                label: r.label ?? r.family,
-                data: [Number(r.value ?? r.minutes)],
+                label: r.family,
+                data: [r.minutes],
                 backgroundColor: getRandomColor()
             }));
 
@@ -774,29 +726,19 @@
                                 padding: { top: 20, bottom: 10 }
                             },
                             datalabels: {
-                                anchor: "center",
-                                align: "center",
+                                anchor: "center",   // dentro de cada segmento
+                                align: "center",    // centrado vertical
                                 formatter: function(value) {
-                                    return (value !== undefined && value !== null && !isNaN(value))
-                                        ? value.toFixed(1) + " min"
-                                        : "";
+                                    return value.toFixed(1) + " min"; // un decimal + unidad
                                 },
-                                font: { weight: "bold" },
-                                color: "#fff"
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        const raw = context.raw;
-                                        return (raw !== undefined && raw !== null && !isNaN(raw))
-                                            ? `${context.dataset.label}: ${raw.toFixed(1)} min`
-                                            : `${context.dataset.label}: -`;
-                                    }
-                                }
+                                font: {
+                                    weight: "bold"
+                                },
+                                color: "#fff" // blanco para contraste sobre colores aleatorios
                             }
                         }
                     },
-                    plugins: [ChartDataLabels]
+                    plugins: [ChartDataLabels] // activa el plugin
                 });
             } else {
                 familyStackedChart.data.labels = labels;
@@ -809,7 +751,7 @@
             return `hsl(${Math.floor(Math.random() * 360)}, 70%, 55%)`;
         }
 
-        // METROS EXTRUIDOS POR FAMILIA
+        //METROS EXTRUIDOS POR FAMILIA
         async function loadFamilyMetersChart() {
             const extruder = document.getElementById("ExtruderSelect").value;
             const date = document.getElementById("startDate").value;
@@ -818,11 +760,10 @@
             const response = await fetch(`/Extruder/GetFamilyMeters?extruder=${extruder}&date=${date}&shift=${shift}`);
             const result = await response.json();
 
-            // 🔹 Usa siempre label + value
             const labels = ["Producción"]; // una sola barra
             const datasets = result.map(r => ({
-                label: r.label ?? r.family,
-                data: [Number(r.value ?? r.meters)],
+                label: r.family,
+                data: [r.meters],
                 backgroundColor: getRandomColor()
             }));
 
@@ -844,34 +785,24 @@
                         plugins: {
                             title: {
                                 display: true,
-                                text: "Metros extruidos por familia (m)",
+                                text: "Metros extruidos por familia (metros)",
                                 font: { size: 18, weight: "bold" },
                                 padding: { top: 20, bottom: 10 }
                             },
                             datalabels: {
-                                anchor: "center",
-                                align: "center",
+                                anchor: "center",   // dentro de cada segmento
+                                align: "center",    // centrado vertical
                                 formatter: function(value) {
-                                    return (value !== undefined && value !== null && !isNaN(value))
-                                        ? value.toFixed(1) + " m"
-                                        : "";
+                                    return value.toFixed(1) + " m"; // un decimal + unidad
                                 },
-                                font: { weight: "bold" },
-                                color: "#fff"
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        const raw = context.raw;
-                                        return (raw !== undefined && raw !== null && !isNaN(raw))
-                                            ? `${context.dataset.label}: ${raw.toFixed(1)} m`
-                                            : `${context.dataset.label}: -`;
-                                    }
-                                }
+                                font: {
+                                    weight: "bold"
+                                },
+                                color: "#fff" // blanco para contraste sobre colores aleatorios
                             }
                         }
                     },
-                    plugins: [ChartDataLabels]
+                    plugins: [ChartDataLabels] // activa el plugin
                 });
             } else {
                 familyMetersChart.data.labels = labels;
@@ -880,7 +811,7 @@
             }
         }
 
-               // VELOCIDAD DURANTE EL DÍA
+        //VELOCIDAD DURANTE EL DÍA
         async function loadSpeedChart() {
             const extruder = document.getElementById("ExtruderSelect").value;
             const date = document.getElementById("startDate").value;
@@ -890,16 +821,15 @@
             const result = await response.json();
 
             // Todos los timestamps únicos (eje X común)
-            const allLabels = [...new Set(result.map(r => r.label ?? r.timestamp))];
+            const allLabels = [...new Set(result.map(r => r.timestamp))];
 
             // Agrupar por familia
             const families = {};
             result.forEach(r => {
-                const family = r.family ?? "Sin familia";
-                if (!families[family]) {
-                    families[family] = {};
+                if (!families[r.family]) {
+                    families[r.family] = {};
                 }
-                families[family][r.label ?? r.timestamp] = Number(r.value ?? r.speed);
+                families[r.family][r.timestamp] = Number(r.speed);
             });
 
             // Colores para las líneas
@@ -914,11 +844,8 @@
 
             // Crear datasets por familia
             const datasets = Object.keys(families).map((family, index) => ({
-                label: family,
-                data: allLabels.map(ts => {
-                    const val = families[family][ts];
-                    return (val !== undefined && val !== null && !isNaN(val)) ? val : null;
-                }),
+                label: family || "Sin familia",
+                data: allLabels.map(ts => families[family][ts] ?? null), // null si no hay dato
                 borderColor: colors[index % colors.length],
                 backgroundColor: colors[index % colors.length].replace("1)", "0.2)"),
                 borderWidth: 2,
@@ -937,52 +864,44 @@
                     },
                     options: {
                         responsive: true,
-                        animation: {
-                            duration: 1200,
-                            easing: "easeOutQuart"
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            },
-                            x: {
-                                ticks: {
-                                    callback: function(value) {
-                                        const label = this.getLabelForValue(value);
-                                        const dateObj = new Date(label);
-                                        return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                                    },
-                                    maxRotation: 45,
-                                    minRotation: 30
-                                }
-                            }
-                        },
-                        plugins: {
-                            title: {
-                                display: true,
-                                text: "Velocidad durante el día (m/min)",
-                                font: { size: 18, weight: "bold" },
-                                color: "#333"
-                            },
-                            legend: {
-                                position: "bottom",
-                                labels: {
-                                    font: { size: 12, weight: "bold" },
-                                    color: "#333"
-                                }
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        const raw = context.raw;
-                                        return (raw !== undefined && raw !== null && !isNaN(raw))
-                                            ? `${context.dataset.label}: ${raw.toFixed(1)} m/min`
-                                            : `${context.dataset.label}: -`;
-                                    }
-                                }
-                            }
-                        }
+                           animation: {
+                               duration: 1200,
+                               easing: "easeOutQuart"
+                         },
+                         scales: {
+                             y: {
+                                 beginAtZero: true
+                             },
+                             x: {
+                                 ticks: {
+                                         callback: function(value, index, ticks) {
+                                            // El label original
+                                            const label = this.getLabelForValue(value);
+                                            // Extraer solo la hora (HH:mm) del timestamp
+                                            const dateObj = new Date(label);
+                                            return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                         },
+                                         maxRotation: 45,
+                                         minRotation: 30
+                                 }
+                             }
+                         },
+            plugins: {
+                title: {
+                    display: true,
+                    text: "Velocidad durante el día (m/min)",
+                    font: { size: 18, weight: "bold" },
+                    color: "#333"
+                },
+                legend: {
+                    position: "bottom",
+                    labels: {
+                        font: { size: 12, weight: "bold" },
+                        color: "#333"
                     }
+                }
+            }
+        }
                 });
             } else {
                 speedChart.data.labels = allLabels;
@@ -992,44 +911,48 @@
         }
 
 
-                    document.getElementById("btnExport").addEventListener("click", async () => {
-            const btn = document.getElementById("btnExport");
-            btn.disabled = true; // 🔹 Deshabilitar mientras exporta
-            btn.textContent = "Wait..."; // opcional, cambia el texto
+               document.getElementById("btnExportAll").addEventListener("click", function () {
+            // Instancias de tus gráficas
+            var charts = [
+                eficienciaRealPieChart,
+                efficiencyChart,
+                downtimeChart,
+                window.dailyEfficiencyChart,
+                familyStackedChart,
+                familyMetersChart,
+                speedChart
+            ];
 
-            const extruder = document.getElementById("ExtruderSelect").value;
-            const shift = document.getElementById("shiftSelect").value;
-            const date = document.getElementById("startDate").value;
+            // Convertir a imágenes
+            var images = charts
+                .filter(chart => chart !== undefined && chart !== null)
+                .map(chart => chart.toBase64Image());
 
-            try {
-                const response = await fetch("/Extruder/GenerateExcelAllExtruders", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ extruder, shift, date })
-                });
+            // Obtener fecha y turno seleccionados en tu vista
+            var date = document.getElementById("startDate").value;
+            var shift = document.getElementById("shiftSelect").value;
 
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = "Reporte.xlsx";
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                } else {
-                    alert("Error al generar el reporte");
-                }
-            } catch (err) {
-                console.error("Error:", err);
-                alert("Error al conectar con el servidor");
-            } finally {
-                btn.disabled = false; // 🔹 Rehabilitar al terminar
-                btn.textContent = "Export Charts"; // restaurar texto
-            }
+            // Enviar todo al servidor
+            fetch('/Extruder/ExportMultipleChartsToExcel', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    base64Images: images,
+                    date: date,
+                    shift: shift
+                })
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                var url = window.URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = `Graficos_${date}_${shift || "Todos"}.xlsx`; // nombre dinámico también en cliente
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            });
         });
-
-
         // Evento del botón Apply
         // document.getElementById("applyFilter").addEventListener("click", loadTotmChart);
         document.getElementById("applyFilter").addEventListener("click", loadEfficiencyChart);
