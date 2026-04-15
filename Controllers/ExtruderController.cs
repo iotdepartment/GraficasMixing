@@ -1052,6 +1052,7 @@ namespace GraficasMixing.Controllers
             var inicio = fechaHoy.AddHours(7);
             var fin = fechaHoy.AddDays(1).AddHours(7);
 
+            // 🔹 Obtener registros crudos
             var registrosRaw = _context.ScadaExtrudermaster
                 .Where(x => x.Extruder == extruder &&
                             (x.Fecha.Date == fechaHoy || x.Fecha.Date == fechaHoy.AddDays(1)))
@@ -1066,23 +1067,33 @@ namespace GraficasMixing.Controllers
                 .Where(x => x.fechaHora >= inicio && x.fechaHora < fin)
                 .ToList();
 
+            // 🔹 FIX: evitar duplicados en setpoints
             var setpoints = _context.SetPointExtruder
                 .Where(sp => sp.extruder == extruder)
-                .ToDictionary(sp => sp.familia, sp => sp.setpoint);
+                .AsEnumerable()
+                .GroupBy(sp => sp.familia)
+                .ToDictionary(g => g.Key, g => g.First().setpoint);
 
+            // 🔹 Construir registros finales
             var registros = registrosRaw.Select(x => new
             {
                 hora = x.fechaHora.ToString("HH:mm"),
                 velocidad = x.velocidad,
-                turno = x.fechaHora.TimeOfDay >= new TimeSpan(7, 0, 0) && x.fechaHora.TimeOfDay < new TimeSpan(15, 29, 59) ? "Turno 1"
-                       : x.fechaHora.TimeOfDay >= new TimeSpan(15, 30, 0) && x.fechaHora.TimeOfDay < new TimeSpan(23, 29, 59) ? "Turno 2"
-                       : "Turno 3",
+                turno =
+                    x.fechaHora.TimeOfDay >= new TimeSpan(7, 0, 0) &&
+                    x.fechaHora.TimeOfDay < new TimeSpan(15, 29, 59)
+                        ? "Turno 1"
+                        : x.fechaHora.TimeOfDay >= new TimeSpan(15, 30, 0) &&
+                          x.fechaHora.TimeOfDay < new TimeSpan(23, 29, 59)
+                            ? "Turno 2"
+                            : "Turno 3",
                 familia = x.familia,
                 setpoint = setpoints.ContainsKey(x.familia) ? setpoints[x.familia] : 0
             }).ToList();
 
             return Json(new { registros });
         }
+
 
         [HttpGet]
         public JsonResult GetContador(int numeroEmpleado)

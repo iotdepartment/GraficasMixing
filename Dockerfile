@@ -4,6 +4,15 @@ WORKDIR /app
 EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
 
+# 🔹 Instalar dependencias nativas necesarias para SkiaSharp
+RUN apt-get update && apt-get install -y \
+    libfontconfig1 \
+    libfreetype6 \
+    libpng16-16 \
+    libexpat1 \
+    libuuid1 \
+    && rm -rf /var/lib/apt/lists/*
+
 # Etapa de compilación
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
@@ -19,7 +28,7 @@ FROM base AS final
 WORKDIR /app
 COPY --from=build /app/publish .
 
-# Cadena de conexión como variable de entorno
+# 🔹 Cadena de conexión como variable de entorno
 ENV ConnectionStrings__DefaultConnection="Server=10.195.10.166,1433;Database=GaficadoreTest;User Id=Manu;Password=2022.Tgram2;TrustServerCertificate=True;"
 
 ENTRYPOINT ["dotnet", "GraficasMixing.dll"]
