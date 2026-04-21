@@ -153,7 +153,6 @@ namespace GraficasMixing.Controllers
             return Json(data);
         }
 
-
         //TABLA EFICIENCIA
         [HttpGet]
         public IActionResult GetProduccionFamilias(string extruder, string shift, DateTime date)
@@ -272,7 +271,6 @@ namespace GraficasMixing.Controllers
 
             return Json(report);
         }
-
 
         public class ChartPoint
         {
@@ -639,13 +637,27 @@ namespace GraficasMixing.Controllers
                 .ThenBy(x => x.Hora)
                 .Select(x => new
                 {
-                    label = x.Fecha.ToString("yyyy-MM-dd") + " " + x.Hora.ToString(),
+                    label = (x.Fecha.Date + x.Hora).ToString("yyyy-MM-dd HH:mm:ss"),
                     value = x.Velocidad ?? 0,
-                    family = x.Familia
+
+                    // Si velocidad es 0 → usar PP, si no → usar Familia
+                    family = (x.Velocidad ?? 0) == 0
+                    ? (x.PP ?? "TIEMPO MUERTO NO IDENTIFICADO")
+                    : (x.Familia ?? "FAMILIA NO IDENTIFICADA"),
+
+                    // 👇 NUEVO: indicador real de PP
+                    isPP = (x.Velocidad ?? 0) == 0
                 })
                 .ToList();
 
             return data;
+
+            //.Select(x => new
+            // {
+            //     label = x.Fecha.ToString("yyyy-MM-dd") + " " + x.Hora.ToString(),
+            //     value = x.Velocidad ?? 0,
+            //     family = x.Familia
+            // })
         }
 
 
@@ -890,8 +902,6 @@ namespace GraficasMixing.Controllers
             return Json(CalcularSpeedData(extruder, date, shift));
         }
 
-
-
         public IActionResult Chart(int id)
         {
             var estado = _context.Estado
@@ -1093,7 +1103,6 @@ namespace GraficasMixing.Controllers
 
             return Json(new { registros });
         }
-
 
         [HttpGet]
         public JsonResult GetContador(int numeroEmpleado)

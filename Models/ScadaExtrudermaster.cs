@@ -6,7 +6,7 @@
 
         public DateTime Fecha { get; set; }
 
-        public TimeSpan Hora { get; set; } 
+        public TimeSpan Hora { get; set; }
 
         public string? Extruder { get; set; }
 
@@ -21,5 +21,7 @@
         public int? Totm { get; set; }
 
         public double? Velocidad { get; set; }
+
+        public string? PP { get; set; }
     }
 }

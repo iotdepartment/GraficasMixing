@@ -880,7 +880,117 @@
             }
         }
 
-               // VELOCIDAD DURANTE EL DÍA
+        // // VELOCIDAD DURANTE EL DÍA
+        // async function loadSpeedChart() {
+        //     const extruder = document.getElementById("ExtruderSelect").value;
+        //     const date = document.getElementById("startDate").value;
+        //     const shift = document.getElementById("shiftSelect").value;
+
+        //     const response = await fetch(`/Extruder/GetSpeedData?extruder=${extruder}&date=${date}&shift=${shift}`);
+        //     const result = await response.json();
+
+        //     // Todos los timestamps únicos (eje X común)
+        //     const allLabels = [...new Set(result.map(r => r.label ?? r.timestamp))];
+
+        //     // Agrupar por familia
+        //     const families = {};
+        //     result.forEach(r => {
+        //         const family = r.family ?? "Sin familia";
+        //         if (!families[family]) {
+        //             families[family] = {};
+        //         }
+        //         families[family][r.label ?? r.timestamp] = Number(r.value ?? r.speed);
+        //     });
+
+        //     // Colores para las líneas
+        //     const colors = [
+        //         "rgba(255, 99, 132, 1)",   // rojo
+        //         "rgba(54, 162, 235, 1)",   // azul
+        //         "rgba(75, 192, 192, 1)",   // verde
+        //         "rgba(255, 206, 86, 1)",   // amarillo
+        //         "rgba(153, 102, 255, 1)",  // morado
+        //         "rgba(255, 159, 64, 1)"    // naranja
+        //     ];
+
+        //     // Crear datasets por familia
+        //     const datasets = Object.keys(families).map((family, index) => ({
+        //         label: family,
+        //         data: allLabels.map(ts => {
+        //             const val = families[family][ts];
+        //             return (val !== undefined && val !== null && !isNaN(val)) ? val : null;
+        //         }),
+        //         borderColor: colors[index % colors.length],
+        //         backgroundColor: colors[index % colors.length].replace("1)", "0.2)"),
+        //         borderWidth: 2,
+        //         tension: 0.3,
+        //         fill: false
+        //     }));
+
+        //     const ctx = document.getElementById("SpeedLineChart").getContext("2d");
+
+        //     if (!speedChart) {
+        //         speedChart = new Chart(ctx, {
+        //             type: "line",
+        //             data: {
+        //                 labels: allLabels,
+        //                 datasets: datasets
+        //             },
+        //             options: {
+        //                 responsive: true,
+        //                 animation: {
+        //                     duration: 1200,
+        //                     easing: "easeOutQuart"
+        //                 },
+        //                 scales: {
+        //                     y: {
+        //                         beginAtZero: true
+        //                     },
+        //                     x: {
+        //                         ticks: {
+        //                             callback: function(value) {
+        //                                 const label = this.getLabelForValue(value);
+        //                                 const dateObj = new Date(label);
+        //                                 return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        //                             },
+        //                             maxRotation: 45,
+        //                             minRotation: 30
+        //                         }
+        //                     }
+        //                 },
+        //                 plugins: {
+        //                     title: {
+        //                         display: true,
+        //                         text: "Velocidad durante el día (m/min)",
+        //                         font: { size: 18, weight: "bold" },
+        //                         color: "#333"
+        //                     },
+        //                     legend: {
+        //                         position: "bottom",
+        //                         labels: {
+        //                             font: { size: 12, weight: "bold" },
+        //                             color: "#333"
+        //                         }
+        //                     },
+        //                     tooltip: {
+        //                         callbacks: {
+        //                             label: function(context) {
+        //                                 const raw = context.raw;
+        //                                 return (raw !== undefined && raw !== null && !isNaN(raw))
+        //                                     ? `${context.dataset.label}: ${raw.toFixed(1)} m/min`
+        //                                     : `${context.dataset.label}: -`;
+        //                             }
+        //                         }
+        //                     }
+        //                 }
+        //             }
+        //         });
+        //     } else {
+        //         speedChart.data.labels = allLabels;
+        //         speedChart.data.datasets = datasets;
+        //         speedChart.update();
+        //     }
+        // }
+                // VELOCIDAD DURANTE EL DÍA
         async function loadSpeedChart() {
             const extruder = document.getElementById("ExtruderSelect").value;
             const date = document.getElementById("startDate").value;
@@ -890,21 +1000,18 @@
             const result = await response.json();
 
             // Todos los timestamps únicos (eje X común)
-            const allLabels = [...new Set(result.map(r => r.label ?? r.timestamp))];
+            const allLabels = [...new Set(result.map(r => r.label))];
 
-            // Agrupar por familia
+            // Agrupar por familia (o PP si velocidad = 0)
             const families = {};
             result.forEach(r => {
                 const family = r.family ?? "Sin familia";
-                if (!families[family]) {
-                    families[family] = {};
-                }
-                families[family][r.label ?? r.timestamp] = Number(r.value ?? r.speed);
+                if (!families[family]) families[family] = [];
+                families[family].push(r);
             });
 
-            // Colores para las líneas
+            // Colores normales para familias
             const colors = [
-                "rgba(255, 99, 132, 1)",   // rojo
                 "rgba(54, 162, 235, 1)",   // azul
                 "rgba(75, 192, 192, 1)",   // verde
                 "rgba(255, 206, 86, 1)",   // amarillo
@@ -912,19 +1019,50 @@
                 "rgba(255, 159, 64, 1)"    // naranja
             ];
 
-            // Crear datasets por familia
-            const datasets = Object.keys(families).map((family, index) => ({
-                label: family,
-                data: allLabels.map(ts => {
-                    const val = families[family][ts];
-                    return (val !== undefined && val !== null && !isNaN(val)) ? val : null;
-                }),
-                borderColor: colors[index % colors.length],
-                backgroundColor: colors[index % colors.length].replace("1)", "0.2)"),
-                borderWidth: 2,
-                tension: 0.3,
-                fill: false
-            }));
+            // Generador de tonos rojos para PP
+            function getRedTone(index) {
+                const lightness = 40 + (index * 8);
+                return `hsl(0, 85%, ${Math.min(lightness, 80)}%)`;
+            }
+
+            // Crear datasets por familia o PP
+            const datasets = Object.keys(families).map((family, index) => {
+                const items = families[family];
+
+                // 🔥 Detección REAL de PP desde backend
+                const isPP = items.some(r => r.isPP === true);
+
+                const borderColor = isPP
+                    ? getRedTone(index)
+                    : colors[index % colors.length];
+
+                const backgroundColor = isPP
+                    ? borderColor.replace(")", ", 0.25)").replace("hsl", "hsla")
+                    : colors[index % colors.length].replace("1)", "0.2)");
+
+                return {
+                    label: family,
+                    data: allLabels.map(ts => {
+                        const item = items.find(x => x.label === ts);
+                        return item ? item.value : null;
+                    }),
+                    borderColor,
+                    backgroundColor,
+                    borderWidth: isPP ? 3 : 2,
+                    tension: 0.3,
+                    fill: false,
+                    borderDash: isPP ? [6, 6] : [],
+                    borderDashOffset: 0,
+                    isPP: isPP
+                };
+            });
+
+            // 🔥 ORDENAR: familias primero, PP después
+            datasets.sort((a, b) => {
+                if (!a.isPP && b.isPP) return -1;
+                if (a.isPP && !b.isPP) return 1;
+                return a.label.localeCompare(b.label);
+            });
 
             const ctx = document.getElementById("SpeedLineChart").getContext("2d");
 
@@ -942,9 +1080,7 @@
                             easing: "easeOutQuart"
                         },
                         scales: {
-                            y: {
-                                beginAtZero: true
-                            },
+                            y: { beginAtZero: true },
                             x: {
                                 ticks: {
                                     callback: function(value) {
@@ -965,10 +1101,11 @@
                                 color: "#333"
                             },
                             legend: {
-                                position: "bottom",
+                                position: "bottom",   // 👈🔥 LEYENDA ABAJO
                                 labels: {
                                     font: { size: 12, weight: "bold" },
-                                    color: "#333"
+                                    color: "#333",
+                                    padding: 12
                                 }
                             },
                             tooltip: {
@@ -992,7 +1129,8 @@
         }
 
 
-                    document.getElementById("btnExport").addEventListener("click", async () => {
+        // EXPORTAR GRAFICAS
+        document.getElementById("btnExport").addEventListener("click", async () => {
             const btn = document.getElementById("btnExport");
             btn.disabled = true; // 🔹 Deshabilitar mientras exporta
             btn.textContent = "Wait..."; // opcional, cambia el texto
@@ -1042,7 +1180,7 @@
         document.getElementById("applyFilter").addEventListener("click", loadEficienciaRealPieChart);
 
 
-            window.onload = () => {
+        window.onload = () => {
 
             function getLaborDay() {
                 const now = new Date();
