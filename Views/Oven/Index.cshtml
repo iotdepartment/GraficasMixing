@@ -5,6 +5,15 @@
 
 <h2 class="text-start">Primary Oven Charts (Oven Area) <i class="bi bi-clipboard-data"></i></h2>
 <hr class="border border-dark border-0 mb-4 opacity-100">
+
+<div class="row mb-3 mt-2">
+    <div class="col-12 text-end">
+        <a href="@Url.Action("Chart", "Oven")" class="btn btn-info rounded-pill">
+            <i class="bi bi-bar-chart"></i> Ver Gráfica
+        </a>
+    </div>
+</div>
+
 <div class="container-fluid mt-3 shadow-sm p-5 bg-white rounded-4 border-1 border">
 
     <div class="row align-items-end mb-3">
@@ -217,7 +226,7 @@
         function loadLatestCards() {
             let oven = $("#OvenSelect").val();
 
-            $.getJSON('/Oven/GetLatest', { oven: oven })
+            $.getJSON('/Oven/GetLatestMain', { oven: oven })
                 .done(function (last) {
                     if (last) {
                         $("#pressureValue").text(last.press + " bar");
@@ -232,7 +241,7 @@
         function loadLast10() {
             let oven = $("#OvenSelect").val();
 
-            $.getJSON('/Oven/GetLast10', { oven: oven })
+            $.getJSON('/Oven/GetLast10Main', { oven: oven })
                 .done(function (data) {
                     updateLast10Table(data);
                 });

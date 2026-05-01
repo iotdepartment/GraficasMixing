@@ -1,0 +1,651 @@
+﻿
+@{
+    Layout = "~/Views/Oven/Partials/_LayoutNoNav.cshtml";
+    ViewData["Title"] = "Graficas Generales";
+}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+
+<div class="row align-items-stretch mb-5 mt-3">
+
+    <div class="col-1 d-flex">
+        <div class="card shadow-sm border-0 rounded-4 d-flex justify-content-center align-items-center text-center w-100 h-100">
+            <img src="~/Images/Logo.png"
+                 alt="Logo empresa"
+                 class="img-fluid"
+                 style="max-width: 100px; height: auto;">
+        </div>
+    </div>
+
+    <div class="col-11 d-flex">
+        <div class="card shadow-lg rounded-pill p-2 mb-2 bg-info w-100 h-100">
+
+            <div class="d-flex justify-content-between align-items-center px-3">
+
+                <!-- Título -->
+                <div class="fw-bold fs-1">Sistema de graficas de Oven</div>
+
+                <!-- Fecha + hora + turno -->
+                <div class="text-end">
+
+                    <!-- Ícono + fecha/hora en una sola línea -->
+                    <div id="fechaHoraLinea" class="fw-semibold">
+                        <i class="bi bi-calendar-date me-1"></i>
+                    </div>
+
+                    <!-- Turno debajo -->
+                    <div id="turnoActual" class="fw-bold fs-5"><i class="bi bi-clock-history me-1"></i></div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+</div>
+<!-- Fila inferior -->
+<div class="row align-items-end mb-0 mt-2">
+    <div class="col-6">
+
+        <div class="row">
+            <div class="col-3">
+                <div class="card shadow-lg rounded-pill mb-2 align-items-center">
+                    <div class="fw-bold fs-1">Oven 1</div>
+                </div>
+            </div>
+
+            <div class="col-3">
+                <div class="card shadow-lg rounded-pill p-2 mb-2 align-items-center">
+                    <div class="d-flex gap-2">
+                        <div class="fw-bold fs-5">Pressure:</div>
+                        <span id="lastPressure" class="badge bg-warning text-dark rounded-pill fs-5"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-3">
+                <div class="card shadow-lg rounded-pill p-2 mb-2 align-items-center">
+                    <div class="d-flex gap-2">
+                        <div class="fw-bold fs-5">Temperature:</div>
+                        <span id="lastTemperature" class="badge bg-danger rounded-pill fs-5"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+        <div class="row align-items-end mb-4">
+            <div class="col-12">
+                <div class="card shadow-lg  rounded-4 p-3 position-relative" style="height: 200px;">
+                    <canvas id="OvenChart1" style="width:100%; height:100%;"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <div class="col-6">
+
+        <div class="row">
+            <div class="col-3">
+                <div class="card shadow-lg rounded-pill mb-2 align-items-center">
+                    <div class="fw-bold fs-1">Oven 2</div>
+                </div>
+            </div>
+
+            <div class="col-3">
+                <div class="card shadow-lg rounded-pill p-2 mb-2 align-items-center">
+                    <div class="d-flex gap-2">
+                        <div class="fw-bold fs-5">Pressure:</div>
+                        <span id="lastPressure2" class="badge bg-warning text-dark rounded-pill fs-5"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-3">
+                <div class="card shadow-lg rounded-pill p-2 mb-2 align-items-center">
+                    <div class="d-flex gap-2">
+                        <div class="fw-bold fs-5">Temperature:</div>
+                        <span id="lastTemperature2" class="badge bg-danger rounded-pill fs-5"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row align-items-end mb-4">
+            <div class="col-12">
+                <div class="card shadow-lg  rounded-4 p-3 position-relative" style="height: 200px;">
+                    <canvas id="OvenChart2" style="width:100%; height:100%;"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="row align-items-end mb-0 mt-2">
+    <div class="col-6">
+
+        <div class="row">
+            <div class="col-3">
+                <div class="card shadow-lg rounded-pill mb-2 align-items-center">
+                    <div class="fw-bold fs-1">Oven 3</div>
+                </div>
+            </div>
+
+            <div class="col-3">
+                <div class="card shadow-lg rounded-pill p-2 mb-2 align-items-center">
+                    <div class="d-flex gap-2">
+                        <div class="fw-bold fs-5">Pressure:</div>
+                        <span id="lastPressure3" class="badge bg-warning text-dark rounded-pill fs-5"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-3">
+                <div class="card shadow-lg rounded-pill p-2 mb-2 align-items-center">
+                    <div class="d-flex gap-2">
+                        <div class="fw-bold fs-5">Temperature:</div>
+                        <span id="lastTemperature3" class="badge bg-danger rounded-pill fs-5"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row align-items-end mb-4">
+            <div class="col-12">
+                <div class="card shadow-lg  rounded-4 p-3 position-relative" style="height: 200px;">
+                    <canvas id="OvenChart3" style="width:100%; height:100%;"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <div class="col-6">
+
+        <div class="row">
+            <div class="col-3">
+                <div class="card shadow-lg rounded-pill mb-2 align-items-center">
+                    <div class="fw-bold fs-1">Oven 4</div>
+                </div>
+            </div>
+
+            <div class="col-3">
+                <div class="card shadow-lg rounded-pill p-2 mb-2 align-items-center">
+                    <div class="d-flex gap-2">
+                        <div class="fw-bold fs-5">Pressure:</div>
+                        <span id="lastPressure4" class="badge bg-warning text-dark rounded-pill fs-5"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-3">
+                <div class="card shadow-lg rounded-pill p-2 mb-2 align-items-center">
+                    <div class="d-flex gap-2">
+                        <div class="fw-bold fs-5">Temperature:</div>
+                        <span id="lastTemperature4" class="badge bg-danger rounded-pill fs-5"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row align-items-end mb-4">
+            <div class="col-12">
+                <div class="card shadow-lg  rounded-4 p-3 position-relative" style="height: 200px;">
+                    <canvas id="OvenChart4" style="width:100%; height:100%;"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="row align-items-end mb-0 mt-2">
+    <div class="col-6">
+
+        <div class="row">
+            <div class="col-3">
+                <div class="card shadow-lg rounded-pill mb-2 align-items-center">
+                    <div class="fw-bold fs-1">Oven 5</div>
+                </div>
+            </div>
+
+            <div class="col-3">
+                <div class="card shadow-lg rounded-pill p-2 mb-2 align-items-center">
+                    <div class="d-flex gap-2">
+                        <div class="fw-bold fs-5">Pressure:</div>
+                        <span id="lastPressure5" class="badge bg-warning text-dark rounded-pill fs-5"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-3">
+                <div class="card shadow-lg rounded-pill p-2 mb-2 align-items-center">
+                    <div class="d-flex gap-2">
+                        <div class="fw-bold fs-5">Temperature:</div>
+                        <span id="lastTemperature5" class="badge bg-danger rounded-pill fs-5"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row align-items-end mb-4">
+            <div class="col-12">
+                <div class="card shadow-lg  rounded-4 p-3 position-relative" style="height: 200px;">
+                    <canvas id="OvenChart5" style="width:100%; height:100%;"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <div class="col-6">
+
+        <div class="row">
+            <div class="col-3">
+                <div class="card shadow-lg rounded-pill mb-2 align-items-center">
+                    <div class="fw-bold fs-1">Oven 6</div>
+                </div>
+            </div>
+
+            <div class="col-3">
+                <div class="card shadow-lg rounded-pill p-2 mb-2 align-items-center">
+                    <div class="d-flex gap-2">
+                        <div class="fw-bold fs-5">Pressure:</div>
+                        <span id="lastPressure6" class="badge bg-warning text-dark rounded-pill fs-5"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-3">
+                <div class="card shadow-lg rounded-pill p-2 mb-2 align-items-center">
+                    <div class="d-flex gap-2">
+                        <div class="fw-bold fs-5">Temperature:</div>
+                        <span id="lastTemperature6" class="badge bg-danger rounded-pill fs-5"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row align-items-end mb-4">
+            <div class="col-12">
+                <div class="card shadow-lg  rounded-4 p-3 position-relative" style="height: 200px;">
+                    <canvas id="OvenChart6" style="width:100%; height:100%;"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.css" rel="stylesheet" />
+
+    <script>
+    // =========================
+    // OVEN 1
+    // =========================
+    let chart1;
+
+    function loadLatest1() {
+        fetch("/Oven/GetLatest?oven=1")
+            .then(r => r.json())
+            .then(d => {
+                document.getElementById("lastPressure").textContent = d.pess + " KPA";
+                document.getElementById("lastTemperature").textContent = d.temp + " °C";
+            });
+    }
+
+    function loadChart1() {
+        fetch("/Oven/GetLast10?oven=1")
+            .then(r => r.json())
+            .then(data => {
+                const labels = data.map(x => x.hors.substring(0, 5)); 
+                const press = data.map(x => parseFloat(x.pess));
+                const temp = data.map(x => parseFloat(x.temp));
+
+                const ctx = document.getElementById("OvenChart1").getContext("2d");
+
+                chart1 = new Chart(ctx, {
+                    type: "line",
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            { label: "Pressure", data: press, borderColor: "orange", tension: 0.3 },
+                            { label: "Temperature", data: temp, borderColor: "red", tension: 0.3 }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            });
+    }
+
+    function updateChart1() {
+        fetch("/Oven/GetLast10?oven=1")
+            .then(r => r.json())
+            .then(data => {
+                chart1.data.labels = data.map(x => x.hors.substring(0, 5));
+                chart1.data.datasets[0].data = data.map(x => parseFloat(x.pess));
+                chart1.data.datasets[1].data = data.map(x => parseFloat(x.temp));
+                chart1.update();
+            });
+    }
+
+    // =========================
+    // OVEN 2
+    // =========================
+    let chart2;
+
+    function loadLatest2() {
+        fetch("/Oven/GetLatest?oven=2")
+            .then(r => r.json())
+            .then(d => {
+                document.getElementById("lastPressure2").textContent = d.pess + " KPA";
+                document.getElementById("lastTemperature2").textContent = d.temp + " °C";
+            });
+    }
+
+    function loadChart2() {
+        fetch("/Oven/GetLast10?oven=2")
+            .then(r => r.json())
+            .then(data => {
+                const labels = data.map(x => x.hors.substring(0, 5));
+                const press = data.map(x => parseFloat(x.pess));
+                const temp = data.map(x => parseFloat(x.temp));
+
+                const ctx = document.getElementById("OvenChart2").getContext("2d");
+
+                chart2 = new Chart(ctx, {
+                    type: "line",
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            { label: "Pressure", data: press, borderColor: "orange", tension: 0.3 },
+                            { label: "Temperature", data: temp, borderColor: "red", tension: 0.3 }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            });
+    }
+
+    function updateChart2() {
+        fetch("/Oven/GetLast10?oven=2")
+            .then(r => r.json())
+            .then(data => {
+                chart2.data.labels = data.map(x => x.hors.substring(0, 5));
+                chart2.data.datasets[0].data = data.map(x => parseFloat(x.pess));
+                chart2.data.datasets[1].data = data.map(x => parseFloat(x.temp));
+                chart2.update();
+            });
+    }
+
+    // =========================
+    // OVEN 3
+    // =========================
+    let chart3;
+
+    function loadLatest3() {
+        fetch("/Oven/GetLatest?oven=3")
+            .then(r => r.json())
+            .then(d => {
+                document.getElementById("lastPressure3").textContent = d.pess + " KPA";
+                document.getElementById("lastTemperature3").textContent = d.temp + " °C";
+            });
+    }
+
+    function loadChart3() {
+        fetch("/Oven/GetLast10?oven=3")
+            .then(r => r.json())
+            .then(data => {
+                const labels = data.map(x => x.hors.substring(0, 5));
+                const press = data.map(x => parseFloat(x.pess));
+                const temp = data.map(x => parseFloat(x.temp));
+
+                const ctx = document.getElementById("OvenChart3").getContext("2d");
+
+                chart3 = new Chart(ctx, {
+                    type: "line",
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            { label: "Pressure", data: press, borderColor: "orange", tension: 0.3 },
+                            { label: "Temperature", data: temp, borderColor: "red", tension: 0.3 }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            });
+    }
+
+    function updateChart3() {
+        fetch("/Oven/GetLast10?oven=3")
+            .then(r => r.json())
+            .then(data => {
+                chart3.data.labels = data.map(x => x.hors.substring(0, 5));
+                chart3.data.datasets[0].data = data.map(x => parseFloat(x.pess));
+                chart3.data.datasets[1].data = data.map(x => parseFloat(x.temp));
+                chart3.update();
+            });
+    }
+
+    // =========================
+    // OVEN 4
+    // =========================
+    let chart4;
+
+    function loadLatest4() {
+        fetch("/Oven/GetLatest?oven=4")
+            .then(r => r.json())
+            .then(d => {
+                document.getElementById("lastPressure4").textContent = d.pess + " KPA";
+                document.getElementById("lastTemperature4").textContent = d.temp + " °C";
+            });
+    }
+
+    function loadChart4() {
+        fetch("/Oven/GetLast10?oven=4")
+            .then(r => r.json())
+            .then(data => {
+                const labels = data.map(x => x.hors.substring(0, 5));
+                const press = data.map(x => parseFloat(x.pess));
+                const temp = data.map(x => parseFloat(x.temp));
+
+                const ctx = document.getElementById("OvenChart4").getContext("2d");
+
+                chart4 = new Chart(ctx, {
+                    type: "line",
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            { label: "Pressure", data: press, borderColor: "orange", tension: 0.3 },
+                            { label: "Temperature", data: temp, borderColor: "red", tension: 0.3 }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            });
+    }
+
+    function updateChart4() {
+        fetch("/Oven/GetLast10?oven=4")
+            .then(r => r.json())
+            .then(data => {
+                chart4.data.labels = data.map(x => x.hors.substring(0, 5));
+                chart4.data.datasets[0].data = data.map(x => parseFloat(x.pess));
+                chart4.data.datasets[1].data = data.map(x => parseFloat(x.temp));
+                chart4.update();
+            });
+    }
+
+    // =========================
+    // OVEN 5
+    // =========================
+    let chart5;
+
+    function loadLatest5() {
+        fetch("/Oven/GetLatest?oven=5")
+            .then(r => r.json())
+            .then(d => {
+                document.getElementById("lastPressure5").textContent = d.pess + " KPA";
+                document.getElementById("lastTemperature5").textContent = d.temp + " °C";
+            });
+    }
+
+    function loadChart5() {
+        fetch("/Oven/GetLast10?oven=5")
+            .then(r => r.json())
+            .then(data => {
+                const labels = data.map(x => x.hors.substring(0, 5));
+                const press = data.map(x => parseFloat(x.pess));
+                const temp = data.map(x => parseFloat(x.temp));
+
+                const ctx = document.getElementById("OvenChart5").getContext("2d");
+
+                chart5 = new Chart(ctx, {
+                    type: "line",
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            { label: "Pressure", data: press, borderColor: "orange", tension: 0.3 },
+                            { label: "Temperature", data: temp, borderColor: "red", tension: 0.3 }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            });
+    }
+
+    function updateChart5() {
+        fetch("/Oven/GetLast10?oven=5")
+            .then(r => r.json())
+            .then(data => {
+                chart5.data.labels = data.map(x => x.hors.substring(0, 5));
+                chart5.data.datasets[0].data = data.map(x => parseFloat(x.pess));
+                chart5.data.datasets[1].data = data.map(x => parseFloat(x.temp));
+                chart5.update();
+            });
+    }
+
+    // =========================
+    // OVEN 6
+    // =========================
+    let chart6;
+
+    function loadLatest6() {
+        fetch("/Oven/GetLatest?oven=6")
+            .then(r => r.json())
+            .then(d => {
+                document.getElementById("lastPressure6").textContent = d.pess + " KPA";
+                document.getElementById("lastTemperature6").textContent = d.temp + " °C";
+            });
+    }
+
+    function loadChart6() {
+        fetch("/Oven/GetLast10?oven=6")
+            .then(r => r.json())
+            .then(data => {
+                const labels = data.map(x => x.hors.substring(0, 5));
+                const press = data.map(x => parseFloat(x.pess));
+                const temp = data.map(x => parseFloat(x.temp));
+
+                const ctx = document.getElementById("OvenChart6").getContext("2d");
+
+                chart6 = new Chart(ctx, {
+                    type: "line",
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            { label: "Pressure", data: press, borderColor: "orange", tension: 0.3 },
+                            { label: "Temperature", data: temp, borderColor: "red", tension: 0.3 }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            });
+    }
+
+    function updateChart6() {
+        fetch("/Oven/GetLast10?oven=6")
+            .then(r => r.json())
+            .then(data => {
+                chart6.data.labels = data.map(x => x.hors.substring(0, 5));
+                chart6.data.datasets[0].data = data.map(x => parseFloat(x.pess));
+                chart6.data.datasets[1].data = data.map(x => parseFloat(x.temp));
+                chart6.update();
+            });
+    }
+
+    // =========================
+    // INICIALIZACIÓN
+    // =========================
+    window.onload = function () {
+        loadLatest1(); loadChart1();
+        loadLatest2(); loadChart2();
+        loadLatest3(); loadChart3();
+        loadLatest4(); loadChart4();
+        loadLatest5(); loadChart5();
+        loadLatest6(); loadChart6();
+
+        setInterval(() => { loadLatest1(); updateChart1(); }, 5000);
+        setInterval(() => { loadLatest2(); updateChart2(); }, 5000);
+        setInterval(() => { loadLatest3(); updateChart3(); }, 5000);
+        setInterval(() => { loadLatest4(); updateChart4(); }, 5000);
+        setInterval(() => { loadLatest5(); updateChart5(); }, 5000);
+        setInterval(() => { loadLatest6(); updateChart6(); }, 5000);
+    };
+    </script>
+
+    <script>
+        function actualizarFechaHoraYTurno() {
+            const ahora = new Date();
+
+            const meses = [
+                "enero", "febrero", "marzo", "abril", "mayo", "junio",
+                "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+            ];
+
+            const dia = ahora.getDate().toString().padStart(2, "0");
+            const mes = meses[ahora.getMonth()];
+            const año = ahora.getFullYear();
+
+            let horas = ahora.getHours();
+            const minutos = ahora.getMinutes().toString().padStart(2, "0");
+
+            const ampm = horas >= 12 ? "p.m." : "a.m.";
+            horas = horas % 12;
+            horas = horas ? horas : 12;
+
+            const horaFormateada = `${horas.toString().padStart(2, "0")}:${minutos} ${ampm}`;
+
+            // Fecha + hora con ícono
+            document.getElementById("fechaHoraLinea").innerHTML =
+                `<i class="bi bi-calendar-date me-1"></i>${dia} de ${mes} de ${año}, ${horaFormateada}`;
+
+            const hora24 = ahora.getHours();
+            const minuto = ahora.getMinutes();
+
+            let turno = "";
+
+            if ((hora24 > 7 || (hora24 === 7 && minuto >= 0)) &&
+                (hora24 < 15 || (hora24 === 15 && minuto <= 30))) {
+                turno = "Turno 1";
+            }
+            else if ((hora24 > 15 || (hora24 === 15 && minuto >= 30)) &&
+                     hora24 < 24) {
+                turno = "Turno 2";
+            }
+            else {
+                turno = "Turno 3";
+            }
+
+            // Turno con ícono
+            document.getElementById("turnoActual").innerHTML =
+                `<i class="bi bi-clock-history me-1"></i>${turno}`;
+        }
+
+        setInterval(actualizarFechaHoraYTurno, 1000);
+        actualizarFechaHoraYTurno();
+    </script>
+}
