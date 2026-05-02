@@ -11,7 +11,6 @@ public class OvenController : Controller
         _context = context;
     }
 
-    // 👉 ESTA ES LA ACCIÓN QUE RETORNA LA VISTA
     public IActionResult Index()
     {
         return View();
@@ -205,121 +204,91 @@ public class OvenController : Controller
         }
     }
 
-
     [HttpGet]
-    public async Task<IActionResult> GetLast10(int oven)
+    public async Task<IActionResult> GetByTurno(int oven)
     {
-        var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time (Mexico)");
-        DateTime nowMx = TimeZoneInfo.ConvertTime(DateTime.Now, tz);
-        DateTime threeHoursAgo = nowMx.AddHours(-3);
+        var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
+        var ahoraLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
 
-        switch (oven)
+        var hoy = ahoraLocal.Date;
+        var horaActual = ahoraLocal.TimeOfDay;
+
+        TimeSpan inicioTurno;
+        TimeSpan finTurno;
+
+        // Turno 1 → 07:00 a 15:30
+        if (horaActual >= new TimeSpan(7, 0, 0) &&
+            horaActual < new TimeSpan(15, 30, 0))
         {
-            case 1:
-                return Json(await _context.Oven1
-                    .Where(x => x.Date >= threeHoursAgo.Date &&
-                                (x.Date > threeHoursAgo.Date || x.Hors >= threeHoursAgo.TimeOfDay))
-                    .OrderBy(x => x.Date)
-                    .ThenBy(x => x.Hors)
-                    .ToListAsync());
-
-            case 2:
-                return Json(await _context.Oven2
-                    .Where(x => x.Date >= threeHoursAgo.Date &&
-                                (x.Date > threeHoursAgo.Date || x.Hors >= threeHoursAgo.TimeOfDay))
-                    .OrderBy(x => x.Date)
-                    .ThenBy(x => x.Hors)
-                    .ToListAsync());
-
-            case 3:
-                return Json(await _context.Oven3
-                    .Where(x => x.Date >= threeHoursAgo.Date &&
-                                (x.Date > threeHoursAgo.Date || x.Hors >= threeHoursAgo.TimeOfDay))
-                    .OrderBy(x => x.Date)
-                    .ThenBy(x => x.Hors)
-                    .ToListAsync());
-
-            case 4:
-                return Json(await _context.Oven4
-                    .Where(x => x.Date >= threeHoursAgo.Date &&
-                                (x.Date > threeHoursAgo.Date || x.Hors >= threeHoursAgo.TimeOfDay))
-                    .OrderBy(x => x.Date)
-                    .ThenBy(x => x.Hors)
-                    .ToListAsync());
-
-            case 5:
-                return Json(await _context.Oven5
-                    .Where(x => x.Date >= threeHoursAgo.Date &&
-                                (x.Date > threeHoursAgo.Date || x.Hors >= threeHoursAgo.TimeOfDay))
-                    .OrderBy(x => x.Date)
-                    .ThenBy(x => x.Hors)
-                    .ToListAsync());
-
-            case 6:
-                return Json(await _context.Oven6
-                    .Where(x => x.Date >= threeHoursAgo.Date &&
-                                (x.Date > threeHoursAgo.Date || x.Hors >= threeHoursAgo.TimeOfDay))
-                    .OrderBy(x => x.Date)
-                    .ThenBy(x => x.Hors)
-                    .ToListAsync());
-
-            default:
-                return BadRequest("Oven inválido");
+            inicioTurno = new TimeSpan(7, 0, 0);
+            finTurno = new TimeSpan(15, 30, 0);
         }
-    }
-    [HttpGet]
-    public async Task<IActionResult> GetLast3Hours(int oven)
-    {
-        var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time (Mexico)");
-        DateTime nowMx = TimeZoneInfo.ConvertTime(DateTime.Now, tz);
-        DateTime threeHoursAgo = nowMx.AddHours(-3);
+        // Turno 2 → 15:30 a 24:00
+        else if (horaActual >= new TimeSpan(15, 30, 0) &&
+                 horaActual <= new TimeSpan(23, 59, 59))
+        {
+            inicioTurno = new TimeSpan(15, 30, 0);
+            finTurno = new TimeSpan(23, 59, 59);
+        }
+        // Turno 3 → 00:00 a 07:00
+        else
+        {
+            inicioTurno = new TimeSpan(0, 0, 0);
+            finTurno = new TimeSpan(7, 0, 0);
+        }
 
         switch (oven)
         {
             case 1:
                 return Json(await _context.Oven1
-                    .Where(x => x.Date >= threeHoursAgo.Date &&
-                                (x.Date > threeHoursAgo.Date || x.Hors >= threeHoursAgo.TimeOfDay))
+                    .Where(x => x.Date.Date == hoy &&
+                                x.Hors >= inicioTurno &&
+                                x.Hors <= finTurno)
                     .OrderBy(x => x.Date)
                     .ThenBy(x => x.Hors)
                     .ToListAsync());
 
             case 2:
                 return Json(await _context.Oven2
-                    .Where(x => x.Date >= threeHoursAgo.Date &&
-                                (x.Date > threeHoursAgo.Date || x.Hors >= threeHoursAgo.TimeOfDay))
+                    .Where(x => x.Date.Date == hoy &&
+                                x.Hors >= inicioTurno &&
+                                x.Hors <= finTurno)
                     .OrderBy(x => x.Date)
                     .ThenBy(x => x.Hors)
                     .ToListAsync());
 
             case 3:
                 return Json(await _context.Oven3
-                    .Where(x => x.Date >= threeHoursAgo.Date &&
-                                (x.Date > threeHoursAgo.Date || x.Hors >= threeHoursAgo.TimeOfDay))
+                    .Where(x => x.Date.Date == hoy &&
+                                x.Hors >= inicioTurno &&
+                                x.Hors <= finTurno)
                     .OrderBy(x => x.Date)
                     .ThenBy(x => x.Hors)
                     .ToListAsync());
 
             case 4:
                 return Json(await _context.Oven4
-                    .Where(x => x.Date >= threeHoursAgo.Date &&
-                                (x.Date > threeHoursAgo.Date || x.Hors >= threeHoursAgo.TimeOfDay))
+                    .Where(x => x.Date.Date == hoy &&
+                                x.Hors >= inicioTurno &&
+                                x.Hors <= finTurno)
                     .OrderBy(x => x.Date)
                     .ThenBy(x => x.Hors)
                     .ToListAsync());
 
             case 5:
                 return Json(await _context.Oven5
-                    .Where(x => x.Date >= threeHoursAgo.Date &&
-                                (x.Date > threeHoursAgo.Date || x.Hors >= threeHoursAgo.TimeOfDay))
+                    .Where(x => x.Date.Date == hoy &&
+                                x.Hors >= inicioTurno &&
+                                x.Hors <= finTurno)
                     .OrderBy(x => x.Date)
                     .ThenBy(x => x.Hors)
                     .ToListAsync());
 
             case 6:
                 return Json(await _context.Oven6
-                    .Where(x => x.Date >= threeHoursAgo.Date &&
-                                (x.Date > threeHoursAgo.Date || x.Hors >= threeHoursAgo.TimeOfDay))
+                    .Where(x => x.Date.Date == hoy &&
+                                x.Hors >= inicioTurno &&
+                                x.Hors <= finTurno)
                     .OrderBy(x => x.Date)
                     .ThenBy(x => x.Hors)
                     .ToListAsync());
