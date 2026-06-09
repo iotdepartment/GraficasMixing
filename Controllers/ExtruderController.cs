@@ -13,10 +13,12 @@ namespace GraficasMixing.Controllers
     public class ExtruderController : Controller
     {
         private readonly GaficadoreTestContext _context;
+        private readonly ExtruderContext _extruderContext;
 
-        public ExtruderController(GaficadoreTestContext context)
+        public ExtruderController(GaficadoreTestContext context, ExtruderContext extruderContext)
         {
             _context = context;
+            _extruderContext = extruderContext;
         }
 
         public IActionResult Index()
@@ -304,7 +306,6 @@ namespace GraficasMixing.Controllers
                 };
 
         }
-
 
         private List<ChartPoint> CalcularDowntimeByShift(string extruder, DateTime date)
         {
@@ -660,7 +661,6 @@ namespace GraficasMixing.Controllers
             // })
         }
 
-
         [HttpPost]
         public IActionResult GenerateExcelAllExtruders([FromBody] ExportRequest request)
         {
@@ -754,7 +754,6 @@ namespace GraficasMixing.Controllers
                         $"Reporte_TodosExtruders_{fileDate}.xlsx");
         }
 
-        ////////////////
         [HttpGet]
         public IActionResult GetEfficiencyByShift(string extruder, DateTime date)
         {
@@ -877,7 +876,6 @@ namespace GraficasMixing.Controllers
             return eficienciaReal;
         }
 
-
         [HttpGet]
         public IActionResult GetDailyEficienciaRealLast7Days(string extruder, string shift, DateTime date)
         {
@@ -904,49 +902,88 @@ namespace GraficasMixing.Controllers
 
         public IActionResult Chart(int id)
         {
+            var cadenaId = $"Extruder {id}";
+
+            // 1. Datos de PUMASTER
+            var ultimoPuMaster = _extruderContext.PUMASTER
+                .Where(p => p.EXTRUDER == cadenaId)
+                .OrderByDescending(p => p.FECHA)
+                .ThenByDescending(p => p.HORA)
+                .FirstOrDefault();
+
+            // 2. 🔹 Devolvemos a ExtruderId que es el nombre real en tu clase C#
             var estado = _context.Estado
-                .Include(e => e.ExtruderRef)
-                .Include(e => e.EmpleadoRef)
-                .Include(e => e.MandrilRef)
                 .Include(e => e.Tubo1Ref)
                 .Include(e => e.Tubo2Ref)
                 .Include(e => e.CoverRef)
                 .FirstOrDefault(e => e.ExtruderId == id);
 
-            if (estado == null)
+            // 3. Mapeo al ViewModel
+            var cardInfo = new DetalleExtruderViewModel
             {
-                return View(new EstadoCardViewModel
-                {
-                    Extruder = "N/A",
-                    Empleado = "N/A",
-                    NumeroEmpleado = "N/A",
-                    Mandril = "N/A",
-                    Familia = "N/A",
-                    Contador = 0,
-                    Tubo1 = "",
-                    Tubo2 = "",
-                    Cover = ""
-                });
-            }
+                Extruder = ultimoPuMaster?.EXTRUDER ?? $"Extruder {id}",
+                Empleado = ultimoPuMaster?.NOMBRE ?? "Sin Asignar",
+                NumeroEmpleado = ultimoPuMaster?.NRO_EMPLEADO ?? "N/A",
+                Mandril = ultimoPuMaster?.MANDRIL ?? "N/A",
+                Familia = ultimoPuMaster?.FAMILIA ?? "N/A",
 
-            var cardInfo = new EstadoCardViewModel
-            {
-                Extruder = estado.ExtruderRef?.NombreExtruder,
-                Empleado = estado.EmpleadoRef?.Nombre,
-                NumeroEmpleado = estado.EmpleadoRef?.NumeroEmpleado.ToString(),
-                Mandril = estado.MandrilRef?.NombreMandril,
-                Familia = estado.MandrilRef?.Familia,
-                Contador = estado.Contador,
-                Tubo1 = estado.Tubo1Ref?.Batch,
-                Tubo2 = estado.Tubo2Ref?.Batch,
-                Cover = estado.CoverRef?.Batch
+                // 🔹 Forzamos la asignación del contador directo si el registro existe
+                Contador = estado != null ? estado.Contador : 0,
+
+                Tubo1 = estado?.Tubo1Ref?.Batch ?? "N/A",
+                Tubo2 = estado?.Tubo2Ref?.Batch ?? "N/A",
+                Cover = estado?.CoverRef?.Batch ?? "N/A"
             };
 
-            // 🔹 Pasamos también el id del extruder a la vista
             ViewBag.ExtruderId = id;
-
             return View(cardInfo);
         }
+
+        //public IActionResult Chart(int id)
+        //{
+        //    var estado = _context.Estado
+        //        .Include(e => e.ExtruderRef)
+        //        .Include(e => e.EmpleadoRef)
+        //        .Include(e => e.MandrilRef)
+        //        .Include(e => e.Tubo1Ref)
+        //        .Include(e => e.Tubo2Ref)
+        //        .Include(e => e.CoverRef)
+        //        .FirstOrDefault(e => e.ExtruderId == id);
+
+        //    if (estado == null)
+        //    {
+        //        return View(new EstadoCardViewModel
+        //        {
+        //            Extruder = "N/A",
+        //            Empleado = "N/A",
+        //            NumeroEmpleado = "N/A",
+        //            Mandril = "N/A",
+        //            Familia = "N/A",
+        //            Contador = 0,
+        //            Tubo1 = "",
+        //            Tubo2 = "",
+        //            Cover = ""
+        //        });
+        //    }
+
+        //    var cardInfo = new EstadoCardViewModel
+        //    {
+        //        Extruder = estado.ExtruderRef?.NombreExtruder,
+        //        Empleado = estado.EmpleadoRef?.Nombre,
+        //        NumeroEmpleado = estado.EmpleadoRef?.NumeroEmpleado.ToString(),
+        //        Mandril = estado.MandrilRef?.NombreMandril,
+        //        Familia = estado.MandrilRef?.Familia,
+        //        Contador = estado.Contador,
+        //        Tubo1 = estado.Tubo1Ref?.Batch,
+        //        Tubo2 = estado.Tubo2Ref?.Batch,
+        //        Cover = estado.CoverRef?.Batch
+        //    };
+
+        //    // 🔹 Pasamos también el id del extruder a la vista
+        //    ViewBag.ExtruderId = id;
+
+        //    return View(cardInfo);
+        //}
 
         [HttpGet]
         public IActionResult GetFotoEmpleado(int numeroEmpleado)
@@ -1105,19 +1142,29 @@ namespace GraficasMixing.Controllers
         }
 
         [HttpGet]
-        public JsonResult GetContador(int numeroEmpleado)
+        public IActionResult GetContador(int extruderId)
         {
-            // Buscar el último estado asociado al empleado
-            var estado = _context.Estado
-                .Where(e => e.EmpleadoRef.NumeroEmpleado == numeroEmpleado)
-                .OrderByDescending(e => e.ID)
-                .FirstOrDefault();
+            // Buscamos el registro en la tabla Estado por su ExtruderId (el ID limpio 1, 2, 3...)
+            var estado = _context.Estado.FirstOrDefault(e => e.ExtruderId == extruderId);
 
-            return Json(new
-            {
-                contador = estado?.Contador ?? 0
-            });
+            // Devolvemos el valor del contador en formato JSON
+            return Json(new { contador = estado?.Contador ?? 0 });
         }
+
+        //[HttpGet]
+        //public JsonResult GetContador(int numeroEmpleado)
+        //{
+        //    // Buscar el último estado asociado al empleado
+        //    var estado = _context.Estado
+        //        .Where(e => e.EmpleadoRef.NumeroEmpleado == numeroEmpleado)
+        //        .OrderByDescending(e => e.ID)
+        //        .FirstOrDefault();
+
+        //    return Json(new
+        //    {
+        //        contador = estado?.Contador ?? 0
+        //    });
+        //}
 
         public IActionResult GeneralChart()
         {

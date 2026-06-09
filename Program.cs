@@ -13,6 +13,9 @@ builder.Services.AddDbContext<GaficadoreTestContext>(options =>
 builder.Services.AddDbContext<MasterMcontext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("OmronConnection")));
 
+builder.Services.AddDbContext<ExtruderContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("PUConnection")));
+
 
 var app = builder.Build();
 

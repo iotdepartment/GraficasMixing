@@ -1,5 +1,7 @@
-﻿@model GraficasMixing.ViewModels.EstadoCardViewModel
-
+﻿@model GraficasMixing.ViewModels.DetalleExtruderViewModel
+@* 
+@model GraficasMixing.ViewModels.EstadoCardViewModel
+ *@
 
 @{
     Layout = "~/Views/Extruder/Partials/_LayoutNoNav.cshtml";
@@ -108,13 +110,18 @@
     <script>
 
         function actualizarContador() {
-            fetch(`/Extruder/GetContador?numeroEmpleado=@Model.NumeroEmpleado`)
+            // 🔹 Cambiamos el parámetro para enviar el ID del Extruder
+            fetch(`/Extruder/GetContador?extruderId=@ViewBag.ExtruderId`)
                 .then(res => res.json())
                 .then(data => {
-                    document.getElementById("contador").innerText = data.contador;
+                    // Asegura que si data.contador es nulo o indefinido, no ponga 0 a menos que sea real
+                    if (data && data.contador !== undefined) {
+                        document.getElementById("contador").innerText = data.contador;
+                    }
                 })
                 .catch(err => console.error("Error actualizando contador:", err));
         }
+
         // Gráfica de pie eficiencia diaria
 
         let totmChart;

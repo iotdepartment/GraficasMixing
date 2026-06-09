@@ -20,6 +20,7 @@ namespace GraficasMixing.Models
         public DbSet<Oven6> Oven6 { get; set; }
         public DbSet<ScadaExtrudermaster> ScadaExtrudermaster { get; set; }
         public DbSet<SetPointExtruder> SetPointExtruder { get; set; }
+        public DbSet<PUMASTER> PUMASTER { get; set; }
 
         public DbSet<Estado> Estado { get; set; }
         public DbSet<Extruder> Extruders { get; set; }
@@ -28,6 +29,8 @@ namespace GraficasMixing.Models
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
             modelBuilder.Entity<Estado>()
                 .HasOne(e => e.ExtruderRef)
                 .WithMany(x => x.Estados)
@@ -42,8 +45,22 @@ namespace GraficasMixing.Models
                 .HasOne(e => e.MandrilRef)
                 .WithMany(x => x.Estados)
                 .HasForeignKey(e => e.MandrilId);
+
+            modelBuilder.Entity<PUMASTER>().ToTable("PUMASTER", schema: "Extruder.dbo");
         }
     }
+
+    public class ExtruderContext : DbContext
+    {
+        public ExtruderContext(DbContextOptions<ExtruderContext> options)
+            : base(options)
+        {
+        }
+
+        // Aquí declaramos la tabla PUMASTER de forma limpia
+        public DbSet<PUMASTER> PUMASTER { get; set; }
+    }
+
 
     public class MasterMcontext : DbContext
     {
@@ -54,4 +71,5 @@ namespace GraficasMixing.Models
 
         public DbSet<MasterM> MasterM { get; set; }
     }
+
 }
