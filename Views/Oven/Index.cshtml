@@ -6,17 +6,28 @@
 <h2 class="text-start">Primary Oven Charts (Oven Area) <i class="bi bi-clipboard-data"></i></h2>
 <hr class="border border-dark border-0 mb-4 opacity-100">
 
-<div class="row mb-3 mt-2">
-    <div class="col-12 text-end">
-        <a href="@Url.Action("Chart", "Oven")" class="btn btn-info rounded-pill">
-            <i class="bi bi-bar-chart"></i> Ver Gráfica
-        </a>
+
+<div class="row mb-3 mt-2 ">
+    <div class="col d-flex justify-content-end align-items-center gap-2">
+        <!-- Texto a la izquierda -->
+        <span class="fw-bold me-2">Oven Resume:</span>
+
+        <!-- Select de extruder -->
+        <select id="IndividualOvenSelect" class="form-select w-auto" onchange="redirigirOven()">
+            <option value="">-- Select Oven --</option>
+            <option value="1">Oven 1</option>
+            <option value="2">Oven 2</option>
+            <option value="3">Oven 3</option>
+            <option value="4">Oven 4</option>
+            <option value="5">Oven 5</option>
+            <option value="6">Oven 6</option>
+        </select>
     </div>
 </div>
 
 <div class="container-fluid mt-3 shadow-sm p-5 bg-white rounded-4 border-1 border">
 
-    <div class="row align-items-end mb-3">
+    <div class="row d-flex align-items-end mb-3">
 
         <!-- Oven -->
         <div class="col-2">
@@ -48,7 +59,7 @@
         </div>
 
         <!-- Submit button-->
-        <div class="col-1 me-0 ">
+        <div class="col-1 ">
             <div class="d-grid gap-2">
                 <button type="button" id="applyFilter" class="btn btn-primary rounded-pill">
                     Apply
@@ -57,9 +68,14 @@
             </div>
         </div>
 
+        <div class="col-lg-1">
+            <a href="@Url.Action("Chart", "Oven")" class="btn btn-info rounded-pill">
+                <i class="bi bi-bar-chart"></i> General
+            </a>
+        </div>
         <!-- Export button-->
-            <div class="col-2">
-                   <button id="exportChartBtn" class="btn btn-outline-success">
+        <div class="col-2">
+            <button id="exportChartBtn" class="btn btn-outline-success">
                 <i class="bi bi-download"></i> Export Chart
             </button>
         </div>
@@ -331,5 +347,16 @@ function loadAllShifts(date, oven) {
 
         }, 10000);
 
+    </script>
+
+    <script>
+        function redirigirOven() {
+            var select = document.getElementById("IndividualOvenSelect");
+            var ovenId = select.value;
+
+            if (ovenId !== "") {
+                window.location.href = '@Url.Action("IndividualChart", "Oven")/' + ovenId;
+            }
+        }
     </script>
 }

@@ -21,6 +21,19 @@ public class OvenController : Controller
         return View();
     }
 
+    public IActionResult IndividualChart(int id)
+    {
+        // Si el id es inválido o es 0, asígnale un valor por defecto o redirige
+        if (id < 1 || id > 6)
+        {
+            return RedirectToAction("Index", "Oven");
+        }
+
+        ViewBag.OvenNumber = id; // Asegura que nunca vaya vacío
+        return View();
+    }
+
+
     [HttpGet]
     public JsonResult GetData(DateTime fecha, string oven, string turno)
     {
@@ -297,4 +310,96 @@ public class OvenController : Controller
                 return BadRequest("Oven inválido");
         }
     }
+    [HttpGet]
+    public async Task<IActionResult> GettByTurno(int oven)
+    {
+        // 1. Obtener zona horaria y tiempos del turno actual de manera limpia
+        var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
+        var ahoraLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+
+        var hoy = ahoraLocal.Date;
+        var horaActual = ahoraLocal.TimeOfDay;
+
+        TimeSpan inicioTurno;
+        TimeSpan finTurno;
+
+        // Turno 1 → 07:00 a 15:30
+        if (horaActual >= new TimeSpan(7, 0, 0) && horaActual < new TimeSpan(15, 30, 0))
+        {
+            inicioTurno = new TimeSpan(7, 0, 0);
+            finTurno = new TimeSpan(15, 30, 0);
+        }
+        // Turno 2 → 15:30 a 24:00
+        else if (horaActual >= new TimeSpan(15, 30, 0) && horaActual <= new TimeSpan(23, 59, 59))
+        {
+            inicioTurno = new TimeSpan(15, 30, 0);
+            finTurno = new TimeSpan(23, 59, 59);
+        }
+        // Turno 3 → 00:00 a 07:00
+        else
+        {
+            inicioTurno = new TimeSpan(0, 0, 0);
+            finTurno = new TimeSpan(7, 0, 0);
+        }
+
+        // 2. Obtener el DbSet correspondiente usando el método dinámico auxiliar
+        var query = GetOvenDbSet(oven);
+        if (query == null)
+        {
+            return BadRequest("Oven inválido");
+        }
+
+        // 3. Ejecutar una única consulta LINQ genérica para cualquier horno
+        var datos = await query
+            .Where(x => x.Date.Date == hoy &&
+                        x.Hors >= inicioTurno &&
+                        x.Hors <= finTurno)
+            .OrderBy(x => x.Date)
+            .ThenBy(x => x.Hors)
+            .ToListAsync();
+
+        return Json(datos);
+    }
+
+    // Método auxiliar para mapear el número de horno al DbSet correspondiente usando la clase base
+    private IQueryable<OvenBase> GetOvenDbSet(int oven)
+    {
+        return oven switch
+        {
+            1 => _context.Oven1,
+            2 => _context.Oven2,
+            3 => _context.Oven3,
+            4 => _context.Oven4,
+            5 => _context.Oven5,
+            6 => _context.Oven6,
+            _ => null
+        };
+    }
+    [HttpGet]
+    public async Task<IActionResult> GettLatest(int oven)
+    {
+        // 1. Obtener el DbSet genérico correspondiente usando el método auxiliar
+        var query = GetOvenDbSet(oven);
+        if (query == null)
+        {
+            return BadRequest("Oven inválido");
+        }
+
+        // 2. Ejecutar una única consulta LINQ para traer el último registro
+        var lastRecord = await query
+            .OrderByDescending(x => x.Date)
+            .ThenByDescending(x => x.Hors)
+            .FirstOrDefaultAsync();
+
+        // 3. Si no hay datos, retornamos una respuesta vacía o un objeto vacío para evitar errores en JS
+        if (lastRecord == null)
+        {
+            return Json(new { pess = "0", temp = "0", hors = "00:00" });
+        }
+
+        return Json(lastRecord);
+    }
+
+
+
 }

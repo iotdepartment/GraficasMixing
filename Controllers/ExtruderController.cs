@@ -5,9 +5,6 @@ using GraficasMixing.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-
-
-
 namespace GraficasMixing.Controllers
 {
     public class ExtruderController : Controller

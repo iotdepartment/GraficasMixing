@@ -1,0 +1,258 @@
+﻿@{
+    Layout = "~/Views/Oven/Partials/_LayoutNoNav.cshtml";
+    ViewData["Title"] = $"Oven {ViewBag.OvenNumber}";
+}
+
+<div class="row align-items-stretch mb-4 mt-3">
+
+    <div class="col-1 d-flex">
+        <div class="card shadow-sm border-0 rounded-4 d-flex justify-content-center align-items-center text-center w-100 h-100">
+            <img src="~/Images/Logo.png"
+                 alt="Logo empresa"
+                 class="img-fluid"
+                 style="max-width: 100px; height: auto;">
+        </div>
+    </div>
+
+    <div class="col-11 d-flex">
+        <div class="card shadow-lg rounded-pill p-2 mb-2 bg-success w-100 h-100">
+
+            <div class="d-flex justify-content-between align-items-center px-3">
+                <!-- Título Dinámico -->
+                <div class="fw-bold text-white fs-1">GRAFICA DE TEMPERATURA Y PRESION OVEN @ViewBag.OvenNumber</div>
+                <!-- Fecha + hora + turno -->
+                <div class="text-end">
+
+                    <!-- Ícono + fecha/hora en una sola línea -->
+                    <div id="fechaHoraLinea" class="fw-semibold text-white">
+                        <i class="bi bi-calendar-date me-1"></i> <span id="txtFechaHora"></span>
+                    </div>
+
+                    <!-- Turno debajo -->
+                    <div id="turnoActual" class="fw-bold fs-5 text-white">
+                        <i class="bi bi-clock-history me-1"></i> <span id="txtTurno"></span>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<div class="row align-items-end mb-4">
+    <div class="col-12">
+        <div class="card shadow-lg  rounded-4 p-3 position-relative" style="height: 250px;">
+            <canvas id="PressureChart" style="width:100%; height:100%;"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="row align-items-end mb-4">
+    <div class="col-12">
+        <div class="card shadow-lg  rounded-4 p-3 position-relative" style="height: 250px;">
+            <canvas id="TemperatureChart" style="width:100%; height:100%;"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4 mt-2 align-items-stretch">
+    <!-- Tarjeta de Presión -->
+    <div class="col-3">
+        <!-- style="height: 220px;" iguala exactamente el tamaño de tus canvas -->
+        <div class="card shadow-lg rounded-4 p-4 text-center d-flex flex-column justify-content-between h-100" style="height: 220px;">
+            <!-- Título arriba -->
+            <div class="fw-bold fs-4 text-secondary text-uppercase tracking-wider">Presion Actual</div>
+
+            <!-- Valor gigante centrado abajo -->
+            <div class="d-flex align-items-center justify-content-center flex-grow-1">
+                <!-- Estilo personalizado para un tamaño masivo e industrial -->
+                <span id="lastPressure" class="badge bg-warning text-dark rounded-3 py-3 w-100 fw-black" style="font-size: 2.5rem; letter-spacing: -1px;">--</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta de Temperatura -->
+    <div class="col-3">
+        <div class="card shadow-lg rounded-4 p-4 text-center d-flex flex-column justify-content-between h-100" style="height: 220px;">
+            <!-- Título arriba -->
+            <div class="fw-bold fs-4 text-secondary text-uppercase tracking-wider">Temperatura Actual</div>
+
+            <!-- Valor gigante centrado abajo -->
+            <div class="d-flex align-items-center justify-content-center flex-grow-1">
+                <span id="lastTemperature" class="badge bg-danger text-white rounded-3 py-3 w-100 fw-black" style="font-size: 2.5rem; letter-spacing: -1px;">--</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script>
+        // 1. Capturar dinámicamente el número de horno desde el Controlador
+        const ovenId = parseInt('@ViewBag.OvenNumber') || 0;
+
+
+                // Instancias globales para tus dos gráficas independientes
+        let pressureChart;
+        let temperatureChart;
+
+        // 2. Cargar los badges de último valor (Consulta a tu endpoint GetLatest)
+        function loadLatestData() {
+            fetch(`/Oven/GettLatest?oven=${ovenId}`)
+            .then(r => r.json())
+            .then(d => {
+                // Aseguramos que existan datos antes de pintar
+                if(d) {
+                    document.getElementById("lastPressure").textContent = d.pess + " KPA";
+                    document.getElementById("lastTemperature").textContent = d.temp + " °C";
+                }
+            })
+            .catch(err => console.error("Error en loadLatestData:", err));
+        }
+
+        // 3. Crear e Inicializar las gráficas por primera vez (Consulta a tu endpoint GetByTurno)
+        function loadCharts() {
+            fetch(`/Oven/GettByTurno?oven=${ovenId}`)
+            .then(r => r.json())
+            .then(data => {
+                // Procesar etiquetas y datos numéricos (truncando la hora a 5 caracteres como hacías)
+                const labels = data.map(x => x.hors.substring(0, 5));
+                const press = data.map(x => parseFloat(x.pess));
+                const temp = data.map(x => parseFloat(x.temp));
+
+                // --- Gráfica de Presión ---
+                const ctxPress = document.getElementById("PressureChart").getContext("2d");
+                pressureChart = new Chart(ctxPress, {
+                    type: "line",
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: "Presion",
+                            data: press,
+                            borderColor: "orange",
+                            backgroundColor: "rgba(255, 165, 0, 0.1)",
+                            tension: 0.3,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            fill: true
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+
+                // --- Gráfica de Temperatura ---
+                const ctxTemp = document.getElementById("TemperatureChart").getContext("2d");
+                temperatureChart = new Chart(ctxTemp, {
+                    type: "line",
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: "Temperatura",
+                            data: temp,
+                            borderColor: "red",
+                            backgroundColor: "rgba(255, 0, 0, 0.1)",
+                            tension: 0.3,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            fill: true
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            })
+            .catch(err => console.error("Error en loadCharts:", err));
+        }
+
+        // 4. Actualizar las gráficas en tiempo real sin destruir las instancias (Usa tu endpoint GetByTurno)
+        function updateCharts() {
+            fetch(`/Oven/GetByTurno?oven=${ovenId}`)
+            .then(r => r.json())
+            .then(data => {
+                const labels = data.map(x => x.hors.substring(0, 5));
+
+                // Actualizar estructura de Presión
+                pressureChart.data.labels = labels;
+                pressureChart.data.datasets[0].data = data.map(x => parseFloat(x.pess));
+                pressureChart.update();
+
+                // Actualizar estructura de Temperatura
+                temperatureChart.data.labels = labels;
+                temperatureChart.data.datasets[0].data = data.map(x => parseFloat(x.temp));
+                temperatureChart.update();
+            })
+            .catch(err => console.error("Error en updateCharts:", err));
+        }
+
+        // 5. Orquestar la ejecución automática al cargar la página
+        document.addEventListener("DOMContentLoaded", () => {
+            // Carga inicial
+            loadLatestData();
+            loadCharts();
+
+            // Ciclo de refresco continuo (Cada 10 segundos actualiza datos y badges)
+            setInterval(() => {
+                loadLatestData();
+                updateCharts();
+            }, 10000);
+        });
+    </script>
+
+    <script>
+        function actualizarFechaHoraYTurno() {
+            const ahora = new Date();
+
+            const meses = [
+                "enero", "febrero", "marzo", "abril", "mayo", "junio",
+                "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+            ];
+
+            const dia = ahora.getDate().toString().padStart(2, "0");
+            const mes = meses[ahora.getMonth()];
+            const año = ahora.getFullYear();
+
+            let horas = ahora.getHours();
+            const minutos = ahora.getMinutes().toString().padStart(2, "0");
+
+            const ampm = horas >= 12 ? "p.m." : "a.m.";
+            horas = horas % 12;
+            horas = horas ? horas : 12;
+
+            const horaFormateada = `${horas.toString().padStart(2, "0")}:${minutos} ${ampm}`;
+
+            // Fecha + hora con ícono
+            document.getElementById("fechaHoraLinea").innerHTML =
+                `<i class="bi bi-calendar-date me-1"></i>${dia} de ${mes} de ${año}, ${horaFormateada}`;
+
+            const hora24 = ahora.getHours();
+            const minuto = ahora.getMinutes();
+
+            let turno = "";
+
+            if ((hora24 > 7 || (hora24 === 7 && minuto >= 0)) &&
+                (hora24 < 15 || (hora24 === 15 && minuto <= 30))) {
+                turno = "Turno 1";
+            }
+            else if ((hora24 > 15 || (hora24 === 15 && minuto >= 30)) &&
+                     hora24 < 24) {
+                turno = "Turno 2";
+            }
+            else {
+                turno = "Turno 3";
+            }
+
+            // Turno con ícono
+            document.getElementById("turnoActual").innerHTML =
+                `<i class="bi bi-clock-history me-1"></i>${turno}`;
+        }
+
+        setInterval(actualizarFechaHoraYTurno, 1000);
+        actualizarFechaHoraYTurno();
+    </script>
+}
