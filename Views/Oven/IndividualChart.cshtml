@@ -101,23 +101,39 @@
 
 
 
-
 @section scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script>
-        // 1. Capturar dinámicamente el número de horno desde el Controlador
+        // 1. Capturar el número de horno de forma segura
         const ovenId = parseInt('@ViewBag.OvenNumber') || 0;
 
-
-                // Instancias globales para tus dos gráficas independientes
+        // Instancias globales para controlar las gráficas
         let pressureChart;
         let temperatureChart;
 
-        // 2. Cargar los badges de último valor (Consulta a tu endpoint GetLatest)
-                function loadLatestData() {
-            // 1. Petición para Presión, Temperatura y Estado (Usa tu método original rápido)
+        // Opciones optimizadas de alto rendimiento para las gráficas
+        const chartOptionsOptimized = {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            parsing: true,
+            spanGaps: true,
+            elements: {
+                line: {
+                    borderWidth: 2,
+                    tension: 0.1
+                }
+            },
+            scales: {
+                x: { ticks: { maxTicksLimit: 15 } }
+            }
+        };
+
+        // 2. Función para cargar Badges, Estado y Ciclos
+        function loadLatestData() {
+            // Petición 1: Presión, Temperatura y Estado en tiempo real
             fetch(`/Oven/GettLatest?oven=${ovenId}`)
             .then(r => r.json())
             .then(d => {
@@ -128,119 +144,133 @@
                     document.getElementById("lastPressure").textContent = (presionTexto || "0") + " KPA";
                     document.getElementById("lastTemperature").textContent = (temperatura || "0") + " °C";
 
-                    // --- EVALUACIÓN DE ESTADO EN TIEMPO REAL ---
+                    // Evaluación de Estado
                     const presionNum = parseFloat(presionTexto) || 0;
                     const badgeEstado = document.getElementById("ovenStatus");
 
                     if (presionNum >= 50) {
-                        // Si la presión es >= 50 KPA el horno está trabajando
                         badgeEstado.textContent = "CICLO ACTIVO";
-                        badgeEstado.className = "badge bg-success text-white rounded-3 py-3 w-100 fw-black text-uppercase"; // Verde
+                        badgeEstado.className = "badge bg-success text-white rounded-3 py-3 w-100 fw-black text-uppercase";
                     } else {
-                        // Si cae por debajo, el ciclo se detuvo o está en espera
                         badgeEstado.textContent = "DETENIDO";
-                        badgeEstado.className = "badge bg-dark text-white rounded-3 py-3 w-100 fw-black text-uppercase"; // Gris oscuro / Negro
+                        badgeEstado.className = "badge bg-dark text-white rounded-3 py-3 w-100 fw-black text-uppercase";
                     }
                 }
             })
             .catch(err => console.error("Error en GettLatest:", err));
 
-            // 2. Petición para el conteo de ciclos del turno (Independiente)
+            // Petición 2: Conteo de ciclos del turno dividido a la mitad
+                    // Petición 2: Conteo de ciclos del turno con soporte para decimales exactos (Ej: 0.5)
             fetch(`/Oven/GetTurnCycles?oven=${ovenId}`)
             .then(r => r.json())
-            .then(ciclos => {
-                document.getElementById("totalCycles").textContent = ciclos;
+            .then(ciclosOriginales => {
+                // Convertimos el dato a número decimal (float) en lugar de entero
+                const total = parseFloat(ciclosOriginales) || 0;
+
+                // Dividimos a la mitad EXACTA manteniendo los decimales
+                const ciclosDivididos = total / 2;
+
+                // Pintamos el resultado forzando a que muestre 1 decimal si es necesario (Ej: 0.5, 1.0, 1.5)
+                // Si prefieres que cuando sea entero (como 1) no muestre el ".0", usamos parseFloat al final
+                document.getElementById("totalCycles").textContent = Number(ciclosDivididos.toFixed(1));
             })
-            .catch(() => document.getElementById("totalCycles").textContent = "0");
+            .catch(err => {
+                console.error("Error en GetTurnCycles:", err);
+                document.getElementById("totalCycles").textContent = "0";
+            });
+
         }
 
-
-        // 3. Crear e Inicializar las gráficas por primera vez (Consulta a tu endpoint GetByTurno)
+        // 3. Inicializar e inyectar datos en las gráficas por primera vez
         function loadCharts() {
-            fetch(`/Oven/GettByTurno?oven=${ovenId}`)
+            fetch(`/Oven/GetByTurno?oven=${ovenId}`)
             .then(r => r.json())
             .then(data => {
-                // Procesar etiquetas y datos numéricos (truncando la hora a 5 caracteres como hacías)
-                const labels = data.map(x => x.hors.substring(0, 5));
-                const press = data.map(x => parseFloat(x.pess));
-                const temp = data.map(x => parseFloat(x.temp));
+                if (!data || data.length === 0) return;
 
-                // --- Gráfica de Presión ---
+                const labels = data.map(x => x.hors);
+                const press = data.map(x => parseFloat(x.pess) || 0);
+                const temp = data.map(x => parseFloat(x.temp) || 0);
+
+                // Gráfica de Presión
                 const ctxPress = document.getElementById("PressureChart").getContext("2d");
                 pressureChart = new Chart(ctxPress, {
                     type: "line",
                     data: {
                         labels: labels,
                         datasets: [{
-                            label: "Presion",
+                            label: "Pressure",
                             data: press,
                             borderColor: "orange",
-                            backgroundColor: "rgba(255, 165, 0, 0.1)",
-                            tension: 0.3,
+                            backgroundColor: "rgba(255, 165, 0, 0.05)",
                             pointRadius: 0,
-                            pointHoverRadius: 0,
+                            pointHoverRadius: 3,
                             fill: true
                         }]
                     },
-                    options: { responsive: true, maintainAspectRatio: false }
+                    options: chartOptionsOptimized
                 });
 
-                // --- Gráfica de Temperatura ---
+                // Gráfica de Temperatura
                 const ctxTemp = document.getElementById("TemperatureChart").getContext("2d");
                 temperatureChart = new Chart(ctxTemp, {
                     type: "line",
                     data: {
                         labels: labels,
                         datasets: [{
-                            label: "Temperatura",
+                            label: "Temperature",
                             data: temp,
                             borderColor: "red",
-                            backgroundColor: "rgba(255, 0, 0, 0.1)",
-                            tension: 0.3,
+                            backgroundColor: "rgba(220, 53, 69, 0.05)",
                             pointRadius: 0,
-                            pointHoverRadius: 0,
+                            pointHoverRadius: 3,
                             fill: true
                         }]
                     },
-                    options: { responsive: true, maintainAspectRatio: false }
+                    options: chartOptionsOptimized
                 });
             })
-            .catch(err => console.error("Error en loadCharts:", err));
+            .catch(err => console.error("Error cargando gráficas:", err));
         }
 
-        // 4. Actualizar las gráficas en tiempo real sin destruir las instancias (Usa tu endpoint GetByTurno)
+        // 4. Actualizar las curvas de las gráficas sin redibujar el canvas entero
         function updateCharts() {
             fetch(`/Oven/GetByTurno?oven=${ovenId}`)
             .then(r => r.json())
             .then(data => {
-                const labels = data.map(x => x.hors.substring(0, 5));
+                if (!data || data.length === 0) return;
 
-                // Actualizar estructura de Presión
-                pressureChart.data.labels = labels;
-                pressureChart.data.datasets[0].data = data.map(x => parseFloat(x.pess));
-                pressureChart.update();
+                const labels = data.map(x => x.hors);
 
-                // Actualizar estructura de Temperatura
-                temperatureChart.data.labels = labels;
-                temperatureChart.data.datasets[0].data = data.map(x => parseFloat(x.temp));
-                temperatureChart.update();
+                if (pressureChart) {
+                    pressureChart.data.labels = labels;
+                    pressureChart.data.datasets[0].data = data.map(x => parseFloat(x.pess) || 0);
+                    pressureChart.update();
+                }
+
+                if (temperatureChart) {
+                    temperatureChart.data.labels = labels;
+                    temperatureChart.data.datasets[0].data = data.map(x => parseFloat(x.temp) || 0);
+                    temperatureChart.update();
+                }
             })
-            .catch(err => console.error("Error en updateCharts:", err));
+            .catch(err => console.error("Error al actualizar gráficas:", err));
         }
 
-        // 5. Orquestar la ejecución automática al cargar la página
+        // 5. Orquestación y Loop de ejecución continua cada minuto (60000ms)
         document.addEventListener("DOMContentLoaded", () => {
-            // Carga inicial
+            // Carga inicial inmediata
             loadLatestData();
             loadCharts();
 
-            // Ciclo de refresco continuo (Cada 10 segundos actualiza datos y badges)
+            // Loop repetitivo cada 1 minuto
             setInterval(() => {
                 loadLatestData();
                 updateCharts();
             }, 10000);
         });
     </script>
+
 
     <script>
         function actualizarFechaHoraYTurno() {

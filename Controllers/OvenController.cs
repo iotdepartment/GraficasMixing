@@ -34,7 +34,6 @@ public class OvenController : Controller
         return View();
     }
 
-
     [HttpGet]
     public JsonResult GetData(DateTime fecha, string oven, string turno)
     {
@@ -360,7 +359,6 @@ public class OvenController : Controller
         return Json(resultado);
     }
 
-
     // Método auxiliar para mapear el número de horno al DbSet correspondiente usando la clase base
     private IQueryable<OvenBase> GetOvenDbSet(int oven)
     {
@@ -396,8 +394,6 @@ public class OvenController : Controller
         return Json(lastRecord);
     }
 
-
-    // 2. NUEVO ENDPOINT EXCLUSIVO PARA CONTAR CICLOS
     [HttpGet]
     public async Task<IActionResult> GetTurnCycles(int oven)
     {
@@ -459,5 +455,4 @@ public class OvenController : Controller
             return Json(0); // Si falla el cálculo, regresa 0 de forma segura
         }
     }
-
 }
