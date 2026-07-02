@@ -15,7 +15,7 @@
     </div>
 
     <div class="col-11 d-flex">
-        <div class="card shadow-lg rounded-pill p-2 mb-2 bg-success w-100 h-100">
+        <div class="card shadow-lg rounded-pill p-2 mb-2 bg-primary w-100 h-100">
 
             <div class="d-flex justify-content-between align-items-center px-3">
                 <!-- Título Dinámico -->
@@ -62,7 +62,7 @@
     <!-- Tarjeta de Presión -->
     <div class="col-3">
         <div class="card shadow-lg bg-warning rounded-4 p-4 text-center d-flex flex-column justify-content-between h-100" style="height: 220px;">
-            <div class="fw-bold fs-4 text-black text-uppercase tracking-wider">Presion Actual</div>
+            <div class="fw-bold fs-4 text-black text-uppercase tracking-wider">PRESION ACTUAL</div>
             <div class="d-flex align-items-center justify-content-center flex-grow-1">
                 <span id="lastPressure" class="badge bg-warning text-dark rounded-3 py-3 w-100 fw-black" style="font-size: 2.5rem; letter-spacing: -1px;">--</span>
             </div>
@@ -72,7 +72,7 @@
     <!-- Tarjeta de Temperatura -->
     <div class="col-3">
         <div class="card shadow-lg bg-danger rounded-4 p-4 text-center d-flex flex-column justify-content-between h-100" style="height: 220px;">
-            <div class="fw-bold fs-4 text-white text-uppercase tracking-wider">Temperatura Actual</div>
+            <div class="fw-bold fs-4 text-white text-uppercase tracking-wider">TEMPERATURA ACTUAL</div>
             <div class="d-flex align-items-center justify-content-center flex-grow-1">
                 <span id="lastTemperature" class="badge bg-danger text-white rounded-3 py-3 w-100 fw-black" style="font-size: 2.5rem; letter-spacing: -1px;">--</span>
             </div>
@@ -82,9 +82,18 @@
     <!-- Nueva Tarjeta de Ciclos -->
     <div class="col-3">
         <div class="card shadow-lg bg-secondary rounded-4 p-4 text-center d-flex flex-column justify-content-between h-100" style="height: 220px;">
-            <div class="fw-bold fs-4 text-white text-uppercase tracking-wider">Ciclos del Turno</div>
+            <div class="fw-bold fs-4 text-white text-uppercase tracking-wider">CICLOS DEL TURNO</div>
             <div class="d-flex align-items-center justify-content-center flex-grow-1">
                 <span id="totalCycles" class="badge bg-secondary text-white rounded-3 py-3 w-100 fw-black" style="font-size: 2.5rem; letter-spacing: -1px;">--</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-3">
+        <div class="card shadow-lg rounded-4 p-4 text-center d-flex flex-column justify-content-between h-100" style="height: 220px;">
+            <div class="fw-bold fs-4 text-black text-uppercase tracking-wider">ESTADO DEL OVEN</div>
+            <div class="d-flex align-items-center justify-content-center flex-grow-1">
+                <!-- Iniciará en color secundario hasta recibir datos -->
+                <span id="ovenStatus" class="badge bg-secondary text-white rounded-3 py-3 w-100 fw-black text-uppercase" style="font-size: 2.3rem; letter-spacing: -1px;">STANDBY</span>
             </div>
         </div>
     </div>
@@ -107,33 +116,44 @@
         let temperatureChart;
 
         // 2. Cargar los badges de último valor (Consulta a tu endpoint GetLatest)
-        function loadLatestData() {
-            // Petición 1: Trae Presión y Temperatura (Usa tu método original intacto)
+                function loadLatestData() {
+            // 1. Petición para Presión, Temperatura y Estado (Usa tu método original rápido)
             fetch(`/Oven/GettLatest?oven=${ovenId}`)
             .then(r => r.json())
             .then(d => {
                 if (d) {
-                    // Evaluamos mayúsculas y minúsculas para asegurar compatibilidad con tu lastRecord
-                    const presion = d.Pess !== undefined ? d.Pess : d.pess;
+                    const presionTexto = d.Pess !== undefined ? d.Pess : d.pess;
                     const temperatura = d.Temp !== undefined ? d.Temp : d.temp;
 
-                    document.getElementById("lastPressure").textContent = (presion || "0") + " KPA";
+                    document.getElementById("lastPressure").textContent = (presionTexto || "0") + " KPA";
                     document.getElementById("lastTemperature").textContent = (temperatura || "0") + " °C";
+
+                    // --- EVALUACIÓN DE ESTADO EN TIEMPO REAL ---
+                    const presionNum = parseFloat(presionTexto) || 0;
+                    const badgeEstado = document.getElementById("ovenStatus");
+
+                    if (presionNum >= 50) {
+                        // Si la presión es >= 50 KPA el horno está trabajando
+                        badgeEstado.textContent = "CICLO ACTIVO";
+                        badgeEstado.className = "badge bg-success text-white rounded-3 py-3 w-100 fw-black text-uppercase"; // Verde
+                    } else {
+                        // Si cae por debajo, el ciclo se detuvo o está en espera
+                        badgeEstado.textContent = "DETENIDO";
+                        badgeEstado.className = "badge bg-dark text-white rounded-3 py-3 w-100 fw-black text-uppercase"; // Gris oscuro / Negro
+                    }
                 }
             })
             .catch(err => console.error("Error en GettLatest:", err));
 
-            // Petición 2: Trae el conteo de ciclos de forma independiente
+            // 2. Petición para el conteo de ciclos del turno (Independiente)
             fetch(`/Oven/GetTurnCycles?oven=${ovenId}`)
             .then(r => r.json())
             .then(ciclos => {
                 document.getElementById("totalCycles").textContent = ciclos;
             })
-            .catch(err => {
-                console.error("Error en GetTurnCycles:", err);
-                document.getElementById("totalCycles").textContent = "0";
-            });
+            .catch(() => document.getElementById("totalCycles").textContent = "0");
         }
+
 
         // 3. Crear e Inicializar las gráficas por primera vez (Consulta a tu endpoint GetByTurno)
         function loadCharts() {
