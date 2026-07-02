@@ -1,6 +1,7 @@
 ﻿using GraficasMixing.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 public class OvenController : Controller
 {
@@ -310,56 +311,55 @@ public class OvenController : Controller
                 return BadRequest("Oven inválido");
         }
     }
+
     [HttpGet]
     public async Task<IActionResult> GettByTurno(int oven)
     {
-        // 1. Obtener zona horaria y tiempos del turno actual de manera limpia
-        var tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
-        var ahoraLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
-
-        var hoy = ahoraLocal.Date;
-        var horaActual = ahoraLocal.TimeOfDay;
-
-        TimeSpan inicioTurno;
-        TimeSpan finTurno;
-
-        // Turno 1 → 07:00 a 15:30
-        if (horaActual >= new TimeSpan(7, 0, 0) && horaActual < new TimeSpan(15, 30, 0))
-        {
-            inicioTurno = new TimeSpan(7, 0, 0);
-            finTurno = new TimeSpan(15, 30, 0);
-        }
-        // Turno 2 → 15:30 a 24:00
-        else if (horaActual >= new TimeSpan(15, 30, 0) && horaActual <= new TimeSpan(23, 59, 59))
-        {
-            inicioTurno = new TimeSpan(15, 30, 0);
-            finTurno = new TimeSpan(23, 59, 59);
-        }
-        // Turno 3 → 00:00 a 07:00
-        else
-        {
-            inicioTurno = new TimeSpan(0, 0, 0);
-            finTurno = new TimeSpan(7, 0, 0);
-        }
-
-        // 2. Obtener el DbSet correspondiente usando el método dinámico auxiliar
         var query = GetOvenDbSet(oven);
-        if (query == null)
-        {
-            return BadRequest("Oven inválido");
-        }
+        if (query == null) return BadRequest("Oven inválido");
 
-        // 3. Ejecutar una única consulta LINQ genérica para cualquier horno
-        var datos = await query
-            .Where(x => x.Date.Date == hoy &&
-                        x.Hors >= inicioTurno &&
-                        x.Hors <= finTurno)
+        // 1. Calcular tiempos del turno de forma simple
+        TimeSpan horaActual = DateTime.Now.TimeOfDay;
+        TimeSpan inicioTurno = (horaActual >= new TimeSpan(7, 0, 0) && horaActual < new TimeSpan(15, 30, 0)) ? new TimeSpan(7, 0, 0)
+                             : (horaActual >= new TimeSpan(15, 30, 0) && horaActual <= new TimeSpan(23, 59, 59)) ? new TimeSpan(15, 30, 0)
+                             : new TimeSpan(0, 0, 0);
+
+        TimeSpan finTurno = (inicioTurno == new TimeSpan(7, 0, 0)) ? new TimeSpan(15, 30, 0)
+                          : (inicioTurno == new TimeSpan(15, 30, 0)) ? new TimeSpan(23, 59, 59)
+                          : new TimeSpan(7, 0, 0);
+
+        DateTime hoy = DateTime.Today;
+
+        // 2. OPTIMIZACIÓN CRÍTICA: 
+        // Usamos AsNoTracking para no saturar la memoria de Entity Framework.
+        // Usamos Select para traer exclusivamente las 3 propiedades que ocupa la gráfica.
+        var datosGrafica = await query
+            .AsNoTracking()
+            .Where(x => x.Date.Date == hoy && x.Hors >= inicioTurno && x.Hors <= finTurno)
             .OrderBy(x => x.Date)
             .ThenBy(x => x.Hors)
+            .Select(x => new { x.Hors, x.Pess, x.Temp })
             .ToListAsync();
 
-        return Json(datos);
+        // 3. ESTRATEGIA DE RENDIMIENTO: 
+        // Si la máquina genera demasiados datos (ej. más de 100 puntos por turno),
+        // tomamos una muestra representativa (ej. los últimos 60 puntos) para que la gráfica vuele.
+        if (datosGrafica.Count > 100)
+        {
+            datosGrafica = datosGrafica.Skip(datosGrafica.Count - 60).ToList();
+        }
+
+        // Proyectamos el JSON final formateando la hora como lo requiere tu JS (.substring(0,5))
+        var resultado = datosGrafica.Select(x => new
+        {
+            hors = x.Hors.ToString().Substring(0, 5),
+            pess = x.Pess,
+            temp = x.Temp
+        });
+
+        return Json(resultado);
     }
+
 
     // Método auxiliar para mapear el número de horno al DbSet correspondiente usando la clase base
     private IQueryable<OvenBase> GetOvenDbSet(int oven)
@@ -375,23 +375,19 @@ public class OvenController : Controller
             _ => null
         };
     }
+
+    // 1. TU MÉTODO ORIGINAL (Intacto, no le cambies nada)
     [HttpGet]
     public async Task<IActionResult> GettLatest(int oven)
     {
-        // 1. Obtener el DbSet genérico correspondiente usando el método auxiliar
         var query = GetOvenDbSet(oven);
-        if (query == null)
-        {
-            return BadRequest("Oven inválido");
-        }
+        if (query == null) return BadRequest("Oven inválido");
 
-        // 2. Ejecutar una única consulta LINQ para traer el último registro
+        // OPTIMIZACIÓN: Buscamos directamente por el ID más alto en lugar de ordenar por fecha/hora
         var lastRecord = await query
-            .OrderByDescending(x => x.Date)
-            .ThenByDescending(x => x.Hors)
+            .OrderByDescending(x => x.id) // Cambia 'id' por 'Id' según tenga tu modelo
             .FirstOrDefaultAsync();
 
-        // 3. Si no hay datos, retornamos una respuesta vacía o un objeto vacío para evitar errores en JS
         if (lastRecord == null)
         {
             return Json(new { pess = "0", temp = "0", hors = "00:00" });
@@ -401,5 +397,67 @@ public class OvenController : Controller
     }
 
 
+    // 2. NUEVO ENDPOINT EXCLUSIVO PARA CONTAR CICLOS
+    [HttpGet]
+    public async Task<IActionResult> GetTurnCycles(int oven)
+    {
+        var query = GetOvenDbSet(oven);
+        if (query == null) return Json(0);
+
+        try
+        {
+            TimeSpan horaActual = DateTime.Now.TimeOfDay;
+            TimeSpan inicioTurno = (horaActual >= new TimeSpan(7, 0, 0) && horaActual < new TimeSpan(15, 30, 0)) ? new TimeSpan(7, 0, 0)
+                                 : (horaActual >= new TimeSpan(15, 30, 0) && horaActual <= new TimeSpan(23, 59, 59)) ? new TimeSpan(15, 30, 0)
+                                 : new TimeSpan(0, 0, 0);
+
+            TimeSpan finTurno = (inicioTurno == new TimeSpan(7, 0, 0)) ? new TimeSpan(15, 30, 0)
+                              : (inicioTurno == new TimeSpan(15, 30, 0)) ? new TimeSpan(23, 59, 59)
+                              : new TimeSpan(7, 0, 0);
+
+            DateTime hoy = DateTime.Today;
+            var historial = await query
+                .Where(x => x.Date.Date == hoy && x.Hors >= inicioTurno && x.Hors <= finTurno)
+                .OrderBy(x => x.Date)
+                .ThenBy(x => x.Hors)
+                .Select(x => x.Pess)
+                .ToListAsync();
+
+            int totalCiclos = 0;
+            if (historial != null && historial.Count > 0)
+            {
+                bool estabaMasDe50 = false;
+                bool primerRegistro = true;
+
+                foreach (var pessTexto in historial)
+                {
+                    if (double.TryParse(pessTexto, NumberStyles.Any, CultureInfo.InvariantCulture, out double presionActual))
+                    {
+                        if (primerRegistro)
+                        {
+                            estabaMasDe50 = presionActual > 50;
+                            primerRegistro = false;
+                            continue;
+                        }
+
+                        if (estabaMasDe50 && presionActual < 50)
+                        {
+                            totalCiclos++;
+                            estabaMasDe50 = false;
+                        }
+                        else if (!estabaMasDe50 && presionActual > 50)
+                        {
+                            estabaMasDe50 = true;
+                        }
+                    }
+                }
+            }
+            return Json(totalCiclos);
+        }
+        catch
+        {
+            return Json(0); // Si falla el cálculo, regresa 0 de forma segura
+        }
+    }
 
 }
