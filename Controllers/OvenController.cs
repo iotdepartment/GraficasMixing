@@ -311,54 +311,6 @@ public class OvenController : Controller
         }
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GettByTurno(int oven)
-    {
-        var query = GetOvenDbSet(oven);
-        if (query == null) return BadRequest("Oven inválido");
-
-        // 1. Calcular tiempos del turno de forma simple
-        TimeSpan horaActual = DateTime.Now.TimeOfDay;
-        TimeSpan inicioTurno = (horaActual >= new TimeSpan(7, 0, 0) && horaActual < new TimeSpan(15, 30, 0)) ? new TimeSpan(7, 0, 0)
-                             : (horaActual >= new TimeSpan(15, 30, 0) && horaActual <= new TimeSpan(23, 59, 59)) ? new TimeSpan(15, 30, 0)
-                             : new TimeSpan(0, 0, 0);
-
-        TimeSpan finTurno = (inicioTurno == new TimeSpan(7, 0, 0)) ? new TimeSpan(15, 30, 0)
-                          : (inicioTurno == new TimeSpan(15, 30, 0)) ? new TimeSpan(23, 59, 59)
-                          : new TimeSpan(7, 0, 0);
-
-        DateTime hoy = DateTime.Today;
-
-        // 2. OPTIMIZACIÓN CRÍTICA: 
-        // Usamos AsNoTracking para no saturar la memoria de Entity Framework.
-        // Usamos Select para traer exclusivamente las 3 propiedades que ocupa la gráfica.
-        var datosGrafica = await query
-            .AsNoTracking()
-            .Where(x => x.Date.Date == hoy && x.Hors >= inicioTurno && x.Hors <= finTurno)
-            .OrderBy(x => x.Date)
-            .ThenBy(x => x.Hors)
-            .Select(x => new { x.Hors, x.Pess, x.Temp })
-            .ToListAsync();
-
-        // 3. ESTRATEGIA DE RENDIMIENTO: 
-        // Si la máquina genera demasiados datos (ej. más de 100 puntos por turno),
-        // tomamos una muestra representativa (ej. los últimos 60 puntos) para que la gráfica vuele.
-        if (datosGrafica.Count > 100)
-        {
-            datosGrafica = datosGrafica.Skip(datosGrafica.Count - 60).ToList();
-        }
-
-        // Proyectamos el JSON final formateando la hora como lo requiere tu JS (.substring(0,5))
-        var resultado = datosGrafica.Select(x => new
-        {
-            hors = x.Hors.ToString().Substring(0, 5),
-            pess = x.Pess,
-            temp = x.Temp
-        });
-
-        return Json(resultado);
-    }
-
     // Método auxiliar para mapear el número de horno al DbSet correspondiente usando la clase base
     private IQueryable<OvenBase> GetOvenDbSet(int oven)
     {
@@ -374,7 +326,6 @@ public class OvenController : Controller
         };
     }
 
-    // 1. TU MÉTODO ORIGINAL (Intacto, no le cambies nada)
     [HttpGet]
     public async Task<IActionResult> GettLatest(int oven)
     {
@@ -393,6 +344,7 @@ public class OvenController : Controller
 
         return Json(lastRecord);
     }
+
     [HttpGet]
     public async Task<IActionResult> GetTurnCycles(int oven)
     {

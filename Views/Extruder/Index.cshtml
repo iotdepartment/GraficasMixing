@@ -41,8 +41,8 @@
         </select>
     </div>
 </div>
-@* CONTROLES PARA LAS CHARTS *@
 
+<!-- CONTROLES PARA LAS CHARTS -->
 <div class="card shadow-sm border border-1 bg-white rounded-4 p-3 sticky-filters">
     <div class="row align-items-end">
 
@@ -121,15 +121,12 @@
 <!-- MODAL PARA EDITAR LOS SETPOINTS -->
 @await Html.PartialAsync("Partials/_ExtruderModal", Model)
 
-@* //Primera Fila 
-    EFICIENCIA DEL DÍA | PORCENTAJE DE PRODUCCION POR TURNO | PORCENTAJE DE TIEMPO MUERTO POR TURNO
-*@
-
+<!-- EFICIENCIA DEL DÍA | PORCENTAJE DE PRODUCCION POR TURNO | PORCENTAJE DE TIEMPO MUERTO POR TURNO -->
 <div class="row g-3 mt-1 mb-4">
 
     <!-- Gráfica 1 -->
     <div class="col-4">
-        <div class="card shadow-sm border border-1 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 360px;">
+        <div class="card shadow-sm border border-1 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 480px;">
             <canvas id="EficienciaRealPieChart" width="200" height="200"></canvas>
             <canvas id="Extruder2EficienciaRealPieChart" style="display:none"></canvas>
 
@@ -138,7 +135,7 @@
 
     <!-- Gráfica 2 -->
     <div class="col-4">
-        <div class="card shadow-sm border border-1 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 360px;">
+        <div class="card shadow-sm border border-1 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 480px;">
             <canvas id="EfficiencyBarChart"></canvas>
             <canvas id="Extruder2EfficiencyChart" style="display:none"></canvas>
 
@@ -147,7 +144,7 @@
 
     <!-- Gráfica 3 -->
     <div class="col-4">
-        <div class="card shadow-sm border border-1 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 360px;">
+        <div class="card shadow-sm border border-1 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 480px;">
             <canvas id="DowntimeBarChart"></canvas>
             <canvas id="Extruder2DowntimeBarChart" style="display:none"></canvas>
 
@@ -156,19 +153,14 @@
 
 </div>
 
-@* <hr class="border border-dark border-0 mb-4 opacity-100"> *@
-
-
-@* PRODUCCION POR FAMILIA (TABLA) *@
-
+<!-- PRODUCCION POR FAMILIA (TABLA) -->
 <div class="row">
      <div class="col-3">
-        <div class="card mx-auto text-center shadow-sm border-0 rounded-pill p-4 mt-2">
+        <div class="card mx-auto text-center shadow-sm border-0 rounded-4 p-4 mt-2">
             <h5 class="m-0 fw-bold">PRODUCCIÓN POR FAMILIA</h5>
         </div>
      </div>
 </div>
-
 <div class="row mb-4">
     <div class="col-12">
         <div class="card shadow-sm border border-0 rounded-4  p-4 mt-2">
@@ -197,13 +189,8 @@
         </div>
     </div>
 </div>
-@* 
-<hr class="border border-dark border-0 mb-4 opacity-100"> *@
 
-@* //Segunda Fila 
-    EFICIENCIA DIARIA DE LOS ULTIMOS 7 DÍAS
-*@
-
+<!-- EFICIENCIA DIARIA DE LOS ULTIMOS 7 DÍAS -->
 <div class="row align-items-end mb-4">
     <div class="col-12 mb-2">
         <div class="card shadow-sm border border-1 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 360px;">
@@ -212,14 +199,8 @@
     </div>
 </div>
         
-@* <hr class="border border-dark border-0 mb-4 opacity-100"> *@
-
-@* //Tercera Fila     
-    TIEMPO DE PRODUCCION POR FAMILIA | METROS EXTRUIDOS POR FAMILIA
-*@
-
+<!-- TIEMPO DE PRODUCCION POR FAMILIA | METROS EXTRUIDOS POR FAMILIA -->
 <div class="row g-3 mb-4">
-
     <div class="col-6">
         <div class="card shadow-sm border border-1 rounded-4 p-3">
             <canvas id="FamilyStackedChart" style="width:100%; height:360px;"></canvas>
@@ -231,20 +212,18 @@
             <canvas id="FamilyMetersChart" style="width:100%; height:360px;"></canvas>
         </div>
     </div>
-
 </div>
 
-@* <hr class="border border-dark border-0 mb-4 opacity-100"> *@
-
-@* // Cuarta Fila 
-    CHART VELOCIODAD DURANTE EL DÍA
-*@
-
+<!-- CHART VELOCIODAD DURANTE EL DÍA -->
 <div class="row align-items-end mb-4">
+    <div class="row">
+        <button type="button" class="btn btn-outline-secondary btn-sm mb-2 w-100" id="btnToggleMode" onclick="toggleGraphMode()">
+            🔄 Ver desglose de Paros (PP)
+        </button>
+    </div>
     <div class="col-12 mb-2">
         <div class="card shadow-sm border border-1 rounded-4 p-3 d-flex justify-content-center align-items-center" style="height: 360px;">
-
-                <canvas id="SpeedLineChart" style="width:100%; height:100%;"></canvas>
+            <canvas id="SpeedLineChart" style="width:100%; height:100%;"></canvas>
         </div>
     </div>
 </div>
@@ -277,13 +256,15 @@
     <script>
         // let totmChart;
         let efficiencyChart;
-        let downtimeChart;
+        let downtimeChart = null;
         let dailyEfficiencyChart;
         let familyStackedChart;
         let familyMetersChart;
-        let speedChart;
+        // let speedChart;
         let eficienciaRealPieChart;
-
+        let speedChart = null;
+        let lastSpeedResult = null; // Guardará el último JSON del servidor
+        let currentMode = "PROD";
         
         //EFICIENCIA DIARIA %
         async function loadEficienciaRealPieChart() {
@@ -324,6 +305,7 @@
                         },
                         options: {
                             responsive: true,
+                            maintainAspectRatio: false,
                             animation: {
                                 duration: 1200,
                                 easing: "easeOutQuart"
@@ -368,99 +350,7 @@
             }
         }
 
-        //EFICIENCIA DIARIA %
-        // async function loadTotmChart() {
-        //     const extruder = document.getElementById("ExtruderSelect").value;
-        //     const shift = document.getElementById("shiftSelect").value;
-        //     const date = document.getElementById("startDate").value;
-        //     const spinner = document.getElementById("spinner");
-        //     const errorMessage = document.getElementById("errorMessage");
-
-        //     spinner.style.display = "inline-block";
-        //     errorMessage.innerText = "";
-
-        //     try {
-        //         const response = await fetch(`/Extruder/GetTotmData?extruder=${extruder}&shift=${shift}&date=${date}`);
-        //         const result = await response.json();
-
-        //         let totm1 = 0;
-        //         let totm0 = 0;
-
-        //         result.forEach(r => {
-        //             if (r.totm == 1) totm1 = r.count;
-        //             else if (r.totm == 0) totm0 = r.count;
-        //         });
-
-        //         const labels = ["Tiempo de Operacion","Tiempo Muerto"];
-        //         const data = [totm1, totm0];
-
-        //         const ctx = document.getElementById("TotmPieChart").getContext("2d");
-
-        //         // Texto dinámico para el título
-        //         const chartTitle = `Eficiencia Diaria % – ${extruder} – ${shift} (${date})`;
-
-        //         if (!totmChart) {
-        //             // Crear gráfico inicial
-        //             totmChart = new Chart(ctx, {
-        //                 type: "pie",
-        //                 data: {
-        //                     labels: labels,
-        //                     datasets: [{
-        //                         data: data,
-        //                         backgroundColor: ["rgba(49, 92, 213)", "rgba(153, 153, 153)"], // verde y rojo
-        //                     }]
-        //                 },
-        //                 options: {
-        //                     responsive: true,
-        //                     animation: {
-        //                         duration: 1200,
-        //                         easing: "easeOutQuart"
-        //                     },
-        //                     plugins: {
-        //                         legend: { position: "bottom" },
-        //                         title: {
-        //                             display: true,
-        //                             text: "Eficiencia del dia (min / %)",
-        //                             font: {
-        //                                 size: 18,
-        //                                 weight: "bold"
-        //                             },
-        //                             color: "#333",
-        //                             padding: {
-        //                                 top: 10,
-        //                                 bottom: 20
-        //                             }
-        //                         },
-        //                         datalabels: {
-        //                             color: "#fff",
-        //                             font: { weight: "bold", size: 14 },
-        //                             formatter: (value, ctx) => {
-        //                                 const dataset = ctx.chart.data.datasets[0].data;
-        //                                 const total = dataset.reduce((a, b) => a + b, 0);
-        //                                 if (total === 0) return "0 (0%)";
-        //                                 const porcentaje = (value / total * 100).toFixed(1);
-        //                                 return `${value} (${porcentaje}%)`;
-        //                             }
-        //                         }
-        //                     }
-        //                 },
-        //                 plugins: [ChartDataLabels]
-        //             });
-        //         } else {
-        //             // Actualizar datos y título suavemente
-        //             totmChart.data.datasets[0].data = data;
-        //             totmChart.options.plugins.title.text = chartTitle;
-        //             totmChart.update();
-        //         }
-        //     } catch (error) {
-        //         errorMessage.innerText = "Error cargando datos.";
-        //     } finally {
-        //         spinner.style.display = "none";
-        //     }
-        // }
-
         //PORCENTAJE DE PRODUCCION POR TURNO
-
         async function loadEfficiencyChart() {
             const extruder = document.getElementById("ExtruderSelect").value;
             const date = document.getElementById("startDate").value;
@@ -487,6 +377,7 @@
                     },
                     options: {
                         responsive: true,
+                        maintainAspectRatio: false,
                         animation: {
                             duration: 1200,
                             easing: "easeOutQuart"
@@ -541,88 +432,86 @@
                 efficiencyChart.update();
             }
         }
+        
+        // PALETA DE COLORES PARA LOS PAROS PROGRAMADOS
+        const colorPalette = [
+            'rgba(255, 99, 132, 1.0)', 'rgba(54, 162, 235, 1.0)', 'rgba(255, 206, 86, 1.0)',
+            'rgba(75, 192, 192, 1.0)', 'rgba(153, 102, 255, 1.0)', 'rgba(255, 159, 64, 1.0)'
+        ];
 
-              // PORCENTAJE DE TIEMPO MUERTO POR TURNO
+        //PAROS PROGRAMADOS POR TURNO
         async function loadDowntimeChart() {
             const extruder = document.getElementById("ExtruderSelect").value;
             const date = document.getElementById("startDate").value;
 
-            const response = await fetch(`/Extruder/GetDowntimeByShift?extruder=${extruder}&date=${date}`);
-            const result = await response.json();
+            if (!date) return;
 
-            // 🔹 Usa siempre label + value
-            const labels = result.map(r => r.label ?? r.shift);
-            const data = result.map(r => Number(r.value ?? r.downtime));
+            try {
+                const response = await fetch(`/Extruder/GetDowntimeByShift?extruder=${extruder}&date=${date}`);
+                const result = await response.json();
 
-            const ctx = document.getElementById("DowntimeBarChart").getContext("2d");
+                // Mapear los datos recibidos del servidor a datasets de Chart.js
+                const datasets = result.desglose.map((item, index) => ({
+                    label: item.codigoPP,
+                    data: item.datosPorTurno, // Array de 3 posiciones [T1, T2, T3]
+                    backgroundColor: colorPalette[index % colorPalette.length],
+                    stack: 'Stack 0' // Indica que pertenecen a la misma pila
+                }));
 
-            if (!downtimeChart) {
-                downtimeChart = new Chart(ctx, {
-                    type: "bar",
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: "Tiempo Muerto (%)",
-                            data: data,
-                            backgroundColor: ["rgba(61, 61, 61,1.0)", "rgba(61, 61, 61,1.0)", "rgba(61, 61, 61,1.0)"]
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        animation: {
-                            duration: 1200,
-                            easing: "easeOutQuart"
+                const ctx = document.getElementById("DowntimeBarChart").getContext("2d");
+
+                if (!downtimeChart) {
+                    downtimeChart = new Chart(ctx, {
+                        type: "bar",
+                        data: {
+                            labels: result.turnos, // ["Turno 1", "Turno 2", "Turno 3"]
+                            datasets: datasets
                         },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                max: 100,
-                                ticks: {
-                                    callback: value => value + "%"
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                x: { stacked: true }, // Habilitar apilado X
+                                y: {
+                                    stacked: true,    // Habilitar apilado Y
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: value => value + " min"
+                                    }
                                 }
-                            }
-                        },
-                        plugins: {
-                            title: {
-                                display: true,
-                                text: "Porcentaje de tiempo muerto por turno (%)",
-                                font: { size: 18, weight: "bold" },
-                                color: "#333",
-                                padding: { top: 20, bottom: 10 }
                             },
-                            datalabels: {
-                                anchor: "center",
-                                align: "center",
-                                formatter: function(value) {
-                                    return (value !== undefined && value !== null && !isNaN(value))
-                                        ? value.toFixed(1) + "%"
-                                        : "";
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: "Desglose de Tiempo Muerto por Código PP (Minutos)",
+                                    font: { size: 18, weight: "bold" }
                                 },
-                                font: { weight: "bold" },
-                                color: "#fff"
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        const raw = context.raw;
-                                        return (raw !== undefined && raw !== null && !isNaN(raw))
-                                            ? `${context.label}: ${raw.toFixed(2)}%`
-                                            : `${context.label}: -`;
+                                datalabels: {
+                                    anchor: "center",
+                                    align: "center",
+                                    formatter: value => value > 0 ? value + " min" : "", // Ocultar etiquetas si es 0
+                                    font: { weight: "bold", size: 11 },
+                                    color: "#fff"
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: context => `${context.dataset.label}: ${context.raw} min`
                                     }
                                 }
                             }
-                        }
-                    },
-                    plugins: [ChartDataLabels]
-                });
-            } else {
-                downtimeChart.data.labels = labels;
-                downtimeChart.data.datasets[0].data = data;
-                downtimeChart.update();
+                        },
+                        plugins: [ChartDataLabels]
+                    });
+                } else {
+                    // Actualizar datos de forma dinámica
+                    downtimeChart.data.labels = result.turnos;
+                    downtimeChart.data.datasets = datasets;
+                    downtimeChart.update();
+                }
+            } catch (error) {
+                console.error("Error al renderizar los minutos de PP:", error);
             }
         }
-
-
 
         //TABLA PRODCCION POR FAMILIA
         function cargarProduccionFamilias() {
@@ -683,6 +572,7 @@
                         },
                         options: {
                             responsive: true,
+                            maintainAspectRatio: false,
                             scales: {
                                 y: {
                                     beginAtZero: true,
@@ -762,6 +652,7 @@
                     },
                     options: {
                         responsive: true,
+                        maintainAspectRatio: false,
                         scales: {
                             x: { stacked: true },
                             y: { stacked: true }
@@ -837,6 +728,7 @@
                     },
                     options: {
                         responsive: true,
+                        maintainAspectRatio: false,
                         scales: {
                             x: { stacked: true },
                             y: { stacked: true }
@@ -880,213 +772,143 @@
             }
         }
 
-        // // VELOCIDAD DURANTE EL DÍA
-        // async function loadSpeedChart() {
-        //     const extruder = document.getElementById("ExtruderSelect").value;
-        //     const date = document.getElementById("startDate").value;
-        //     const shift = document.getElementById("shiftSelect").value;
-
-        //     const response = await fetch(`/Extruder/GetSpeedData?extruder=${extruder}&date=${date}&shift=${shift}`);
-        //     const result = await response.json();
-
-        //     // Todos los timestamps únicos (eje X común)
-        //     const allLabels = [...new Set(result.map(r => r.label ?? r.timestamp))];
-
-        //     // Agrupar por familia
-        //     const families = {};
-        //     result.forEach(r => {
-        //         const family = r.family ?? "Sin familia";
-        //         if (!families[family]) {
-        //             families[family] = {};
-        //         }
-        //         families[family][r.label ?? r.timestamp] = Number(r.value ?? r.speed);
-        //     });
-
-        //     // Colores para las líneas
-        //     const colors = [
-        //         "rgba(255, 99, 132, 1)",   // rojo
-        //         "rgba(54, 162, 235, 1)",   // azul
-        //         "rgba(75, 192, 192, 1)",   // verde
-        //         "rgba(255, 206, 86, 1)",   // amarillo
-        //         "rgba(153, 102, 255, 1)",  // morado
-        //         "rgba(255, 159, 64, 1)"    // naranja
-        //     ];
-
-        //     // Crear datasets por familia
-        //     const datasets = Object.keys(families).map((family, index) => ({
-        //         label: family,
-        //         data: allLabels.map(ts => {
-        //             const val = families[family][ts];
-        //             return (val !== undefined && val !== null && !isNaN(val)) ? val : null;
-        //         }),
-        //         borderColor: colors[index % colors.length],
-        //         backgroundColor: colors[index % colors.length].replace("1)", "0.2)"),
-        //         borderWidth: 2,
-        //         tension: 0.3,
-        //         fill: false
-        //     }));
-
-        //     const ctx = document.getElementById("SpeedLineChart").getContext("2d");
-
-        //     if (!speedChart) {
-        //         speedChart = new Chart(ctx, {
-        //             type: "line",
-        //             data: {
-        //                 labels: allLabels,
-        //                 datasets: datasets
-        //             },
-        //             options: {
-        //                 responsive: true,
-        //                 animation: {
-        //                     duration: 1200,
-        //                     easing: "easeOutQuart"
-        //                 },
-        //                 scales: {
-        //                     y: {
-        //                         beginAtZero: true
-        //                     },
-        //                     x: {
-        //                         ticks: {
-        //                             callback: function(value) {
-        //                                 const label = this.getLabelForValue(value);
-        //                                 const dateObj = new Date(label);
-        //                                 return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        //                             },
-        //                             maxRotation: 45,
-        //                             minRotation: 30
-        //                         }
-        //                     }
-        //                 },
-        //                 plugins: {
-        //                     title: {
-        //                         display: true,
-        //                         text: "Velocidad durante el día (m/min)",
-        //                         font: { size: 18, weight: "bold" },
-        //                         color: "#333"
-        //                     },
-        //                     legend: {
-        //                         position: "bottom",
-        //                         labels: {
-        //                             font: { size: 12, weight: "bold" },
-        //                             color: "#333"
-        //                         }
-        //                     },
-        //                     tooltip: {
-        //                         callbacks: {
-        //                             label: function(context) {
-        //                                 const raw = context.raw;
-        //                                 return (raw !== undefined && raw !== null && !isNaN(raw))
-        //                                     ? `${context.dataset.label}: ${raw.toFixed(1)} m/min`
-        //                                     : `${context.dataset.label}: -`;
-        //                             }
-        //                         }
-        //                     }
-        //                 }
-        //             }
-        //         });
-        //     } else {
-        //         speedChart.data.labels = allLabels;
-        //         speedChart.data.datasets = datasets;
-        //         speedChart.update();
-        //     }
-        // }
-                // VELOCIDAD DURANTE EL DÍA
         async function loadSpeedChart() {
             const extruder = document.getElementById("ExtruderSelect").value;
             const date = document.getElementById("startDate").value;
             const shift = document.getElementById("shiftSelect").value;
 
-            const response = await fetch(`/Extruder/GetSpeedData?extruder=${extruder}&date=${date}&shift=${shift}`);
-            const result = await response.json();
+            if (!date) return;
 
-            // Todos los timestamps únicos (eje X común)
-            const allLabels = [...new Set(result.map(r => r.label))];
+            try {
+                const response = await fetch(`/Extruder/GetSpeedData?extruder=${extruder}&date=${date}&shift=${shift}`);
+                lastSpeedResult = await response.json(); // Guardamos el resultado globalmente
 
-            // Agrupar por familia (o PP si velocidad = 0)
-            const families = {};
-            result.forEach(r => {
-                const family = r.family ?? "Sin familia";
-                if (!families[family]) families[family] = [];
-                families[family].push(r);
+                // Cada vez que se cargan datos nuevos, reiniciamos al modo producción por defecto
+                currentMode = "PROD";
+                document.getElementById("btnToggleMode").innerHTML = "🔄 Ver desglose de Paros (PP)";
+
+                renderSpeedChart();
+            } catch (error) {
+                console.error("Error al cargar datos de velocidad:", error);
+            }
+        }
+
+        const colors = [
+            "rgba(54, 162, 235, 1)",   // azul
+            "rgba(255, 206, 86, 1)",   // amarillo
+            "rgba(153, 102, 255, 1)",  // morado
+            "rgba(255, 159, 64, 1)",   // naranja
+            "rgba(75, 192, 192, 1)"    // verde agua
+        ];
+
+
+                function renderSpeedChart() {
+            if (!lastSpeedResult) return;
+
+            // 1. Obtener todos los timestamps únicos para el eje X
+            const allLabels = [...new Set(lastSpeedResult.map(r => r.label))];
+
+            // 2. Agrupación DINÁMICA según el modo activo
+            const groupedData = {};
+
+            lastSpeedResult.forEach(r => {
+                let key = "";
+
+                if (currentMode === "PROD") {
+                    // MODO PRODUCCIÓN: Si es paro, todo va a "Tiempo Muerto". Si produce, se separa por su familia.
+                    key = r.isPP ? "Tiempo Muerto" : (r.family ?? "FAMILIA NO IDENTIFICADA");
+                } else {
+                    // MODO PAROS (PP): Si produce, todo va a "Producción". Si es paro, se separa por su código PP.
+                    key = r.isPP ? (r.family ?? "TIEMPO MUERTO NO IDENTIFICADO") : "Producción";
+                }
+
+                if (!groupedData[key]) groupedData[key] = [];
+                groupedData[key].push(r);
             });
 
-            // Colores normales para familias
-            const colors = [
-                "rgba(54, 162, 235, 1)",   // azul
-                "rgba(75, 192, 192, 1)",   // verde
-                "rgba(255, 206, 86, 1)",   // amarillo
-                "rgba(153, 102, 255, 1)",  // morado
-                "rgba(255, 159, 64, 1)"    // naranja
-            ];
+            // 3. Creación de Datasets basados en la nueva agrupación temporal
+            let colorIndex = 0;
+            const datasets = Object.keys(groupedData).map(keyName => {
+                const items = groupedData[keyName];
 
-            // Generador de tonos rojos para PP
-            function getRedTone(index) {
-                const lightness = 40 + (index * 8);
-                return `hsl(0, 85%, ${Math.min(lightness, 80)}%)`;
-            }
+                // Evaluamos si este bloque agrupado corresponde a un paro o no
+                const isBlockPP = items.some(r => r.isPP === true);
 
-            // Crear datasets por familia o PP
-            const datasets = Object.keys(families).map((family, index) => {
-                const items = families[family];
+                let borderColor = "";
+                let isUnified = false;
 
-                // 🔥 Detección REAL de PP desde backend
-                const isPP = items.some(r => r.isPP === true);
+                // Determinación estricta de colores y estilos según el requerimiento
+                if (currentMode === "PROD") {
+                    if (keyName === "Tiempo Muerto") {
+                        borderColor = "rgba(235, 54, 54, 1)"; // Rojo único para el bloque consolidado
+                        isUnified = true;
+                    } else {
+                        borderColor = colors[colorIndex % colors.length]; // Familias desglosadas por color
+                        colorIndex++;
+                    }
+                } else {
+                    if (keyName === "Producción") {
+                        borderColor = "rgba(40, 167, 69, 1)"; // Verde único para la producción consolidada
+                        isUnified = true;
+                    } else {
+                        borderColor = colors[colorIndex % colors.length]; // Reutiliza los mismos colores para los PP desglosados
+                        colorIndex++;
+                    }
+                }
 
-                const borderColor = isPP
-                    ? getRedTone(index)
-                    : colors[index % colors.length];
-
-                const backgroundColor = isPP
-                    ? borderColor.replace(")", ", 0.25)").replace("hsl", "hsla")
-                    : colors[index % colors.length].replace("1)", "0.2)");
+                const backgroundColor = borderColor.replace("1)", "0.2)");
 
                 return {
-                    label: family,
+                    label: keyName,
+                    // Mapeo lineal: Buscamos el punto correspondiente al timestamp del eje X
                     data: allLabels.map(ts => {
                         const item = items.find(x => x.label === ts);
                         return item ? item.value : null;
                     }),
-                    borderColor,
-                    backgroundColor,
-                    borderWidth: isPP ? 3 : 2,
+                    borderColor: borderColor,
+                    backgroundColor: backgroundColor,
+                    borderWidth: isBlockPP ? 3 : 2,
                     tension: 0.3,
                     fill: false,
-                    borderDash: isPP ? [6, 6] : [],
-                    borderDashOffset: 0,
-                    isPP: isPP
+                    // Línea discontinua para cualquier representación de paros (bloque unificado o desglosado)
+                    borderDash: isBlockPP ? [6, 6] : [],
+                    clip: false,
+                    // Guardamos metadatos para el ordenamiento
+                    isPP: isBlockPP,
+                    isUnified: isUnified
                 };
             });
 
-            // 🔥 ORDENAR: familias primero, PP después
+            // 4. ORDENAR: En modo PROD las familias primero, en modo PP los paros primero. Los bloques consolidados al final.
             datasets.sort((a, b) => {
-                if (!a.isPP && b.isPP) return -1;
-                if (a.isPP && !b.isPP) return 1;
+                if (currentMode === "PROD") {
+                    if (a.label === "Tiempo Muerto") return 1;
+                    if (b.label === "Tiempo Muerto") return -1;
+                } else {
+                    if (a.label === "Producción") return 1;
+                    if (b.label === "Producción") return -1;
+                }
                 return a.label.localeCompare(b.label);
             });
 
+            // 5. Dibujar o Actualizar en Chart.js
             const ctx = document.getElementById("SpeedLineChart").getContext("2d");
 
             if (!speedChart) {
                 speedChart = new Chart(ctx, {
                     type: "line",
-                    data: {
-                        labels: allLabels,
-                        datasets: datasets
-                    },
+                    data: { labels: allLabels, datasets: datasets },
                     options: {
                         responsive: true,
-                        animation: {
-                            duration: 1200,
-                            easing: "easeOutQuart"
-                        },
+                        maintainAspectRatio: false,
                         scales: {
                             y: { beginAtZero: true },
                             x: {
+                                offset: true,
                                 ticks: {
                                     callback: function(value) {
                                         const label = this.getLabelForValue(value);
-                                        const dateObj = new Date(label);
-                                        return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                        return new Date(label).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                                     },
                                     maxRotation: 45,
                                     minRotation: 30
@@ -1096,17 +918,14 @@
                         plugins: {
                             title: {
                                 display: true,
-                                text: "Velocidad durante el día (m/min)",
+                                text: "Monitoreo de Velocidad de Extrusor (m/min)",
                                 font: { size: 18, weight: "bold" },
-                                color: "#333"
+                                color: "#333",
+                                padding: { top: 15, bottom: 5 }
                             },
                             legend: {
-                                position: "bottom",   // 👈🔥 LEYENDA ABAJO
-                                labels: {
-                                    font: { size: 12, weight: "bold" },
-                                    color: "#333",
-                                    padding: 12
-                                }
+                                position: "bottom",
+                                labels: { font: { size: 12, weight: "bold" }, color: "#333", padding: 15 }
                             },
                             tooltip: {
                                 callbacks: {
@@ -1128,6 +947,21 @@
             }
         }
 
+        // 3. Función del botón para intercambiar los modos
+        function toggleGraphMode() {
+            const btn = document.getElementById("btnToggleMode");
+
+            if (currentMode === "PROD") {
+                currentMode = "PP";
+                btn.innerHTML = "🔄 Ver desglose de Producción (Familias)";
+            } else {
+                currentMode = "PROD";
+                btn.innerHTML = "🔄 Ver desglose de Paros (PP)";
+            }
+
+            // Redibujamos aplicando las reglas del nuevo modo
+            renderSpeedChart();
+        }
 
         // EXPORTAR GRAFICAS
         document.getElementById("btnExport").addEventListener("click", async () => {
@@ -1167,9 +1001,7 @@
             }
         });
 
-
         // Evento del botón Apply
-        // document.getElementById("applyFilter").addEventListener("click", loadTotmChart);
         document.getElementById("applyFilter").addEventListener("click", loadEfficiencyChart);
         document.getElementById("applyFilter").addEventListener("click", loadDowntimeChart);
         document.getElementById("applyFilter").addEventListener("click", loadDailyEfficiencyChart);
@@ -1178,7 +1010,6 @@
         document.getElementById("applyFilter").addEventListener("click", loadSpeedChart);
         document.getElementById("applyFilter").addEventListener("click", cargarProduccionFamilias);
         document.getElementById("applyFilter").addEventListener("click", loadEficienciaRealPieChart);
-
 
         window.onload = () => {
 

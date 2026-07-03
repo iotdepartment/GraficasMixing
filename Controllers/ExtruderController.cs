@@ -649,13 +649,6 @@ namespace GraficasMixing.Controllers
                 .ToList();
 
             return data;
-
-            //.Select(x => new
-            // {
-            //     label = x.Fecha.ToString("yyyy-MM-dd") + " " + x.Hora.ToString(),
-            //     value = x.Velocidad ?? 0,
-            //     family = x.Familia
-            // })
         }
 
         [HttpPost]
@@ -760,8 +753,58 @@ namespace GraficasMixing.Controllers
         [HttpGet]
         public IActionResult GetDowntimeByShift(string extruder, DateTime date)
         {
-            return Json(CalcularDowntimeByShift(extruder, date));
+            // 1. Definimos los rangos de fecha estrictos para el SQL
+            DateTime fechaHoy = date.Date;
+            DateTime fechaManana = date.Date.AddDays(1);
+
+            // 2. Traer registros usando filtros separados que EF Core SÍ puede traducir a SQL
+            var datosParos = _context.ScadaExtrudermaster
+                .Where(x => x.Extruder == extruder
+                         && x.Totm == 0
+                         // Condición: Es hoy después de las 7:00 AM O es mañana antes de las 7:00 AM
+                         && ((x.Fecha.Date == fechaHoy && x.Hora >= new TimeSpan(7, 0, 0))
+                          || (x.Fecha.Date == fechaManana && x.Hora < new TimeSpan(7, 0, 0))))
+                .Select(x => new
+                {
+                    x.Fecha,
+                    x.Hora,
+                    // Si PP es nulo o vacío en la BD, lo nombramos "No Especificado"
+                    CodigoPP = string.IsNullOrEmpty(x.PP) ? "No Especificado" : x.PP
+                })
+                .ToList() // 🔹 Aquí ejecutamos una única consulta limpia en la base de datos
+
+                // 3. Procesamos los turnos en memoria (Client Evaluation) de forma segura
+                .Select(x => new
+                {
+                    Turno = x.Hora >= new TimeSpan(7, 0, 0) && x.Hora < new TimeSpan(15, 0, 0) ? "Turno 1" :
+                            x.Hora >= new TimeSpan(15, 0, 0) && x.Hora <= new TimeSpan(23, 59, 59) ? "Turno 2" : "Turno 3",
+                    x.CodigoPP
+                })
+                .GroupBy(x => new { x.Turno, x.CodigoPP })
+                .Select(g => new
+                {
+                    g.Key.Turno,
+                    g.Key.CodigoPP,
+                    Minutos = g.Count() // Cada registro equivale a 1 minuto
+                })
+                .ToList();
+
+            // 4. Formatear la respuesta estructurada para Chart.js Stacked Bar
+            var todosLosTurnos = new[] { "Turno 1", "Turno 2", "Turno 3" };
+            var todosLosCodigosPP = datosParos.Select(d => d.CodigoPP).Distinct().ToList();
+
+            var resultadoFinal = todosLosCodigosPP.Select(pp => new
+            {
+                CodigoPP = pp,
+                // Genera los minutos correspondientes a [Turno 1, Turno 2, Turno 3] en ese orden
+                DatosPorTurno = todosLosTurnos.Select(t =>
+                    datosParos.FirstOrDefault(d => d.Turno == t && d.CodigoPP == pp)?.Minutos ?? 0
+                ).ToList()
+            }).ToList();
+
+            return Json(new { turnos = todosLosTurnos, desglose = resultadoFinal });
         }
+
 
         [HttpGet]
         public IActionResult GetEficienciaRealData(string extruder, string shift, DateTime date)

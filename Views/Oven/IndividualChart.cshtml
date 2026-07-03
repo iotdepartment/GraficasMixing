@@ -172,18 +172,43 @@
             })
             .catch(err => console.error("Error en GetTurnCycles:", err));
         }
+                // Función auxiliar para convertir "HH:MM:SS..." a "HH:MM a.m./p.m."
+        function formatearHoraAmPm(horaRaw) {
+            if (!horaRaw) return "00:00 a.m.";
 
+            // Tomamos los primeros 5 caracteres "HH:MM"
+            const partes = horaRaw.substring(0, 5).split(":");
+            let horas = parseInt(partes[0]) || 0;
+            const minutos = partes[1] || "00";
 
-        // 3. Inicializar e inyectar datos en las gráficas por primera vez
+            // Determinar si es a.m. o p.m.
+            const ampm = horas >= 12 ? "p.m." : "a.m.";
+
+            // Convertir al formato de 12 horas
+            horas = horas % 12;
+            horas = horas ? horas : 12; // Si es 0, lo transforma en 12
+
+            // Forzar dos dígitos para la hora (Ej: 04:11 p.m.)
+            const horaFormateada = horas.toString().padStart(2, "0");
+
+            return `${horaFormateada}:${minutos} ${ampm}`;
+        }
+
+        // 1. Inicializar e inyectar datos en las gráficas usando tu método original del controlador
         function loadCharts() {
             fetch(`/Oven/GetByTurno?oven=${ovenId}`)
             .then(r => r.json())
             .then(data => {
                 if (!data || data.length === 0) return;
 
-                const labels = data.map(x => x.hors);
-                const press = data.map(x => parseFloat(x.pess) || 0);
-                const temp = data.map(x => parseFloat(x.temp) || 0);
+                // Aplicamos la conversión AM/PM a cada marca de tiempo
+                const labels = data.map(x => {
+                    const horaRaw = x.Hors !== undefined ? x.Hors : x.hors;
+                    return formatearHoraAmPm(horaRaw);
+                });
+
+                const press = data.map(x => parseFloat(x.Pess !== undefined ? x.Pess : x.pess) || 0);
+                const temp = data.map(x => parseFloat(x.Temp !== undefined ? x.Temp : x.temp) || 0);
 
                 // Gráfica de Presión
                 const ctxPress = document.getElementById("PressureChart").getContext("2d");
@@ -223,32 +248,37 @@
                     options: chartOptionsOptimized
                 });
             })
-            .catch(err => console.error("Error cargando gráficas:", err));
+            .catch(err => console.error("Error al inicializar las gráficas:", err));
         }
 
-        // 4. Actualizar las curvas de las gráficas sin redibujar el canvas entero
+        // 2. Actualizar las curvas cada minuto de forma dinámica
         function updateCharts() {
             fetch(`/Oven/GetByTurno?oven=${ovenId}`)
             .then(r => r.json())
             .then(data => {
                 if (!data || data.length === 0) return;
 
-                const labels = data.map(x => x.hors);
+                // Aplicamos la misma conversión AM/PM en la actualización
+                const labels = data.map(x => {
+                    const horaRaw = x.Hors !== undefined ? x.Hors : x.hors;
+                    return formatearHoraAmPm(horaRaw);
+                });
 
                 if (pressureChart) {
                     pressureChart.data.labels = labels;
-                    pressureChart.data.datasets[0].data = data.map(x => parseFloat(x.pess) || 0);
+                    pressureChart.data.datasets[0].data = data.map(x => parseFloat(x.Pess !== undefined ? x.Pess : x.pess) || 0);
                     pressureChart.update();
                 }
 
                 if (temperatureChart) {
                     temperatureChart.data.labels = labels;
-                    temperatureChart.data.datasets[0].data = data.map(x => parseFloat(x.temp) || 0);
+                    temperatureChart.data.datasets[0].data = data.map(x => parseFloat(x.Temp !== undefined ? x.Temp : x.temp) || 0);
                     temperatureChart.update();
                 }
             })
-            .catch(err => console.error("Error al actualizar gráficas:", err));
+            .catch(err => console.error("Error al actualizar las gráficas:", err));
         }
+
 
         // 5. Orquestación y Loop de ejecución continua cada minuto (60000ms)
         document.addEventListener("DOMContentLoaded", () => {
