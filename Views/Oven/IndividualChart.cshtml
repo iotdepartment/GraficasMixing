@@ -15,7 +15,7 @@
     </div>
 
     <div class="col-11 d-flex">
-        <div class="card shadow-lg rounded-pill p-2 mb-2 bg-primary w-100 h-100">
+        <div class="card shadow-lg rounded-4 p-2 mb-2 bg-primary w-100 h-100">
 
             <div class="d-flex justify-content-between align-items-center px-3">
                 <!-- Título Dinámico -->
@@ -131,9 +131,8 @@
             }
         };
 
-        // 2. Función para cargar Badges, Estado y Ciclos
         function loadLatestData() {
-            // Petición 1: Presión, Temperatura y Estado en tiempo real
+            // 1. Petición para Presión, Temperatura y Estado
             fetch(`/Oven/GettLatest?oven=${ovenId}`)
             .then(r => r.json())
             .then(d => {
@@ -144,11 +143,12 @@
                     document.getElementById("lastPressure").textContent = (presionTexto || "0") + " KPA";
                     document.getElementById("lastTemperature").textContent = (temperatura || "0") + " °C";
 
-                    // Evaluación de Estado
+                    // --- EVALUACIÓN DE ESTADO REAL A 500 KPA ---
                     const presionNum = parseFloat(presionTexto) || 0;
                     const badgeEstado = document.getElementById("ovenStatus");
 
-                    if (presionNum >= 50) {
+                    if (presionNum >= 500) {
+                        // Al marcar más de 500 KPA se confirma que está en proceso
                         badgeEstado.textContent = "CICLO ACTIVO";
                         badgeEstado.className = "badge bg-success text-white rounded-3 py-3 w-100 fw-black text-uppercase";
                     } else {
@@ -159,27 +159,20 @@
             })
             .catch(err => console.error("Error en GettLatest:", err));
 
-            // Petición 2: Conteo de ciclos del turno dividido a la mitad
-                    // Petición 2: Conteo de ciclos del turno con soporte para decimales exactos (Ej: 0.5)
+            // 2. Petición para el conteo de ciclos (Independiente)
             fetch(`/Oven/GetTurnCycles?oven=${ovenId}`)
             .then(r => r.json())
             .then(ciclosOriginales => {
-                // Convertimos el dato a número decimal (float) en lugar de entero
                 const total = parseFloat(ciclosOriginales) || 0;
 
-                // Dividimos a la mitad EXACTA manteniendo los decimales
+                // Dependiendo de tu proceso, mantén la división o usa el total directo
                 const ciclosDivididos = total / 2;
 
-                // Pintamos el resultado forzando a que muestre 1 decimal si es necesario (Ej: 0.5, 1.0, 1.5)
-                // Si prefieres que cuando sea entero (como 1) no muestre el ".0", usamos parseFloat al final
                 document.getElementById("totalCycles").textContent = Number(ciclosDivididos.toFixed(1));
             })
-            .catch(err => {
-                console.error("Error en GetTurnCycles:", err);
-                document.getElementById("totalCycles").textContent = "0";
-            });
-
+            .catch(err => console.error("Error en GetTurnCycles:", err));
         }
+
 
         // 3. Inicializar e inyectar datos en las gráficas por primera vez
         function loadCharts() {

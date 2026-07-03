@@ -393,7 +393,6 @@ public class OvenController : Controller
 
         return Json(lastRecord);
     }
-
     [HttpGet]
     public async Task<IActionResult> GetTurnCycles(int oven)
     {
@@ -402,57 +401,97 @@ public class OvenController : Controller
 
         try
         {
-            TimeSpan horaActual = DateTime.Now.TimeOfDay;
-            TimeSpan inicioTurno = (horaActual >= new TimeSpan(7, 0, 0) && horaActual < new TimeSpan(15, 30, 0)) ? new TimeSpan(7, 0, 0)
-                                 : (horaActual >= new TimeSpan(15, 30, 0) && horaActual <= new TimeSpan(23, 59, 59)) ? new TimeSpan(15, 30, 0)
-                                 : new TimeSpan(0, 0, 0);
+            // 1. Obtener la zona horaria de forma segura (Compatible con Windows, Linux y Docker)
+            TimeZoneInfo tz;
+            try
+            {
+                tz = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
+            }
+            catch (TimeZoneNotFoundException)
+            {
+                tz = TimeZoneInfo.FindSystemTimeZoneById("America/Mexico_City");
+            }
 
-            TimeSpan finTurno = (inicioTurno == new TimeSpan(7, 0, 0)) ? new TimeSpan(15, 30, 0)
-                              : (inicioTurno == new TimeSpan(15, 30, 0)) ? new TimeSpan(23, 59, 59)
-                              : new TimeSpan(7, 0, 0);
+            var ahoraLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+            var hoy = ahoraLocal.Date;
+            var horaActual = ahoraLocal.TimeOfDay;
 
-            DateTime hoy = DateTime.Today;
-            var historial = await query
-                .Where(x => x.Date.Date == hoy && x.Hors >= inicioTurno && x.Hors <= finTurno)
+            TimeSpan inicioTurno;
+            TimeSpan finTurno;
+
+            // 2. Tu lógica exacta de asignación de turnos
+            // Turno 1 → 07:00 a 15:30
+            if (horaActual >= new TimeSpan(7, 0, 0) && horaActual < new TimeSpan(15, 30, 0))
+            {
+                inicioTurno = new TimeSpan(7, 0, 0);
+                finTurno = new TimeSpan(15, 30, 0);
+            }
+            // Turno 2 → 15:30 a 24:00
+            else if (horaActual >= new TimeSpan(15, 30, 0) && horaActual <= new TimeSpan(23, 59, 59))
+            {
+                inicioTurno = new TimeSpan(15, 30, 0);
+                finTurno = new TimeSpan(23, 59, 59);
+            }
+            // Turno 3 → 00:00 a 07:00
+            else
+            {
+                inicioTurno = new TimeSpan(0, 0, 0);
+                finTurno = new TimeSpan(7, 0, 0);
+            }
+
+            // 3. Consulta Ultra Rápida a la Base de Datos
+            // Usamos AsNoTracking para no saturar memoria y traemos EXCLUSIVAMENTE la columna Pess
+            var presiones = await query
+                .AsNoTracking()
+                .Where(x => x.Date.Date == hoy &&
+                            x.Hors >= inicioTurno &&
+                            x.Hors <= finTurno)
                 .OrderBy(x => x.Date)
                 .ThenBy(x => x.Hors)
                 .Select(x => x.Pess)
                 .ToListAsync();
 
             int totalCiclos = 0;
-            if (historial != null && historial.Count > 0)
+            int totalRegistros = presiones.Count;
+
+            if (totalRegistros > 0)
             {
-                bool estabaMasDe50 = false;
-                bool primerRegistro = true;
-
-                foreach (var pessTexto in historial)
+                double[] valores = new double[totalRegistros];
+                for (int i = 0; i < totalRegistros; i++)
                 {
-                    if (double.TryParse(pessTexto, NumberStyles.Any, CultureInfo.InvariantCulture, out double presionActual))
-                    {
-                        if (primerRegistro)
-                        {
-                            estabaMasDe50 = presionActual > 50;
-                            primerRegistro = false;
-                            continue;
-                        }
+                    double.TryParse(presiones[i], NumberStyles.Any, CultureInfo.InvariantCulture, out valores[i]);
+                }
 
-                        if (estabaMasDe50 && presionActual < 50)
-                        {
-                            totalCiclos++;
-                            estabaMasDe50 = false;
-                        }
-                        else if (!estabaMasDe50 && presionActual > 50)
-                        {
-                            estabaMasDe50 = true;
-                        }
+                // --- ALGORITMO POR ESTADOS CONFIGURADO A 500 KPA ---
+                // Evaluamos si el horno arrancó el turno arriba de 500
+                bool hornoEstabaArriba = valores[0] >= 500;
+
+                for (int i = 1; i < totalRegistros; i++)
+                {
+                    double presionActual = valores[i];
+
+                    // DETECCIÓN: El horno estaba trabajando (>500) y el ciclo terminó al caer por debajo de 500
+                    if (hornoEstabaArriba && presionActual < 500)
+                    {
+                        totalCiclos++;
+                        hornoEstabaArriba = false; // Cambia estado a abajo
+                    }
+                    // PREPARACIÓN: El horno volvió a cargar presión superando los 500 KPA
+                    else if (!hornoEstabaArriba && presionActual >= 500)
+                    {
+                        hornoEstabaArriba = true; // Cambia estado a arriba
                     }
                 }
             }
+
             return Json(totalCiclos);
+
         }
-        catch
+        catch (Exception ex)
         {
-            return Json(0); // Si falla el cálculo, regresa 0 de forma segura
+            // En caso de cualquier falla imprevista con la BD, retorna 0 de forma segura para no trabar la vista
+            System.Diagnostics.Debug.WriteLine($"Error en GetTurnCycles: {ex.Message}");
+            return Json(0);
         }
     }
 }
