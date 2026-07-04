@@ -287,21 +287,51 @@ namespace GraficasMixing.Controllers
 
         private List<ChartPoint> CalcularEfficiencyByShift(string extruder, DateTime date)
         {
+            // 1. Definir los límites estrictos de la jornada (7:00 AM hoy hasta 6:59 AM de mañana)
+            DateTime fechaHoy = date.Date;
+            DateTime fechaManana = date.Date.AddDays(1);
 
-            var turno1 = _context.ScadaExtrudermaster.Where(x => x.Extruder == extruder && x.Fecha.Date == date.Date && x.Hora >= new TimeSpan(7, 0, 0) && x.Hora < new TimeSpan(15, 0, 0));
-            var turno2 = _context.ScadaExtrudermaster.Where(x => x.Extruder == extruder && x.Fecha.Date == date.Date && x.Hora >= new TimeSpan(15, 0, 0) && x.Hora <= new TimeSpan(23, 59, 59));
-            var turno3 = _context.ScadaExtrudermaster.Where(x => x.Extruder == extruder && x.Fecha.Date == date.AddDays(1).Date && x.Hora < new TimeSpan(7, 0, 0));
-
-            double CalcEfficiency(IQueryable<ScadaExtrudermaster> q) =>
-                q.Count() == 0 ? 0 : (q.Count(x => x.Totm == 1) * 100.0 / q.Count());
-
-            return new List<ChartPoint>
+            // 2. Realizar una ÚNICA consulta consolidada con AsNoTracking agrupando en la Base de Datos
+            var datosTurnos = _context.ScadaExtrudermaster
+                .AsNoTracking() // 👈 CLAVE: Evita cargar los objetos en el gestor de memoria de EF Core
+                .Where(x => x.Extruder == extruder
+                         // Filtro nativo traducible: Es hoy en horario operativo O es mañana en la madrugada
+                         && ((x.Fecha.Date == fechaHoy && x.Hora >= new TimeSpan(7, 0, 0))
+                          || (x.Fecha.Date == fechaManana && x.Hora < new TimeSpan(7, 0, 0))))
+                .Select(x => new
                 {
-                    new ChartPoint { Label = "Turno1", Value = CalcEfficiency(turno1) },
-                    new ChartPoint { Label = "Turno2", Value = CalcEfficiency(turno2) },
-                    new ChartPoint { Label = "Turno3", Value = CalcEfficiency(turno3) }
-                };
+                    // Clasificación de turnos en base a la hora
+                    Turno = x.Hora >= new TimeSpan(7, 0, 0) && x.Hora < new TimeSpan(15, 0, 0) ? "Turno 1" :
+                            x.Hora >= new TimeSpan(15, 0, 0) && x.Hora <= new TimeSpan(23, 59, 59) ? "Turno 2" : "Turno 3",
+                    IsProduciendo = x.Totm == 1 ? 1 : 0
+                })
+                .GroupBy(x => x.Turno)
+                .Select(g => new
+                {
+                    Turno = g.Key,
+                    TotalRegistros = g.Count(),
+                    RegistrosProduccion = g.Sum(x => x.IsProduciendo)
+                })
+                .ToList(); // 🔹 Único viaje de ida y vuelta al servidor de base de datos
 
+            // 3. Mapear y asegurar la estructura fija de los 3 turnos en el retorno
+            var turnosEstructurales = new[] { "Turno 1", "Turno 2", "Turno 3" };
+
+            return turnosEstructurales.Select(t =>
+            {
+                var datos = datosTurnos.FirstOrDefault(d => d.Turno == t);
+
+                // Si no hay datos (ej. día festivo), el porcentaje es 0 de forma segura
+                double porcentaje = (datos == null || datos.TotalRegistros == 0)
+                    ? 0
+                    : (datos.RegistrosProduccion * 100.0 / datos.TotalRegistros);
+
+                return new ChartPoint
+                {
+                    Label = t,
+                    Value = Math.Round(porcentaje, 2) // Retornamos el valor formateado a dos decimales
+                };
+            }).ToList();
         }
 
         private List<ChartPoint> CalcularDowntimeByShift(string extruder, DateTime date)
@@ -325,111 +355,114 @@ namespace GraficasMixing.Controllers
 
         private EficienciaRealResult CalcularEficienciaRealData(string extruder, string shift, DateTime date)
         {
-            IEnumerable<ScadaExtrudermaster> query;
+            // 1. Límites estrictos del día para filtros booleanos indexados
+            DateTime fechaHoy = date.Date;
+            DateTime fechaManana = date.Date.AddDays(1);
 
-            switch (shift)
+            TimeSpan horaInicio = new TimeSpan(7, 0, 0);
+            TimeSpan horaFin = new TimeSpan(6, 59, 59);
+            bool esTurnoFijo = true;
+
+            if (shift == "Turno1")
             {
-                case "Turno1":
-                    query = _context.ScadaExtrudermaster
-                        .Where(x => x.Extruder == extruder &&
-                                    x.Fecha.Date == date.Date &&
-                                    x.Hora >= new TimeSpan(7, 0, 0) &&
-                                    x.Hora < new TimeSpan(15, 0, 0) &&
-                                    x.Metros >= 0)
-                        .ToList();
-                    break;
-
-                case "Turno2":
-                    query = _context.ScadaExtrudermaster
-                        .Where(x => x.Extruder == extruder &&
-                                    x.Fecha.Date == date.Date &&
-                                    x.Hora >= new TimeSpan(15, 0, 0) &&
-                                    x.Hora <= new TimeSpan(23, 59, 59) &&
-                                    x.Metros >= 0)
-                        .ToList();
-                    break;
-
-                case "Turno3":
-                    query = _context.ScadaExtrudermaster
-                        .Where(x => x.Extruder == extruder &&
-                                    x.Fecha.Date == date.AddDays(1).Date &&
-                                    x.Hora >= new TimeSpan(0, 0, 0) &&
-                                    x.Hora < new TimeSpan(7, 0, 0) &&
-                                    x.Metros >= 0)
-                        .ToList();
-                    break;
-
-                case "All":
-                    var turno1 = _context.ScadaExtrudermaster
-                        .Where(x => x.Extruder == extruder &&
-                                    x.Fecha.Date == date.Date &&
-                                    x.Hora >= new TimeSpan(7, 0, 0) &&
-                                    x.Hora < new TimeSpan(15, 0, 0) &&
-                                    x.Metros >= 0)
-                        .ToList();
-
-                    var turno2 = _context.ScadaExtrudermaster
-                        .Where(x => x.Extruder == extruder &&
-                                    x.Fecha.Date == date.Date &&
-                                    x.Hora >= new TimeSpan(15, 0, 0) &&
-                                    x.Hora <= new TimeSpan(23, 59, 59) &&
-                                    x.Metros >= 0)
-                        .ToList();
-
-                    var turno3 = _context.ScadaExtrudermaster
-                        .Where(x => x.Extruder == extruder &&
-                                    x.Fecha.Date == date.AddDays(1).Date &&
-                                    x.Hora < new TimeSpan(7, 0, 0) &&
-                                    x.Metros >= 0)
-                        .ToList();
-
-                    query = turno1.Concat(turno2).Concat(turno3);
-                    break;
-
-                default:
-                    query = new List<ScadaExtrudermaster>();
-                    break;
+                horaInicio = new TimeSpan(7, 0, 0);
+                horaFin = new TimeSpan(15, 0, 0);
+            }
+            else if (shift == "Turno2")
+            {
+                horaInicio = new TimeSpan(15, 0, 0);
+                horaFin = new TimeSpan(23, 59, 59);
+            }
+            else if (shift == "Turno3")
+            {
+                horaInicio = new TimeSpan(0, 0, 0);
+                horaFin = new TimeSpan(7, 0, 0);
+            }
+            else if (shift == "All")
+            {
+                esTurnoFijo = false;
+            }
+            else
+            {
+                return new EficienciaRealResult { Familias = new List<ChartPoint>() };
             }
 
-            var grouped = query.GroupBy(x => x.Familia);
+            // 2. Definir la consulta base filtrada con AsNoTracking para máxima velocidad de lectura
+            var queryBase = _context.ScadaExtrudermaster
+                .AsNoTracking() // 👈🔥 CLAVE: Deshabilita el tracking de memoria intermedia de EF Core
+                .Where(x => x.Extruder == extruder);
 
-            var produccionFamilias = grouped
-                .Select(g =>
+            if (esTurnoFijo)
+            {
+                DateTime fechaFiltro = shift == "Turno3" ? fechaManana : fechaHoy;
+                queryBase = queryBase.Where(x => x.Fecha.Date == fechaFiltro && x.Hora >= horaInicio && x.Hora < horaFin);
+            }
+            else
+            {
+                queryBase = queryBase.Where(x => (x.Fecha.Date == fechaHoy && x.Hora >= new TimeSpan(7, 0, 0))
+                                              || (x.Fecha.Date == fechaManana && x.Hora < new TimeSpan(7, 0, 0)));
+            }
+
+            // 3. 🧠 UNA SOLA CONSULTA SQL: Agrupamos por familia trayendo todos los contadores a la vez
+            var datosAgrupadosBD = queryBase
+                .GroupBy(x => x.Familia)
+                .Select(g => new
                 {
-                    var metrosProducidos = g.Sum(x => x.Metros ?? 0);
-                    if (metrosProducidos <= 0) return null;
-
-                    var velocidadPromedio = g.Where(v => v.Velocidad > 0)
-                                             .Select(v => v.Velocidad ?? 0)
-                                             .DefaultIfEmpty(0)
-                                             .Average();
-
-                    var setpoint = _context.SetPointExtruder
-                        .Where(sp => sp.familia == g.Key && sp.extruder == extruder)
-                        .Select(sp => sp.setpoint)
-                        .FirstOrDefault();
-
-                    var porcentajeEfectividad = (setpoint > 0)
-                        ? (velocidadPromedio * 100 / setpoint)
-                        : 0;
-
-                    return new ChartPoint { Label = g.Key, Value = porcentajeEfectividad };
+                    Familia = g.Key,
+                    TotalRegistros = g.Count(), // Para acumular el total general del turno
+                    OperacionRegistros = g.Count(x => x.Totm == 1), // Para acumular el tiempo operativo
+                    MetrosProducidos = g.Sum(x => x.Metros >= 0 ? (x.Metros ?? 0) : 0),
+                    VelocidadPromedio = g.Average(v => v.Velocidad > 0 ? (v.Velocidad ?? 0) : (double?)null) ?? 0
                 })
-                .Where(x => x != null)
-                .ToList();
+                .ToList(); // 🔹 Único viaje de ida y vuelta a la base de datos
 
+            if (!datosAgrupadosBD.Any())
+            {
+                return new EficienciaRealResult { Familias = new List<ChartPoint>() };
+            }
+
+            // 4. Extraer los métricos globales sumando los totales ya pre-calculados en memoria
+            double totalMinutos = datosAgrupadosBD.Sum(x => x.TotalRegistros);
+            double operacionMinutos = datosAgrupadosBD.Sum(x => x.OperacionRegistros);
+            double calcEfficiency = totalMinutos > 0 ? (operacionMinutos * 100.0 / totalMinutos) : 0;
+
+            // 5. Filtrar las familias que sí produjeron metros para hacer el Left Join local de SetPoints
+            var familiasConMetros = datosAgrupadosBD.Where(f => f.MetrosProducidos > 0).ToList();
+
+            var produccionFamilias = (from f in familiasConMetros
+                                      join sp in _context.SetPointExtruder.AsNoTracking()
+                                      on new { Fam = f.Familia, Ext = extruder } equals new { Fam = sp.familia, Ext = sp.extruder } into spJoin
+                                      from subSp in spJoin.DefaultIfEmpty()
+                                      select new
+                                      {
+                                          f.Familia,
+                                          f.VelocidadPromedio,
+                                          Setpoint = subSp != null ? subSp.setpoint : 0d
+                                      })
+                                      .Select(f =>
+                                      {
+                                          double porcentajeEfectividad = (f.Setpoint > 0)
+                                              ? (f.VelocidadPromedio * 100.0 / f.Setpoint)
+                                              : 0;
+
+                                          return new ChartPoint
+                                          {
+                                              Label = string.IsNullOrEmpty(f.Familia) ? "Sin Familia" : f.Familia,
+                                              Value = Math.Round(porcentajeEfectividad, 2)
+                                          };
+                                      })
+                                      .ToList();
+
+            // 6. Cálculos matemáticos finales
             double promedioEfectividad = produccionFamilias.Count > 0 ? produccionFamilias.Average(x => x.Value) : 0;
-            double total = query.Count();
-            double operacion = query.Count(x => x.Totm == 1);
-            double calcEfficiency = total > 0 ? (operacion * 100.0 / total) : 0;
             double eficienciaReal = (promedioEfectividad > 0) ? (calcEfficiency / promedioEfectividad) * 100 : 0;
 
             return new EficienciaRealResult
             {
                 Familias = produccionFamilias,
-                PromedioEfectividad = promedioEfectividad,
-                CalcEfficiency = calcEfficiency,
-                EficienciaReal = eficienciaReal
+                PromedioEfectividad = Math.Round(promedioEfectividad, 2),
+                CalcEfficiency = Math.Round(calcEfficiency, 2),
+                EficienciaReal = Math.Round(eficienciaReal, 2)
             };
         }
 
@@ -438,16 +471,93 @@ namespace GraficasMixing.Controllers
             DateTime endDate = date.Date;
             DateTime startDate = endDate.AddDays(-6);
 
+            // 1. Traer TODOS los registros crudos de la semana usando filtros que SQL entiende nativamente
+            var rawDataBD = _context.ScadaExtrudermaster
+                .AsNoTracking() // Deshabilita el tracking para lecturas ultrarrápidas
+                .Where(x => x.Extruder == extruder
+                         // Filtro plano: El rango de fechas de los 7 días completos
+                         && x.Fecha.Date >= startDate
+                         && x.Fecha.Date <= endDate.AddDays(1))
+                .Select(x => new
+                {
+                    x.Fecha,
+                    x.Hora,
+                    x.Velocidad,
+                    x.Metros,
+                    x.Totm,
+                    x.Familia
+                })
+                .ToList(); // 🔹 Único viaje de ida y vuelta a la base de datos sin errores de traducción
+
+            // 2. Procesar la lógica de turnos y agrupar por Fecha de Producción Real en memoria de C#
+            var datosHistoricosAgrupados = rawDataBD
+                .Select(x =>
+                {
+                    // Ajuste matemático de Jornada SCADA: de 12:00 AM a 6:59 AM pertenece al día de producción anterior
+                    DateTime fechaProduccionReal = x.Hora < new TimeSpan(7, 0, 0)
+                        ? x.Fecha.Date.AddDays(-1)
+                        : x.Fecha.Date;
+
+                    // Determinar el turno correspondiente del registro
+                    string turnoRegistro = x.Hora >= new TimeSpan(7, 0, 0) && x.Hora < new TimeSpan(15, 0, 0) ? "Turno1" :
+                                          x.Hora >= new TimeSpan(15, 0, 0) && x.Hora <= new TimeSpan(23, 59, 59) ? "Turno2" : "Turno3";
+
+                    return new { x.Fecha, x.Hora, x.Velocidad, x.Metros, x.Totm, x.Familia, fechaProduccionReal, turnoRegistro };
+                })
+                // 🔹 Aplicamos el filtro de fecha límite estricto de la semana tras el ajuste de horas
+                .Where(x => x.fechaProduccionReal >= startDate && x.fechaProduccionReal <= endDate)
+                // 🔹 Si el usuario filtró por un turno específico, lo restringimos aquí en memoria
+                .Where(x => shift == "All" || x.turnoRegistro == shift)
+                .GroupBy(x => new { x.fechaProduccionReal, x.Familia })
+                .Select(g => new
+                {
+                    g.Key.fechaProduccionReal,
+                    g.Key.Familia,
+                    TotalRegistros = g.Count(),
+                    OperacionRegistros = g.Count(x => x.Totm == 1),
+                    MetrosProducidos = g.Sum(x => x.Metros >= 0 ? (x.Metros ?? 0) : 0),
+                    // AVG() en memoria simulando SQL ignorando nulos (valores menores o iguales a 0)
+                    VelocidadPromedio = g.Where(v => v.Velocidad > 0).Select(v => v.Velocidad ?? 0).DefaultIfEmpty(0).Average()
+                })
+                .ToList();
+
+            // 3. Descargar todos los SetPoints de este extrusor en un solo viaje para cruzarlos localmente
+            var setPointsLocal = _context.SetPointExtruder
+                .AsNoTracking()
+                .Where(sp => sp.extruder == extruder)
+                .ToList();
+
             var resultados = new List<object>();
 
+            // 4. Construir la respuesta para la gráfica recorriendo los 7 días continuos en la RAM
             for (DateTime d = startDate; d <= endDate; d = d.AddDays(1))
             {
-                double eficienciaReal = CalcularEficienciaReal(extruder, shift, d);
+                var datosDelDia = datosHistoricosAgrupados.Where(x => x.fechaProduccionReal == d).ToList();
+
+                double totalMinutos = datosDelDia.Sum(x => x.TotalRegistros);
+                double operacionMinutos = datosDelDia.Sum(x => x.OperacionRegistros);
+                double calcEfficiency = totalMinutos > 0 ? (operacionMinutos * 100.0 / totalMinutos) : 0;
+
+                var familiasConMetros = datosDelDia.Where(f => f.MetrosProducidos > 0).ToList();
+
+                var eficienciasFamilias = (from f in familiasConMetros
+                                           join sp in setPointsLocal
+                                           on f.Familia equals sp.familia into spJoin
+                                           from subSp in spJoin.DefaultIfEmpty()
+                                           select new
+                                           {
+                                               PorcentajeEfectividad = subSp != null && subSp.setpoint > 0
+                                                   ? (f.VelocidadPromedio * 100.0 / subSp.setpoint)
+                                                   : 0
+                                           }).ToList();
+
+                double promedioEfectividad = eficienciasFamilias.Count > 0 ? eficienciasFamilias.Average(x => x.PorcentajeEfectividad) : 0;
+                double eficienciaReal = (promedioEfectividad > 0) ? (calcEfficiency / promedioEfectividad) * 100 : 0;
 
                 resultados.Add(new
                 {
                     label = d.ToString("yyyy-MM-dd"),
-                    value = eficienciaReal
+                    value = Math.Round(eficienciaReal, 2)
                 });
             }
 
@@ -456,130 +566,140 @@ namespace GraficasMixing.Controllers
 
         private IEnumerable<object> CalcularFamilyRuntime(string extruder, DateTime date, string shift)
         {
-            IQueryable<ScadaExtrudermaster> query;
+            // 1. Definimos las fechas del día actual y siguiente para el SQL indexado
+            DateTime fechaHoy = date.Date;
+            DateTime fechaManana = date.Date.AddDays(1);
 
+            TimeSpan horaInicio = new TimeSpan(7, 0, 0);
+            TimeSpan horaFin = new TimeSpan(6, 59, 59);
+            bool esTurnoFijo = true;
+
+            // 2. Configurar las ventanas de tiempo por turno de manera nativa sin repetir consultas
             if (shift == "Turno1")
             {
-                query = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.Date &&
-                    x.Hora >= new TimeSpan(7, 0, 0) &&
-                    x.Hora < new TimeSpan(15, 0, 0) &&
-                    x.Totm == 1);
+                horaInicio = new TimeSpan(7, 0, 0);
+                horaFin = new TimeSpan(15, 0, 0);
             }
             else if (shift == "Turno2")
             {
-                query = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.Date &&
-                    x.Hora >= new TimeSpan(15, 0, 0) &&
-                    x.Hora <= new TimeSpan(23, 59, 59) &&
-                    x.Totm == 1);
+                horaInicio = new TimeSpan(15, 0, 0);
+                horaFin = new TimeSpan(23, 59, 59);
             }
             else if (shift == "Turno3")
             {
-                query = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.AddDays(1).Date &&
-                    x.Hora < new TimeSpan(7, 0, 0) &&
-                    x.Totm == 1);
+                horaInicio = new TimeSpan(0, 0, 0);
+                horaFin = new TimeSpan(7, 0, 0);
             }
-            else // ALL SHIFTS
+            else if (shift == "All" || string.IsNullOrEmpty(shift))
             {
-                var turno1 = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.Date &&
-                    x.Hora >= new TimeSpan(7, 0, 0) &&
-                    x.Hora < new TimeSpan(15, 0, 0) &&
-                    x.Totm == 1);
-
-                var turno2 = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.Date &&
-                    x.Hora >= new TimeSpan(15, 0, 0) &&
-                    x.Hora <= new TimeSpan(23, 59, 59) &&
-                    x.Totm == 1);
-
-                var turno3 = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.AddDays(1).Date &&
-                    x.Hora < new TimeSpan(7, 0, 0) &&
-                    x.Totm == 1);
-
-                query = turno1.Concat(turno2).Concat(turno3);
+                esTurnoFijo = false; // Indicador de que abarcamos toda la jornada híbrida
+            }
+            else
+            {
+                return new List<object>();
             }
 
-            var data = query
+            // 3. Inicializar la consulta base con AsNoTracking filtrando solo registros operativos (Totm == 1)
+            var queryBase = _context.ScadaExtrudermaster
+                .AsNoTracking() // 👈 CLAVE: Evita cargar metadatos innecesarios en el gestor de EF Core
+                .Where(x => x.Extruder == extruder && x.Totm == 1);
+
+            // 4. Aplicar el rango de tiempo exacto traducible por el motor SQL
+            if (esTurnoFijo)
+            {
+                DateTime fechaFiltro = shift == "Turno3" ? fechaManana : fechaHoy;
+                queryBase = queryBase.Where(x => x.Fecha.Date == fechaFiltro && x.Hora >= horaInicio && x.Hora < horaFin);
+            }
+            else
+            {
+                // Filtro nativo unificado para "All Shifts" sin sumas complejas de columnas
+                queryBase = queryBase.Where(x => (x.Fecha.Date == fechaHoy && x.Hora >= new TimeSpan(7, 0, 0))
+                                                    || (x.Fecha.Date == fechaManana && x.Hora < new TimeSpan(7, 0, 0)));
+            }
+
+            // 5. Agrupación y conteo directo en la Base de Datos (1 registro = 1 minuto)
+            var data = queryBase
                 .GroupBy(x => x.Familia)
-                .Select(g => new { label = g.Key, value = g.Count() }) // minutos = count
+                .Select(g => new
+                {
+                    // Si el nombre de la familia es nulo o vacío, asignamos una etiqueta limpia
+                    label = string.IsNullOrEmpty(g.Key) ? "Sin Familia" : g.Key,
+                    value = g.Count() // minutos = total de registros en el SCADA
+                })
                 .OrderByDescending(x => x.value)
-                .ToList();
+                .ToList(); // 🔹 Único viaje de ida y vuelta a la base de datos
 
             return data;
         }
 
         private IEnumerable<object> CalcularFamilyMeters(string extruder, DateTime date, string shift)
         {
-            IQueryable<ScadaExtrudermaster> query;
+            // 1. Definimos las fechas del día actual y siguiente para el SQL indexado
+            DateTime fechaHoy = date.Date;
+            DateTime fechaManana = date.Date.AddDays(1);
+
+            TimeSpan horaInicio = new TimeSpan(7, 0, 0);
+            TimeSpan horaFin = new TimeSpan(6, 59, 59);
+            bool esTurnoFijo = true;
+
+            // 2. Configurar las ventanas de tiempo por turno de manera nativa sin repetir código
             if (shift == "Turno1")
             {
-                query = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.Date &&
-                    x.Hora >= new TimeSpan(7, 0, 0) &&
-                    x.Hora < new TimeSpan(15, 0, 0) &&
-                    x.Metros >= 0);   // ← IGNORAR NEGATIVOS
+                horaInicio = new TimeSpan(7, 0, 0);
+                horaFin = new TimeSpan(15, 0, 0);
             }
             else if (shift == "Turno2")
             {
-                query = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.Date &&
-                    x.Hora >= new TimeSpan(15, 0, 0) &&
-                    x.Hora <= new TimeSpan(23, 59, 59) &&
-                    x.Metros >= 0);   // ← IGNORAR NEGATIVOS
+                horaInicio = new TimeSpan(15, 0, 0);
+                horaFin = new TimeSpan(23, 59, 59);
             }
             else if (shift == "Turno3")
             {
-                query = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.AddDays(1).Date &&
-                    x.Hora < new TimeSpan(7, 0, 0) &&
-                    x.Metros >= 0);   // ← IGNORAR NEGATIVOS
+                horaInicio = new TimeSpan(0, 0, 0);
+                horaFin = new TimeSpan(7, 0, 0);
             }
-            else // ALL SHIFTS
+            else if (shift == "All" || string.IsNullOrEmpty(shift))
             {
-                var turno1 = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.Date &&
-                    x.Hora >= new TimeSpan(7, 0, 0) &&
-                    x.Hora < new TimeSpan(15, 0, 0) &&
-                    x.Metros >= 0);
-
-                var turno2 = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.Date &&
-                    x.Hora >= new TimeSpan(15, 0, 0) &&
-                    x.Hora <= new TimeSpan(23, 59, 59) &&
-                    x.Metros >= 0);
-
-                var turno3 = _context.ScadaExtrudermaster.Where(x =>
-                    x.Extruder == extruder &&
-                    x.Fecha.Date == date.AddDays(1).Date &&
-                    x.Hora < new TimeSpan(7, 0, 0) &&
-                    x.Metros >= 0);
-
-                query = turno1.Concat(turno2).Concat(turno3);
+                esTurnoFijo = false; // Indicador de que abarcamos toda la jornada híbrida
+            }
+            else
+            {
+                return new List<object>();
             }
 
-            var data = query
+            // 3. Inicializar la consulta base con AsNoTracking ignorando valores negativos
+            var queryBase = _context.ScadaExtrudermaster
+                .AsNoTracking() // 👈 CLAVE: Deshabilita el tracking de memoria intermedia para reportes rápidos
+                .Where(x => x.Extruder == extruder && x.Metros >= 0);
+
+            // 4. Aplicar el rango de tiempo exacto traducible por el motor SQL
+            if (esTurnoFijo)
+            {
+                DateTime fechaFiltro = shift == "Turno3" ? fechaManana : fechaHoy;
+                queryBase = queryBase.Where(x => x.Fecha.Date == fechaFiltro && x.Hora >= horaInicio && x.Hora < horaFin);
+            }
+            else
+            {
+                // Filtro nativo unificado para "All Shifts" sin sumas complejas de columnas
+                queryBase = queryBase.Where(x => (x.Fecha.Date == fechaHoy && x.Hora >= new TimeSpan(7, 0, 0))
+                                                    || (x.Fecha.Date == fechaManana && x.Hora < new TimeSpan(7, 0, 0)));
+            }
+
+            // 5. Agrupación y sumatoria directa en el motor de la Base de Datos
+            var data = queryBase
                 .GroupBy(x => x.Familia)
-                .Select(g => new { label = g.Key, value = g.Sum(x => x.Metros ?? 0) })
+                .Select(g => new
+                {
+                    // Si el nombre de la familia es nulo, asignamos una etiqueta limpia
+                    label = string.IsNullOrEmpty(g.Key) ? "Sin Familia" : g.Key,
+                    value = Math.Round(g.Sum(x => x.Metros ?? 0), 2) // Suma y redondeo a 2 decimales directamente en SQL
+                })
                 .OrderByDescending(x => x.value)
-                .ToList();
+                .ToList(); // 🔹 Único viaje de ida y vuelta a la base de datos
 
             return data;
         }
+
 
         private IEnumerable<object> CalcularSpeedData(string extruder, DateTime date, string shift)
         {
@@ -805,7 +925,6 @@ namespace GraficasMixing.Controllers
             return Json(new { turnos = todosLosTurnos, desglose = resultadoFinal });
         }
 
-
         [HttpGet]
         public IActionResult GetEficienciaRealData(string extruder, string shift, DateTime date)
         {
@@ -979,52 +1098,6 @@ namespace GraficasMixing.Controllers
             return View(cardInfo);
         }
 
-        //public IActionResult Chart(int id)
-        //{
-        //    var estado = _context.Estado
-        //        .Include(e => e.ExtruderRef)
-        //        .Include(e => e.EmpleadoRef)
-        //        .Include(e => e.MandrilRef)
-        //        .Include(e => e.Tubo1Ref)
-        //        .Include(e => e.Tubo2Ref)
-        //        .Include(e => e.CoverRef)
-        //        .FirstOrDefault(e => e.ExtruderId == id);
-
-        //    if (estado == null)
-        //    {
-        //        return View(new EstadoCardViewModel
-        //        {
-        //            Extruder = "N/A",
-        //            Empleado = "N/A",
-        //            NumeroEmpleado = "N/A",
-        //            Mandril = "N/A",
-        //            Familia = "N/A",
-        //            Contador = 0,
-        //            Tubo1 = "",
-        //            Tubo2 = "",
-        //            Cover = ""
-        //        });
-        //    }
-
-        //    var cardInfo = new EstadoCardViewModel
-        //    {
-        //        Extruder = estado.ExtruderRef?.NombreExtruder,
-        //        Empleado = estado.EmpleadoRef?.Nombre,
-        //        NumeroEmpleado = estado.EmpleadoRef?.NumeroEmpleado.ToString(),
-        //        Mandril = estado.MandrilRef?.NombreMandril,
-        //        Familia = estado.MandrilRef?.Familia,
-        //        Contador = estado.Contador,
-        //        Tubo1 = estado.Tubo1Ref?.Batch,
-        //        Tubo2 = estado.Tubo2Ref?.Batch,
-        //        Cover = estado.CoverRef?.Batch
-        //    };
-
-        //    // 🔹 Pasamos también el id del extruder a la vista
-        //    ViewBag.ExtruderId = id;
-
-        //    return View(cardInfo);
-        //}
-
         [HttpGet]
         public IActionResult GetFotoEmpleado(int numeroEmpleado)
         {
@@ -1190,21 +1263,6 @@ namespace GraficasMixing.Controllers
             // Devolvemos el valor del contador en formato JSON
             return Json(new { contador = estado?.Contador ?? 0 });
         }
-
-        //[HttpGet]
-        //public JsonResult GetContador(int numeroEmpleado)
-        //{
-        //    // Buscar el último estado asociado al empleado
-        //    var estado = _context.Estado
-        //        .Where(e => e.EmpleadoRef.NumeroEmpleado == numeroEmpleado)
-        //        .OrderByDescending(e => e.ID)
-        //        .FirstOrDefault();
-
-        //    return Json(new
-        //    {
-        //        contador = estado?.Contador ?? 0
-        //    });
-        //}
 
         public IActionResult GeneralChart()
         {
